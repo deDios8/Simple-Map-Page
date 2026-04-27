@@ -1,3 +1,6 @@
+file:///C:/Users/dedio/OneDrive/Documents/Programming/python/Simple%20Map%20Page/embed.html
+
+
 # Simple Map Page
 
 This page is a mobile-friendly Leaflet map that:
@@ -76,6 +79,8 @@ Notes:
 - Keep `allow="geolocation"` on the iframe or browser location access will be blocked.
 - Host over HTTPS for real GPS support on mobile browsers.
 - Edit Firebase values inside `embed.html` if you want live sync from Realtime Database.
+
+
 
 
 Prompt used to generate:
