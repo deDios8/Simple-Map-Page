@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Simple Map Page</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <div id="map" aria-label="Interactive map"></div>
+
+      <section class="status-card" aria-live="polite">
+        <p class="status-label">Location</p>
+        <p id="location-status">Requesting GPS access...</p>
+      </section>
+
+      <button
+        id="drawer-toggle"
+        class="drawer-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="drawer"
+        aria-label="Open object list"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <aside id="drawer" class="drawer" aria-label="GeoJSON objects">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Objects</p>
+            <h1>GeoJSON Layers</h1>
+          </div>
+          <button id="drawer-close" class="text-button" type="button">Close</button>
+        </div>
+
+        <div class="drawer-body">
+          <section class="panel-section">
+            <h2>All objects</h2>
+            <ul id="object-list" class="object-list"></ul>
+          </section>
+
+          <section class="panel-section">
+            <div class="editor-header">
+              <h2>Edit object</h2>
+              <p id="editor-empty-state">Select an object from the list.</p>
+            </div>
+
+            <form id="editor-form" class="editor-form" hidden>
+              <label>
+                Title
+                <input id="field-name" name="name" type="text" placeholder="Object label" />
+              </label>
+
+              <label>
+                Color
+                <input id="field-color" name="color" type="color" value="#0b8f87" />
+              </label>
+
+              <label class="checkbox-row">
+                <input id="field-visible" name="visible" type="checkbox" />
+                Visible on map
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  id="field-description"
+                  name="description"
+                  rows="3"
+                  placeholder="Extra details shown when tapped"
+                ></textarea>
+              </label>
+
+              <label>
+                Additional data (JSON)
+                <textarea
+                  id="field-extra"
+                  name="extra"
+                  rows="5"
+                  spellcheck="false"
+                  placeholder='{"priority":"high"}'
+                ></textarea>
+              </label>
+
+              <div class="editor-actions">
+                <button class="primary-button" type="submit">Save changes</button>
+                <p id="save-status" class="save-status" aria-live="polite"></p>
+              </div>
+            </form>
+          </section>
+        </div>
+      </aside>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
