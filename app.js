@@ -9,13 +9,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
+  authDomain: "geogm-simple-map.firebaseapp.com",
+  databaseURL: "https://geogm-simple-map-default-rtdb.firebaseio.com",
+  projectId: "geogm-simple-map",
+  storageBucket: "geogm-simple-map.firebasestorage.app",
+  messagingSenderId: "554186481304",
+  appId: "1:554186481304:web:35df4f22e9539a991b3aed"
 };
 
 const firebaseCollectionPath = "geoObjects";

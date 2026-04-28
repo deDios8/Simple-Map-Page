@@ -1,7 +1,14 @@
+# Instructions for deployment
+
 Project Console: 
 https://console.firebase.google.com/project/geogm-simple-map/overview
-Hosting URL: 
+Remote Hosting URL: 
+firebase deploy
 https://geogm-simple-map.web.app
+Local Test:
+cd "c:\Users\dedio\OneDrive\Documents\Programming\python\Simple Map Page"
+python -m http.server 8080
+http://localhost:8080/index.html
 
 # Simple Map Page
 
