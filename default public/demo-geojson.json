@@ -1,0 +1,65 @@
+{
+  "geoObjects": {
+    "downtown": {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-101.3133, 48.2128]
+      },
+      "properties": {
+        "id": "downtown",
+        "name": "Downtown Pin",
+        "visible": true,
+        "color": "#0b8f87",
+        "description": "Current point of interest.",
+        "extraData": {
+          "category": "pin",
+          "priority": "high"
+        }
+      }
+    },
+    "stagingZone": {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-101.31335, 48.2175],
+            [-101.3134, 48.2175],
+            [-101.3134, 48.2129],
+            [-101.31335, 48.2129],
+            [-101.31335, 48.2175]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "stagingZone",
+        "name": "Staging Zone",
+        "visible": true,
+        "color": "#d2603f",
+        "description": "Rectangular work area.",
+        "extraData": {
+          "access": "restricted",
+          "supervisor": "Ops A"
+        }
+      }
+    },
+    "hiddenMarker": {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-101.3133, 48.2128]
+      },
+      "properties": {
+        "id": "hiddenMarker",
+        "name": "Hidden Marker",
+        "visible": false,
+        "color": "#5e718c",
+        "description": "This stays hidden until visibility is enabled.",
+        "extraData": {
+          "category": "standby"
+        }
+      }
+    }
+  }
+}
