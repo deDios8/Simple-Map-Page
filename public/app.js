@@ -127,9 +127,13 @@ function initMap() {
 
   L.control.zoom({ position: "topright" }).addTo(state.map);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors",
-    maxZoom: 20,
+  // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  //   attribution: "&copy; OpenStreetMap contributors",
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    attribution:
+      "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+    maxZoom: 19,
+    minZoom: 12,
   }).addTo(state.map);
 }
 
@@ -232,7 +236,7 @@ function locateUser() {
         state.userMarker.setLatLng(latLng);
       }
 
-      locationStatus.textContent = `GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+      locationStatus.textContent = `Zoom: ${state.map.getZoom()} | GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
     },
     (error) => {
       locationStatus.textContent = `Location unavailable: ${error.message}`;
