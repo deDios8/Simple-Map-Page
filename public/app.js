@@ -213,6 +213,9 @@ function locateUser() {
 
       if (state.userId && !state.objects[state.userId]) {
         createUserObject();
+      } 
+      if (state.userId && !state.trackingInterval) {
+        startCoordinateTracking();
       }
 
       if (!state.userMarker) {
@@ -257,8 +260,12 @@ function promptUserId() {
     state.userId = id;
     modal.hidden = true;
 
-    if (state.userLocation && !state.objects[state.userId]) {
-      createUserObject();
+    if (state.userLocation) {
+      if (!state.objects[state.userId]) {
+        createUserObject();
+      } else {
+        startCoordinateTracking();
+      }
     }
   });
 }
