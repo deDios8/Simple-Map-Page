@@ -236,7 +236,7 @@ function locateUser() {
         state.userMarker.setLatLng(latLng);
       }
 
-      locationStatus.textContent = `Zoom: ${state.map.getZoom()} | GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+      locationStatus.textContent = `GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
     },
     (error) => {
       locationStatus.textContent = `Location unavailable: ${error.message}`;
