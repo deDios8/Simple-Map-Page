@@ -25,7 +25,7 @@ const demoGeoObjects = {
     type: "Feature",
     geometry: {
       type: "Point",
-      coordinates: [-122.4194, 37.7749],
+      coordinates: [-101.31304, 48.21224],
     },
     properties: {
       id: "downtown",
@@ -44,11 +44,11 @@ const demoGeoObjects = {
     geometry: {
       type: "Polygon",
       coordinates: [[
-        [-122.425, 37.779],
-        [-122.413, 37.779],
-        [-122.413, 37.771],
-        [-122.425, 37.771],
-        [-122.425, 37.779],
+        [-101.319, 48.217],
+        [-101.307, 48.217],
+        [-101.307, 48.209],
+        [-101.319, 48.209],
+        [-101.319, 48.217],
       ]],
     },
     properties: {
@@ -67,7 +67,7 @@ const demoGeoObjects = {
     type: "Feature",
     geometry: {
       type: "Point",
-      coordinates: [-122.4094, 37.7812],
+      coordinates: [-101.31304, 48.21224],
     },
     properties: {
       id: "hiddenMarker",
@@ -120,7 +120,7 @@ function initMap() {
   state.map = L.map("map", {
     zoomControl: false,
     tap: true,
-  }).setView([37.7749, -122.4194], 14);
+  }).setView([48.21224, -101.31304], 14);
 
   L.control.zoom({ position: "topright" }).addTo(state.map);
 
