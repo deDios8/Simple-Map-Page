@@ -95,3 +95,9 @@ Make a simple webpage that displays a leaflet map centered on the user's locatio
 The page should have a hamburger style collapsible button in the bottom right corner that allows the user to see a list of all geojson objects and tap on them there to edit their properties. Their font color in the menu should be based on same color entry that determines their display color on the map.
 The page should have listener for a firebase realtime database that will update the map when a change occurs.
 The page should be well suited on mobile devices using their gps location.
+
+THEN
+
+I'd like to add a new functionality to this app.
+I'd like to have the user enter an identifying string when they first access the site. Then add a geojson Point object  with the inputed id, at the users gps coordinates, and with a black color.
+Then, while visiting the page, every 2 seconds, I'd like to update that geojson object's coordinates with the user's coordinates, and leave the rest of the geojson objects data unchanged. 

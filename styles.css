@@ -276,3 +276,53 @@ body {
   background: rgba(250, 252, 249, 0.96);
   color: var(--text);
 }
+
+.id-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 43, 36, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.id-modal-overlay[hidden] {
+  display: none;
+}
+
+.id-modal-card {
+  width: min(380px, calc(100vw - 32px));
+  padding: 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+
+.id-modal-card h2 {
+  margin: 0;
+}
+
+.id-modal-card > p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.id-modal-card form {
+  display: grid;
+  gap: 12px;
+}
+
+.id-modal-card input[type="text"] {
+  width: 100%;
+  border: 1px solid rgba(20, 48, 42, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 12px 14px;
+  color: var(--text);
+  font: inherit;
+}

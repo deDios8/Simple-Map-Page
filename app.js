@@ -91,6 +91,8 @@ const state = {
   objects: {},
   selectedId: null,
   userLocation: null,
+  userId: null,
+  trackingInterval: null,
 };
 
 const locationStatus = document.querySelector("#location-status");
@@ -114,6 +116,7 @@ function init() {
   bindUi();
   locateUser();
   initFirebaseListener();
+  promptUserId();
 }
 
 function initMap() {
@@ -208,6 +211,10 @@ function locateUser() {
       const latLng = [coords.latitude, coords.longitude];
       state.userLocation = latLng;
 
+      if (state.userId && !state.objects[state.userId]) {
+        createUserObject();
+      }
+
       if (!state.userMarker) {
         state.userMarker = L.circleMarker(latLng, {
           radius: 9,
@@ -233,6 +240,88 @@ function locateUser() {
       timeout: 15000,
     },
   );
+}
+
+function promptUserId() {
+  const modal = document.querySelector("#user-id-modal");
+  const form = document.querySelector("#user-id-form");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = document.querySelector("#user-id-input");
+    const id = input.value.trim();
+    if (!id) {
+      return;
+    }
+
+    state.userId = id;
+    modal.hidden = true;
+
+    if (state.userLocation && !state.objects[state.userId]) {
+      createUserObject();
+    }
+  });
+}
+
+function createUserObject() {
+  if (!state.userId || !state.userLocation) {
+    return;
+  }
+
+  const [lat, lng] = state.userLocation;
+
+  const userFeature = {
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [lng, lat],
+    },
+    properties: {
+      id: state.userId,
+      name: state.userId,
+      visible: true,
+      color: "#000000",
+      description: "Live user location.",
+      extraData: {},
+    },
+  };
+
+  persistObject(state.userId, userFeature);
+  startCoordinateTracking();
+}
+
+function startCoordinateTracking() {
+  if (state.trackingInterval) {
+    clearInterval(state.trackingInterval);
+  }
+
+  state.trackingInterval = setInterval(() => {
+    if (!state.userId || !state.userLocation) {
+      return;
+    }
+
+    const existing = state.objects[state.userId];
+    if (!existing) {
+      return;
+    }
+
+    const [lat, lng] = state.userLocation;
+
+    const updated = {
+      ...existing,
+      geometry: {
+        ...existing.geometry,
+        coordinates: [lng, lat],
+      },
+    };
+
+    state.objects[state.userId] = updated;
+    renderLayer();
+
+    if (state.firebaseReady && state.database) {
+      update(ref(state.database, firebaseCollectionPath), { [state.userId]: updated });
+    }
+  }, 2000);
 }
 
 function initFirebaseListener() {

@@ -102,6 +102,24 @@
       </aside>
     </main>
 
+    <div id="user-id-modal" class="id-modal-overlay">
+      <div class="id-modal-card">
+        <p class="eyebrow">Welcome</p>
+        <h2>Enter your ID</h2>
+        <p>Your location will be tracked on the map under this identifier.</p>
+        <form id="user-id-form">
+          <input
+            id="user-id-input"
+            type="text"
+            placeholder="Your identifier"
+            autocomplete="off"
+            required
+          />
+          <button class="primary-button" type="submit">Start tracking</button>
+        </form>
+      </div>
+    </div>
+
     <script
       src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
