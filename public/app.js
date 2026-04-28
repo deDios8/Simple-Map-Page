@@ -9,13 +9,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
+  authDomain: "geogm-simple-map.firebaseapp.com",
+  databaseURL: "https://geogm-simple-map-default-rtdb.firebaseio.com",
+  projectId: "geogm-simple-map",
+  storageBucket: "geogm-simple-map.firebasestorage.app",
+  messagingSenderId: "554186481304",
+  appId: "1:554186481304:web:35df4f22e9539a991b3aed"
 };
 
 const firebaseCollectionPath = "geoObjects";
@@ -25,7 +25,7 @@ const demoGeoObjects = {
     type: "Feature",
     geometry: {
       type: "Point",
-      coordinates: [-122.4194, 37.7749],
+      coordinates: [-101.31304, 48.21224],
     },
     properties: {
       id: "downtown",
@@ -44,11 +44,11 @@ const demoGeoObjects = {
     geometry: {
       type: "Polygon",
       coordinates: [[
-        [-122.425, 37.779],
-        [-122.413, 37.779],
-        [-122.413, 37.771],
-        [-122.425, 37.771],
-        [-122.425, 37.779],
+        [-101.319, 48.217],
+        [-101.307, 48.217],
+        [-101.307, 48.209],
+        [-101.319, 48.209],
+        [-101.319, 48.217],
       ]],
     },
     properties: {
@@ -67,7 +67,7 @@ const demoGeoObjects = {
     type: "Feature",
     geometry: {
       type: "Point",
-      coordinates: [-122.4094, 37.7812],
+      coordinates: [-101.31304, 48.21224],
     },
     properties: {
       id: "hiddenMarker",
@@ -120,7 +120,7 @@ function initMap() {
   state.map = L.map("map", {
     zoomControl: false,
     tap: true,
-  }).setView([37.7749, -122.4194], 14);
+  }).setView([48.21224, -101.31304], 14);
 
   L.control.zoom({ position: "topright" }).addTo(state.map);
 
