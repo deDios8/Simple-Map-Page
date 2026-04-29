@@ -183,7 +183,7 @@ function bindUi() {
         visible: fieldVisible.checked,
         latitude: parseFloat(fieldLatitude.value.trim()) || (objectEntry.geometry?.coordinates ? objectEntry.geometry.coordinates[1] : null),
         longitude: parseFloat(fieldLongitude.value.trim()) || (objectEntry.geometry?.coordinates ? objectEntry.geometry.coordinates[0] : null),
-        // radius: parseFloat(fieldRadius.value.trim()) || objectEntry.properties.radius,
+        radius: parseFloat(fieldRadius.value.trim()) || (objectEntry.properties?.radius ? objectEntry.properties.radius : null),
         description: fieldDescription.value.trim(),
         extraData: parsedExtra,
       },
