@@ -484,9 +484,6 @@ function renderObjectList() {
           const id = feature.properties?.id;
           const color = feature.properties?.color || "#0b8f87";
           const visible = feature.properties?.visible ? "Visible" : "Hidden";
-          const latitude = feature.geometry?.coordinates ? feature.geometry.coordinates[1] : null;
-          const longitude = feature.geometry?.coordinates ? feature.geometry.coordinates[0] : null;
-          const radius = feature.properties?.radius || null;
           const selectedClass = state.selectedId === id ? "is-selected" : "";
           const name = escapeHtml(feature.properties?.name || id || "Unnamed object");
           const type = escapeHtml(feature.geometry?.type || "Unknown");
