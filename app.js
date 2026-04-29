@@ -32,6 +32,7 @@ const demoGeoObjects = {
       name: "Downtown Pin",
       visible: true,
       color: "#0b8f87",
+      radius: 12,
       description: "Current point of interest.",
       extraData: {
         category: "pin",
@@ -39,30 +40,6 @@ const demoGeoObjects = {
       },
     },
   },
-  // stagingZone: {
-  //   type: "Feature",
-  //   geometry: {
-  //     type: "Polygon",
-  //     coordinates: [[
-  //       [-101.319, 48.217],
-  //       [-101.307, 48.217],
-  //       [-101.307, 48.209],
-  //       [-101.319, 48.209],
-  //       [-101.319, 48.217],
-  //     ]],
-  //   },
-  //   properties: {
-  //     id: "stagingZone",
-  //     name: "Staging Zone",
-  //     visible: true,
-  //     color: "#d2603f",
-  //     description: "Rectangular work area.",
-  //     extraData: {
-  //       access: "restricted",
-  //       supervisor: "Ops A",
-  //     },
-  //   },
-  // },
   hiddenMarker: {
     type: "Feature",
     geometry: {
@@ -74,9 +51,34 @@ const demoGeoObjects = {
       name: "Hidden Marker",
       visible: false,
       color: "#5e718c",
+      radius: 8,
       description: "This stays hidden until visibility is enabled.",
       extraData: {
         category: "standby",
+      },
+    },
+  },
+  stagingZone: {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [-101.319, 48.217],
+        [-101.307, 48.217],
+        [-101.307, 48.209],
+        [-101.319, 48.209],
+        [-101.319, 48.217],
+      ]],
+    },
+    properties: {
+      id: "stagingZone",
+      name: "Staging Zone",
+      visible: true,
+      color: "#d2603f",
+      description: "Rectangular work area.",
+      extraData: {
+        access: "restricted",
+        supervisor: "Ops A",
       },
     },
   },
