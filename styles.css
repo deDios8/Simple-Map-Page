@@ -136,6 +136,42 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.drawer-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.listener-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--accent-dark);
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.listener-toggle:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--accent);
+}
+
+.listener-toggle:active {
+  transform: scale(0.95);
+}
+
+.listener-toggle[data-state="paused"] {
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .drawer-body {
   overflow: auto;
   padding: 14px 18px 18px;

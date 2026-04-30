@@ -95,12 +95,15 @@ const state = {
   userLocation: null,
   userId: null,
   trackingInterval: null,
+  listenerActive: true,
+  listenerUnsubscribe: null,
 };
 
 const locationStatus = document.querySelector("#location-status");
 const drawer = document.querySelector("#drawer");
 const drawerToggle = document.querySelector("#drawer-toggle");
 const drawerClose = document.querySelector("#drawer-close");
+const listenerToggle = document.querySelector("#listener-toggle");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorEmptyState = document.querySelector("#editor-empty-state");
@@ -145,6 +148,7 @@ function initMap() {
 function bindUi() {
   drawerToggle.addEventListener("click", () => setDrawerOpen(!drawer.classList.contains("is-open")));
   drawerClose.addEventListener("click", () => setDrawerOpen(false));
+  listenerToggle.addEventListener("click", toggleListener);
 
   objectList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-id]");
@@ -359,9 +363,18 @@ function initFirebaseListener() {
 
   state.firebaseReady = true;
 
-  onValue(objectRef, (snapshot) => {
-    applyObjects(snapshot.val() || {});
+  state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
+    if (state.listenerActive) {
+      applyObjects(snapshot.val() || {});
+    }
   });
+}
+
+function toggleListener() {
+  state.listenerActive = !state.listenerActive;
+  listenerToggle.setAttribute("data-state", state.listenerActive ? "active" : "paused");
+  listenerToggle.textContent = state.listenerActive ? "⏸" : "▶";
+  listenerToggle.setAttribute("title", state.listenerActive ? "Pause Firebase listener" : "Resume Firebase listener");
 }
 
 function applyObjects(nextObjects) {
