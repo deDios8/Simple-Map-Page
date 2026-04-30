@@ -197,16 +197,38 @@ function bindUi() {
       return;
     }
 
+    const parsedLatitude = Number.parseFloat(fieldLatitude.value.trim());
+    const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
+    const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
+    const currentCoordinates = objectEntry.geometry?.coordinates;
+    const fallbackLatitude = Array.isArray(currentCoordinates) ? currentCoordinates[1] : null;
+    const fallbackLongitude = Array.isArray(currentCoordinates) ? currentCoordinates[0] : null;
+    const fallbackRadius = Number.isFinite(objectEntry.properties?.radius)
+      ? objectEntry.properties.radius
+      : null;
+    const nextLatitude = Number.isFinite(parsedLatitude) ? parsedLatitude : fallbackLatitude;
+    const nextLongitude = Number.isFinite(parsedLongitude) ? parsedLongitude : fallbackLongitude;
+    const nextRadius = Number.isFinite(parsedRadius) ? parsedRadius : fallbackRadius;
+
+    let nextGeometry = objectEntry.geometry;
+    if (objectEntry.geometry?.type === "Point" && Number.isFinite(nextLatitude) && Number.isFinite(nextLongitude)) {
+      nextGeometry = {
+        ...objectEntry.geometry,
+        coordinates: [nextLongitude, nextLatitude],
+      };
+    }
+
     const nextEntry = {
       ...objectEntry,
+      geometry: nextGeometry,
       properties: {
         ...objectEntry.properties,
         name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
         color: fieldColor.value,
         visible: fieldVisible.checked,
-        latitude: parseFloat(fieldLatitude.value.trim()) || (objectEntry.geometry?.coordinates ? objectEntry.geometry.coordinates[1] : null),
-        longitude: parseFloat(fieldLongitude.value.trim()) || (objectEntry.geometry?.coordinates ? objectEntry.geometry.coordinates[0] : null),
-        radius: parseFloat(fieldRadius.value.trim()) || (objectEntry.properties?.radius ? objectEntry.properties.radius : null),
+        latitude: nextLatitude,
+        longitude: nextLongitude,
+        radius: nextRadius,
         description: fieldDescription.value.trim(),
         extraData: parsedExtra,
       },
@@ -512,7 +534,7 @@ function renderLayer() {
 
 function pointStyle(feature) {
   const color = feature.properties?.color || "#0b8f87";
-  const radius = feature.properties?.radius || 9;
+  const radius = Number.isFinite(feature.properties?.radius) ? feature.properties.radius : 9;
   return {
     radius,
     color,
@@ -625,9 +647,9 @@ function populateEditor(id) {
   fieldName.value = feature.properties?.name || "";
   fieldColor.value = feature.properties?.color || "#0b8f87";
   fieldVisible.checked = Boolean(feature.properties?.visible);
-  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "huh";
+  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
-  fieldRadius.value = feature.properties?.radius ? String(feature.properties.radius) : "";
+  fieldRadius.value = Number.isFinite(feature.properties?.radius) ? String(feature.properties.radius) : "";
   fieldDescription.value = feature.properties?.description || "";
   fieldExtra.value = JSON.stringify(feature.properties?.extraData || {}, null, 2);
 }
