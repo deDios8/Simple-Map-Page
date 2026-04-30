@@ -95,6 +95,32 @@ body {
   background: #f6f7f2;
 }
 
+.request-actions {
+  position: fixed;
+  left: 18px;
+  bottom: var(--safe-bottom);
+  z-index: 900;
+  display: flex;
+  gap: 10px;
+}
+
+.request-action-button {
+  width: 62px;
+  height: 62px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #123a67 0%, #215f9d 100%);
+  box-shadow: 0 14px 32px rgba(14, 45, 81, 0.35);
+  color: #f6f7f2;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.request-action-button:active {
+  transform: scale(0.96);
+}
+
 .drawer {
   position: fixed;
   right: 12px;
@@ -304,6 +330,10 @@ body {
 
   .drawer-toggle {
     right: 14px;
+  }
+
+  .request-actions {
+    left: 12px;
   }
 }
 

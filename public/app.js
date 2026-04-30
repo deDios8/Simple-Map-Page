@@ -19,6 +19,7 @@ const firebaseConfig = {
 };
 
 const firebaseCollectionPath = "geoObjects";
+const firebaseClientRequestPath = "clientRequests";
 
 const demoGeoObjects = {
   downtown: {
@@ -104,6 +105,8 @@ const drawer = document.querySelector("#drawer");
 const drawerToggle = document.querySelector("#drawer-toggle");
 const drawerClose = document.querySelector("#drawer-close");
 const listenerToggle = document.querySelector("#listener-toggle");
+const requestAButton = document.querySelector("#request-a-button");
+const requestBButton = document.querySelector("#request-b-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorEmptyState = document.querySelector("#editor-empty-state");
@@ -149,6 +152,12 @@ function bindUi() {
   drawerToggle.addEventListener("click", () => setDrawerOpen(!drawer.classList.contains("is-open")));
   drawerClose.addEventListener("click", () => setDrawerOpen(false));
   listenerToggle.addEventListener("click", toggleListener);
+  requestAButton.addEventListener("click", () => {
+    void submitClientRequest("request A");
+  });
+  requestBButton.addEventListener("click", () => {
+    void submitClientRequest("request B");
+  });
 
   objectList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-id]");
@@ -375,6 +384,49 @@ function toggleListener() {
   listenerToggle.setAttribute("data-state", state.listenerActive ? "active" : "paused");
   listenerToggle.textContent = state.listenerActive ? "pause db" : "resume db";
   listenerToggle.setAttribute("title", state.listenerActive ? "Pause Firebase listener" : "Resume Firebase listener");
+}
+
+async function submitClientRequest(requestId) {
+  if (!state.firebaseReady || !state.database) {
+    locationStatus.textContent = "Request unavailable: Firebase is not ready.";
+    return;
+  }
+
+  if (!state.userId) {
+    locationStatus.textContent = "Request unavailable: enter your ID first.";
+    return;
+  }
+
+  if (!state.userLocation) {
+    locationStatus.textContent = "Request unavailable: waiting for location fix.";
+    return;
+  }
+
+  const [lat, lng] = state.userLocation;
+  const timestamp = new Date().toISOString();
+  const requestKey = `${requestId.replace(/\s+/g, "-")}-${Date.now()}`;
+  const requestFeature = {
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [lng, lat],
+    },
+    properties: {
+      timestamp,
+      requesterId: state.userId,
+      id: requestId,
+    },
+  };
+
+  try {
+    await update(ref(state.database, firebaseClientRequestPath), {
+      [requestKey]: requestFeature,
+    });
+    locationStatus.textContent = `${requestId} sent at ${timestamp}`;
+  } catch (error) {
+    console.error(error);
+    locationStatus.textContent = "Request failed. Check Firebase permissions and connection.";
+  }
 }
 
 function applyObjects(nextObjects) {
