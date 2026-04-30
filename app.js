@@ -373,7 +373,7 @@ function initFirebaseListener() {
 function toggleListener() {
   state.listenerActive = !state.listenerActive;
   listenerToggle.setAttribute("data-state", state.listenerActive ? "active" : "paused");
-  listenerToggle.textContent = state.listenerActive ? "⏸" : "▶";
+  listenerToggle.textContent = state.listenerActive ? "pause db" : "resume db";
   listenerToggle.setAttribute("title", state.listenerActive ? "Pause Firebase listener" : "Resume Firebase listener");
 }
 
