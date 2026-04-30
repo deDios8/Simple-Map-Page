@@ -107,6 +107,8 @@ const drawerClose = document.querySelector("#drawer-close");
 const listenerToggle = document.querySelector("#listener-toggle");
 const requestAButton = document.querySelector("#request-a-button");
 const requestBButton = document.querySelector("#request-b-button");
+const requestXButton = document.querySelector("#request-x-button");
+const requestYButton = document.querySelector("#request-y-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorEmptyState = document.querySelector("#editor-empty-state");
@@ -157,6 +159,12 @@ function bindUi() {
   });
   requestBButton.addEventListener("click", () => {
     void submitClientRequest("request B");
+  });
+  requestXButton.addEventListener("click", () => {
+    void submitClientRequest("request X");
+  });
+  requestYButton.addEventListener("click", () => {
+    void submitClientRequest("request Y");
   });
 
   objectList.addEventListener("click", (event) => {
