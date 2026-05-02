@@ -401,6 +401,11 @@ function promptUserId() {
       sessionInput.value = sessionName;
     }
 
+    const drawerTitle = document.querySelector("#drawer-session-title");
+    if (drawerTitle) {
+      drawerTitle.textContent = sessionName;
+    }
+
     reconnectObjectListener();
     modal.hidden = true;
 
