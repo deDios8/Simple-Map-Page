@@ -263,6 +263,17 @@ body {
   gap: 10px;
 }
 
+.appearance-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.appearance-row .checkbox-row {
+  align-self: end;
+}
+
 .editor-form input[type="text"],
 .editor-form input[type="color"],
 .editor-form textarea {
