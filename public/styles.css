@@ -419,7 +419,8 @@ body {
   gap: 12px;
 }
 
-.id-modal-card input[type="text"] {
+.id-modal-card input[type="text"],
+.id-modal-card input[type="password"] {
   width: 100%;
   border: 1px solid rgba(20, 48, 42, 0.18);
   border-radius: 14px;
@@ -427,4 +428,12 @@ body {
   padding: 12px 14px;
   color: var(--text);
   font: inherit;
+}
+
+#user-id-status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #a83036;
+  font-size: 0.9rem;
+  font-weight: 600;
 }

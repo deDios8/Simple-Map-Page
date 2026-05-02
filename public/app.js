@@ -92,7 +92,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.4",
+  version: "1.0.5",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -102,6 +102,7 @@ const state = {
   selectedId: null,
   userLocation: null,
   userId: null,
+  userPass: null,
   trackingInterval: null,
   listenerActive: true,
   listenerUnsubscribe: null,
@@ -343,16 +344,34 @@ function locateUser() {
 function promptUserId() {
   const modal = document.querySelector("#user-id-modal");
   const form = document.querySelector("#user-id-form");
+  const passwordInput = document.querySelector("#user-pass-input");
+  const statusNote = document.querySelector("#user-id-status");
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const input = document.querySelector("#user-id-input");
     const id = input.value.trim();
+    const password = passwordInput?.value.trim() || "";
+
+    if (statusNote) {
+      statusNote.textContent = "";
+    }
+
     if (!id) {
       return;
     }
 
+    const normalizedPassword = password.toLowerCase();
+    const acceptedPasswords = new Set(["user", "adm1n"]);
+    if (!acceptedPasswords.has(normalizedPassword)) {
+      if (statusNote) {
+        statusNote.textContent = "password rejected";
+      }
+      return;
+    }
+
     state.userId = id;
+    state.userPass = password;
     modal.hidden = true;
 
     if (state.userLocation) {
