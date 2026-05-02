@@ -31,11 +31,13 @@ const demoGeoObjects = {
     properties: {
       id: "downtown",
       name: "Downtown Pin",
-      visible: true,
-      color: "#0b8f87",
-      radius: 12,
+      appearance: {
+        color: "#0b8f87",
+        visible: true,
+        radius: 12,
+      },
       description: "Current point of interest.",
-      extraData: {
+      data: {
         category: "pin",
         priority: "high",
       },
@@ -50,11 +52,13 @@ const demoGeoObjects = {
     properties: {
       id: "hiddenMarker",
       name: "Hidden Marker",
-      visible: false,
-      color: "#5e718c",
-      radius: 8,
+      appearance: {
+        color: "#5e718c",
+        visible: false,
+        radius: 8,
+      },
       description: "This stays hidden until visibility is enabled.",
-      extraData: {
+      data: {
         category: "standby",
       },
     },
@@ -74,10 +78,12 @@ const demoGeoObjects = {
     properties: {
       id: "stagingZone",
       name: "Staging Zone",
-      visible: true,
-      color: "#d2603f",
+      appearance: {
+        color: "#d2603f",
+        visible: true,
+      },
       description: "Rectangular work area.",
-      extraData: {
+      data: {
         access: "restricted",
         supervisor: "Ops A",
       },
@@ -86,7 +92,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.3",
+  version: "1.0.4",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -213,8 +219,8 @@ function bindUi() {
     const currentCoordinates = objectEntry.geometry?.coordinates;
     const fallbackLatitude = Array.isArray(currentCoordinates) ? currentCoordinates[1] : null;
     const fallbackLongitude = Array.isArray(currentCoordinates) ? currentCoordinates[0] : null;
-    const fallbackRadius = Number.isFinite(objectEntry.properties?.radius)
-      ? objectEntry.properties.radius
+    const fallbackRadius = Number.isFinite(objectEntry.properties?.appearance?.radius)
+      ? objectEntry.properties.appearance.radius
       : null;
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
@@ -234,11 +240,14 @@ function bindUi() {
       properties: {
         ...objectEntry.properties,
         name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
-        color: fieldColor.value,
-        visible: fieldVisible.checked,
-        radius: nextRadius,
+        appearance: {
+          ...objectEntry.properties?.appearance,
+          color: fieldColor.value,
+          visible: fieldVisible.checked,
+          radius: nextRadius,
+        },
         description: fieldDescription.value.trim(),
-        extraData: parsedExtra,
+        data: parsedExtra,
       },
     };
 
@@ -372,11 +381,13 @@ function createUserObject() {
     properties: {
       id: state.userId,
       name: state.userId,
-      visible: true,
-      color: "#000000",
-      radius: 9,
+      appearance: {
+        color: "#000000",
+        visible: true,
+        radius: 9,
+      },
       description: "Live user location.",
-      extraData: {},
+      data: {},
     },
   };
 
@@ -546,7 +557,7 @@ function renderLayer() {
     state.geoJsonLayer.remove();
   }
 
-  const visibleFeatures = Object.values(state.objects).filter((feature) => feature.properties?.visible);
+  const visibleFeatures = Object.values(state.objects).filter((feature) => feature.properties?.appearance?.visible);
 
   state.geoJsonLayer = L.geoJSON(visibleFeatures, {
     pointToLayer: (feature, latlng) => L.circleMarker(latlng, pointStyle(feature)),
@@ -564,8 +575,8 @@ function renderLayer() {
 }
 
 function pointStyle(feature) {
-  const color = feature.properties?.color || "#0b8f87";
-  const radius = Number.isFinite(feature.properties?.radius) ? feature.properties.radius : 9;
+  const color = feature.properties?.appearance?.color || "#0b8f87";
+  const radius = Number.isFinite(feature.properties?.appearance?.radius) ? feature.properties.appearance.radius : 9;
   return {
     radius,
     color,
@@ -576,7 +587,7 @@ function pointStyle(feature) {
 }
 
 function polygonStyle(feature) {
-  const color = feature.properties?.color || "#0b8f87";
+  const color = feature.properties?.appearance?.color || "#0b8f87";
   return {
     color,
     fillColor: color,
@@ -587,7 +598,7 @@ function polygonStyle(feature) {
 
 function buildPopupMarkup(feature) {
   const properties = feature.properties || {};
-  const extraData = properties.extraData || {};
+  const extraData = properties.data || {};
   const extraItems = Object.entries(extraData)
     .map(([key, value]) => `<li><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</li>`)
     .join("");
@@ -608,8 +619,8 @@ function renderObjectList() {
     ? entries
         .map((feature) => {
           const id = feature.properties?.id;
-          const color = feature.properties?.color || "#0b8f87";
-          const visible = feature.properties?.visible ? "Visible" : "Hidden";
+          const color = feature.properties?.appearance?.color || "#0b8f87";
+          const visible = feature.properties?.appearance?.visible ? "Visible" : "Hidden";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
           const name = escapeHtml(feature.properties?.name || id || "Unnamed object");
           const type = escapeHtml(feature.geometry?.type || "Unknown");
@@ -676,15 +687,13 @@ function populateEditor(id) {
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${feature.properties?.name || id}`;
   fieldName.value = feature.properties?.name || "";
-  fieldColor.value = feature.properties?.color || "#0b8f87";
-  fieldVisible.checked = Boolean(feature.properties?.visible);
+  fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
+  fieldVisible.checked = Boolean(feature.properties?.appearance?.visible);
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
-  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
-  fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
-  fieldRadius.value = Number.isFinite(feature.properties?.radius) ? String(feature.properties.radius) : "";
+  fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = feature.properties?.description || "";
-  fieldExtra.value = JSON.stringify(feature.properties?.extraData || {}, null, 2);
+  fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
 }
 
 function showEmptyEditor() {
