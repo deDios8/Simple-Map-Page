@@ -318,6 +318,15 @@ body {
   font-weight: 700;
 }
 
+.primary-button:disabled,
+.danger-button:disabled {
+  background: linear-gradient(180deg, #a8b4b0 0%, #7f8c88 100%);
+  color: #eef2ef;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 1;
+}
+
 .editor-actions {
   display: grid;
   gap: 8px;

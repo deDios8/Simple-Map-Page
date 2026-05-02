@@ -131,6 +131,16 @@ const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
 const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
+const editableFields = [
+  fieldName,
+  fieldColor,
+  fieldVisible,
+  fieldLatitude,
+  fieldLongitude,
+  fieldRadius,
+  fieldDescription,
+  fieldExtra,
+];
 
 init();
 
@@ -195,6 +205,11 @@ function bindUi() {
 
   editorForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!canEditObjects()) {
+      saveStatus.textContent = "Read-only mode: editing requires gm password.";
+      return;
+    }
 
     if (!state.selectedId) {
       return;
@@ -266,6 +281,11 @@ function bindUi() {
   });
 
   deleteObjectButton.addEventListener("click", async () => {
+    if (!canEditObjects()) {
+      saveStatus.textContent = "Read-only mode: deleting requires gm password.";
+      return;
+    }
+
     if (!state.selectedId || !state.objects[state.selectedId]) {
       saveStatus.textContent = "Delete failed: no object selected.";
       return;
@@ -371,7 +391,7 @@ function promptUserId() {
     }
 
     state.userId = id;
-    state.userPass = password;
+    state.userPass = normalizedPassword;
     modal.hidden = true;
 
     if (state.userLocation) {
@@ -713,12 +733,33 @@ function populateEditor(id) {
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = feature.properties?.description || "";
   fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
+  applyEditorPermissions();
 }
 
 function showEmptyEditor() {
   editorForm.hidden = true;
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
+  applyEditorPermissions();
+}
+
+function canEditObjects() {
+  return state.userPass === "adm1n";
+}
+
+function applyEditorPermissions() {
+  const isEditable = canEditObjects();
+
+  editableFields.forEach((field) => {
+    field.disabled = !isEditable;
+  });
+
+  const isFormVisible = !editorForm.hidden;
+  deleteObjectButton.disabled = !isEditable || !isFormVisible;
+  const saveButton = editorForm.querySelector('button[type="submit"]');
+  if (saveButton) {
+    saveButton.disabled = !isEditable || !isFormVisible;
+  }
 }
 
 async function persistObject(id, nextEntry) {
