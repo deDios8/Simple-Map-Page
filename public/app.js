@@ -515,7 +515,7 @@ async function submitClientRequest(requestId) {
 
   const [lat, lng] = state.userLocation;
   const timestamp = new Date().toISOString();
-  const requestKey = `${Date.now()}-${requestId.replace(/\s+/g, "-")}`;
+  const requestKey = `${Date.now()}-${state.userId}-${requestId.replace(/\s+/g, "-")}`;
   const requestFeature = {
     type: "Feature",
     geometry: {
