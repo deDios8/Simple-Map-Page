@@ -227,8 +227,8 @@ function bindUi() {
         name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
         color: fieldColor.value,
         visible: fieldVisible.checked,
-        latitude: nextLatitude,
-        longitude: nextLongitude,
+        // latitude: nextLatitude,
+        // longitude: nextLongitude,
         radius: nextRadius,
         description: fieldDescription.value.trim(),
         extraData: parsedExtra,
@@ -308,7 +308,7 @@ function locateUser() {
         state.userMarker.setLatLng(latLng);
       }
 
-      locationStatus.textContent = `GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+      locationStatus.textContent = `Ver2\nGPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
     },
     (error) => {
       locationStatus.textContent = `Location unavailable: ${error.message}`;
@@ -668,6 +668,8 @@ function populateEditor(id) {
   fieldName.value = feature.properties?.name || "";
   fieldColor.value = feature.properties?.color || "#0b8f87";
   fieldVisible.checked = Boolean(feature.properties?.visible);
+  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
+  fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.radius) ? String(feature.properties.radius) : "";
