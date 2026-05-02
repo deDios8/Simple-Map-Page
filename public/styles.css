@@ -257,6 +257,12 @@ body {
   font-weight: 600;
 }
 
+.coordinates-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
 .editor-form input[type="text"],
 .editor-form input[type="color"],
 .editor-form textarea {

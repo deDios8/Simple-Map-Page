@@ -86,7 +86,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.0a",
+  version: "1.0.2a",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -216,8 +216,8 @@ function bindUi() {
     const fallbackRadius = Number.isFinite(objectEntry.properties?.radius)
       ? objectEntry.properties.radius
       : null;
-    const nextLatitude = Number.isFinite(parsedLatitude) ? parsedLatitude : fallbackLatitude;
-    const nextLongitude = Number.isFinite(parsedLongitude) ? parsedLongitude : fallbackLongitude;
+    const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
+    const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
     const nextRadius = Number.isFinite(parsedRadius) ? parsedRadius : fallbackRadius;
 
     let nextGeometry = objectEntry.geometry;
@@ -236,8 +236,6 @@ function bindUi() {
         name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
         color: fieldColor.value,
         visible: fieldVisible.checked,
-        // latitude: nextLatitude,
-        // longitude: nextLongitude,
         radius: nextRadius,
         description: fieldDescription.value.trim(),
         extraData: parsedExtra,
@@ -293,7 +291,10 @@ function locateUser() {
 
   navigator.geolocation.watchPosition(
     ({ coords }) => {
-      const latLng = [coords.latitude, coords.longitude];
+      const latLng = [
+        Math.round(coords.latitude * 100000) / 100000,
+        Math.round(coords.longitude * 100000) / 100000,
+      ];
       state.userLocation = latLng;
 
       if (state.userId && !state.objects[state.userId]) {
@@ -317,7 +318,7 @@ function locateUser() {
         state.userMarker.setLatLng(latLng);
       }
 
-      locationStatus.textContent = `GPS locked: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+      locationStatus.textContent = `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
     },
     (error) => {
       locationStatus.textContent = `Location unavailable: ${error.message}`;
