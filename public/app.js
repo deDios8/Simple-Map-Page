@@ -18,8 +18,8 @@ const firebaseConfig = {
   appId: "1:554186481304:web:35df4f22e9539a991b3aed"
 };
 
-const firebaseCollectionPath = "geoObjects";
-const firebaseClientRequestPath = "clientRequests";
+const firebaseCollectionNode = "geoObjects";
+const firebaseClientRequestNode = "clientRequests";
 
 const demoGeoObjects = {
   downtown: {
@@ -103,6 +103,7 @@ const state = {
   userLocation: null,
   userId: null,
   userPass: null,
+  sessionName: "testBed",
   trackingInterval: null,
   listenerActive: true,
   listenerUnsubscribe: null,
@@ -364,12 +365,14 @@ function locateUser() {
 function promptUserId() {
   const modal = document.querySelector("#user-id-modal");
   const form = document.querySelector("#user-id-form");
+  const sessionInput = document.querySelector("#session-name-input");
   const passwordInput = document.querySelector("#user-pass-input");
   const statusNote = document.querySelector("#user-id-status");
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const input = document.querySelector("#user-id-input");
+    const sessionName = normalizeSessionName(sessionInput?.value.trim() || "testBed");
     const id = input.value.trim();
     const password = passwordInput?.value.trim() || "";
 
@@ -392,6 +395,13 @@ function promptUserId() {
 
     state.userId = id;
     state.userPass = normalizedPassword;
+    state.sessionName = sessionName;
+
+    if (sessionInput) {
+      sessionInput.value = sessionName;
+    }
+
+    reconnectObjectListener();
     modal.hidden = true;
 
     if (state.userLocation) {
@@ -463,7 +473,7 @@ function startCoordinateTracking() {
     renderLayer();
 
     if (state.firebaseReady && state.database) {
-      update(ref(state.database, firebaseCollectionPath), { [state.userId]: updated });
+      update(ref(state.database, getFirebaseCollectionPath()), { [state.userId]: updated });
     }
   }, 2000);
 }
@@ -479,15 +489,9 @@ function initFirebaseListener() {
 
   const app = initializeApp(firebaseConfig);
   state.database = getDatabase(app);
-  const objectRef = ref(state.database, firebaseCollectionPath);  
 
   state.firebaseReady = true;
-
-  state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
-    if (state.listenerActive) {
-      applyObjects(snapshot.val() || {});
-    }
-  });
+  reconnectObjectListener();
 }
 
 function toggleListener() {
@@ -530,7 +534,7 @@ async function submitClientRequest(requestId) {
   };
 
   try {
-    await update(ref(state.database, firebaseClientRequestPath), {
+    await update(ref(state.database, getFirebaseClientRequestPath()), {
       [requestKey]: requestFeature,
     });
     locationStatus.textContent = `${requestId} sent at ${timestamp}`;
@@ -764,7 +768,7 @@ function applyEditorPermissions() {
 
 async function persistObject(id, nextEntry) {
   if (state.firebaseReady && state.database) {
-    await update(ref(state.database, firebaseCollectionPath), { [id]: nextEntry });
+    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: nextEntry });
   }
 
   applyObjects({
@@ -775,7 +779,7 @@ async function persistObject(id, nextEntry) {
 
 async function deleteObject(id) {
   if (state.firebaseReady && state.database) {
-    await update(ref(state.database, firebaseCollectionPath), { [id]: null });
+    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: null });
   }
 
   const nextObjects = { ...state.objects };
@@ -790,4 +794,35 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function normalizeSessionName(rawValue) {
+  const trimmed = rawValue.trim();
+  const withoutSlashes = trimmed.replace(/^\/+|\/+$/g, "");
+  return withoutSlashes || "testBed";
+}
+
+function getFirebaseCollectionPath() {
+  return `${state.sessionName}/${firebaseCollectionNode}`;
+}
+
+function getFirebaseClientRequestPath() {
+  return `${state.sessionName}/${firebaseClientRequestNode}`;
+}
+
+function reconnectObjectListener() {
+  if (!state.firebaseReady || !state.database) {
+    return;
+  }
+
+  if (typeof state.listenerUnsubscribe === "function") {
+    state.listenerUnsubscribe();
+  }
+
+  const objectRef = ref(state.database, getFirebaseCollectionPath());
+  state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
+    if (state.listenerActive) {
+      applyObjects(snapshot.val() || {});
+    }
+  });
 }
