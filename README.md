@@ -1,6 +1,5 @@
 # TODO
-Points don't save lat/lng changes even though they say they succeed
-Polygons fail to save.
+
 
 # Instructions for deployment
 

@@ -113,6 +113,7 @@ const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
+const deleteObjectButton = document.querySelector("#delete-object-button");
 const fieldName = document.querySelector("#field-name");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
@@ -244,6 +245,26 @@ function bindUi() {
     } catch (error) {
       console.error(error);
       saveStatus.textContent = "Save failed. Check Firebase configuration and permissions.";
+    }
+  });
+
+  deleteObjectButton.addEventListener("click", async () => {
+    if (!state.selectedId || !state.objects[state.selectedId]) {
+      saveStatus.textContent = "Delete failed: no object selected.";
+      return;
+    }
+
+    const deletingId = state.selectedId;
+    saveStatus.textContent = state.firebaseReady ? "Deleting from Firebase..." : "Deleting locally...";
+
+    try {
+      await deleteObject(deletingId);
+      saveStatus.textContent = state.firebaseReady
+        ? "Deleted. Remote updates will sync automatically."
+        : "Deleted locally. Add Firebase config to sync remotely.";
+    } catch (error) {
+      console.error(error);
+      saveStatus.textContent = "Delete failed. Check Firebase configuration and permissions.";
     }
   });
 }
@@ -669,6 +690,16 @@ async function persistObject(id, nextEntry) {
     ...state.objects,
     [id]: nextEntry,
   });
+}
+
+async function deleteObject(id) {
+  if (state.firebaseReady && state.database) {
+    await update(ref(state.database, firebaseCollectionPath), { [id]: null });
+  }
+
+  const nextObjects = { ...state.objects };
+  delete nextObjects[id];
+  applyObjects(nextObjects);
 }
 
 function escapeHtml(value) {

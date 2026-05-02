@@ -292,9 +292,24 @@ body {
   font-weight: 700;
 }
 
+.danger-button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #d83d45 0%, #9f2027 100%);
+  color: #fff8f8;
+  padding: 12px 18px;
+  font-weight: 700;
+}
+
 .editor-actions {
   display: grid;
   gap: 8px;
+}
+
+.editor-action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .save-status {
