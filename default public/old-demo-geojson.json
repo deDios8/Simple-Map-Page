@@ -35,31 +35,6 @@
           "key": "value"
         }
       }
-    },
-    "stagingZone": {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [-101.31335, 48.2175],
-            [-101.3134, 48.2175],
-            [-101.3134, 48.2129],
-            [-101.31335, 48.2129],
-            [-101.31335, 48.2175]
-          ]
-        ]
-      },
-      "properties": {
-        "id": "stagingZone",
-        "name": "Staging Zone",
-        "visible": true,
-        "color": "#d2603f",
-        "description": "Rectangular work area.",
-        "extraData": {
-          "key": "value"
-        }
-      }
     }
   }
 }

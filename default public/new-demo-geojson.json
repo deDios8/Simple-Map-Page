@@ -1,0 +1,44 @@
+{
+  "geoObjects": {
+    "downtown": {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-101.3133, 48.2128]
+      },
+      "properties": {
+        "id": "downtown",
+        "appearance": {
+          "color": "#0b8f87",
+          "visible": true,
+          "radius": 12
+        },
+        "name": "Downtown Pin",
+        "description": "Current point of interest.",
+        "data": {
+          "key": "value"
+        }
+      }
+    },
+    "hiddenMarker": {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-101.3133, 48.2128]
+      },
+      "properties": {
+        "id": "hiddenMarker",
+        "appearance": {
+          "color": "#5e718c",
+          "visible": false,
+          "radius": 8
+        },
+        "name": "Hidden Marker",
+        "description": "This stays hidden until visibility is enabled.",
+        "data": {
+          "key": "value"
+        }
+      }
+    }
+  }
+}
