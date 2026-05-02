@@ -86,6 +86,7 @@ const demoGeoObjects = {
 };
 
 const state = {
+  version: "1.0.0a",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -122,15 +123,23 @@ const fieldLongitude = document.querySelector("#field-longitude");
 const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
 const fieldExtra = document.querySelector("#field-extra");
+const versionInfo = document.querySelector("#version-info");
 
 init();
 
 function init() {
+  renderVersionInfo();
   initMap();
   bindUi();
   locateUser();
   initFirebaseListener();
   promptUserId();
+}
+
+function renderVersionInfo() {
+  if (versionInfo) {
+    versionInfo.textContent = `Version: ${state.version}`;
+  }
 }
 
 function initMap() {
@@ -227,8 +236,8 @@ function bindUi() {
         name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
         color: fieldColor.value,
         visible: fieldVisible.checked,
-        latitude: nextLatitude,
-        longitude: nextLongitude,
+        // latitude: nextLatitude,
+        // longitude: nextLongitude,
         radius: nextRadius,
         description: fieldDescription.value.trim(),
         extraData: parsedExtra,
@@ -250,6 +259,7 @@ function bindUi() {
 
   deleteObjectButton.addEventListener("click", async () => {
     if (!state.selectedId || !state.objects[state.selectedId]) {
+      saveStatus.textContent = "Delete failed: no object selected.";
       return;
     }
 
@@ -667,6 +677,8 @@ function populateEditor(id) {
   fieldName.value = feature.properties?.name || "";
   fieldColor.value = feature.properties?.color || "#0b8f87";
   fieldVisible.checked = Boolean(feature.properties?.visible);
+  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
+  fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.radius) ? String(feature.properties.radius) : "";
