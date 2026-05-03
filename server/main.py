@@ -26,6 +26,7 @@ from db_stream import (
 
 
 GEO_OBJECTS_NODE = "geoObjects"
+CLIENT_REQUESTS_NODE = "clientRequests"
 
 
 # ---------------------------------------------------------------------------
@@ -33,18 +34,18 @@ GEO_OBJECTS_NODE = "geoObjects"
 # ---------------------------------------------------------------------------
 
 
-def put_geo_object(
-    database_url: str, session_name: str, key: str, geo_object: dict[str, Any]
+def put_db_entry(
+    database_url: str, session_name: str, key: str, db_entry: dict[str, Any], NODE: str = GEO_OBJECTS_NODE
 ) -> None:
     """Write (overwrite) a single geoObject entry by key."""
-    url = build_node_url(database_url, session_name, GEO_OBJECTS_NODE, key)
-    data = json.dumps(geo_object).encode("utf-8")
+    url = build_node_url(database_url, session_name, NODE, key)
+    data = json.dumps(db_entry).encode("utf-8")
     req = Request(url, data=data, method="PUT", headers={"Content-Type": "application/json"})
     with urlopen(req) as response:
         response.read()
 
 
-def patch_geo_object(
+def patch_db_entry(
     database_url: str, session_name: str, key: str, fields: dict[str, Any]
 ) -> None:
     """Merge-update specific fields of a geoObject entry by key."""
@@ -55,7 +56,7 @@ def patch_geo_object(
         response.read()
 
 
-def delete_geo_object(database_url: str, session_name: str, key: str) -> None:
+def delete_db_entry(database_url: str, session_name: str, key: str) -> None:
     """Delete a geoObject entry by key."""
     url = build_node_url(database_url, session_name, GEO_OBJECTS_NODE, key)
     req = Request(url, method="DELETE")
