@@ -242,6 +242,11 @@ def iter_firebase_stream(database_url: str, session_name: str):
 						data_lines = []
 						continue
 
+					if not isinstance(payload, dict):
+						event_type = None
+						data_lines = []
+						continue
+
 					yield StreamEvent(
 						event_type=event_type,
 						path=payload.get("path", "/"),
