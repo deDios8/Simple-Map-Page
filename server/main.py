@@ -6,62 +6,16 @@ Responsibilities:
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
 
-from __future__ import annotations
-
-import json
 import queue
-from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
-
 from db_stream import (
     DEFAULT_DATABASE_URL,
     DatabaseStream,
     SyncChange,
-    client_Request,
-    geo_Feature,
-    build_node_url,
-    normalize_session_name,
+    ClientRequest,
+    put_db_entry,
+    patch_db_entry,
+    delete_db_entry,
 )
-
-
-GEO_OBJECTS_NODE = "geoObjects"
-CLIENT_REQUESTS_NODE = "clientRequests"
-
-
-# ---------------------------------------------------------------------------
-# geoObjects write helpers
-# ---------------------------------------------------------------------------
-
-
-def put_db_entry(
-    database_url: str, session_name: str, key: str, db_entry: dict[str, Any], NODE: str = GEO_OBJECTS_NODE
-) -> None:
-    """Write (overwrite) a single geoObject entry by key."""
-    url = build_node_url(database_url, session_name, NODE, key)
-    data = json.dumps(db_entry).encode("utf-8")
-    req = Request(url, data=data, method="PUT", headers={"Content-Type": "application/json"})
-    with urlopen(req) as response:
-        response.read()
-
-
-def patch_db_entry(
-    database_url: str, session_name: str, key: str, fields: dict[str, Any]
-) -> None:
-    """Merge-update specific fields of a geoObject entry by key."""
-    url = build_node_url(database_url, session_name, GEO_OBJECTS_NODE, key)
-    data = json.dumps(fields).encode("utf-8")
-    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
-    with urlopen(req) as response:
-        response.read()
-
-
-def delete_db_entry(database_url: str, session_name: str, key: str) -> None:
-    """Delete a geoObject entry by key."""
-    url = build_node_url(database_url, session_name, GEO_OBJECTS_NODE, key)
-    req = Request(url, method="DELETE")
-    with urlopen(req) as response:
-        response.read()
 
 
 # ---------------------------------------------------------------------------
@@ -69,36 +23,54 @@ def delete_db_entry(database_url: str, session_name: str, key: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def on_request_create(key: str, request: client_Request) -> None:
+def on_request_create(key: str, request: ClientRequest) -> None:
     print(f"[REQUEST CREATE] {key}: from={request.requester_id}")
 
+def on_geo_object_create(key: str, geo_object: dict) -> None:
+    print(f"[GEO OBJECT CREATE] {key}: {geo_object}")
 
-def on_request_update(key: str, request: client_Request) -> None:
+def on_request_update(key: str, request: ClientRequest) -> None:
     print(f"[REQUEST UPDATE] {key}: from={request.requester_id}")
 
+def on_geo_object_update(key: str, geo_object: dict) -> None:
+    print(f"[GEO OBJECT UPDATE] {key}: {geo_object}")
 
-def on_request_delete(key: str, request: client_Request | None) -> None:
-    print(f"[REQUEST DELETE] {key}: from={request.requester_id}")
+def on_request_delete(key: str, request: ClientRequest | None) -> None:
+    if request is None:
+        print(f"[REQUEST DELETE] {key}: request is None")
+    else:
+        print(f"[REQUEST DELETE] {key}: from={request.requester_id}")
 
-
-# ---------------------------------------------------------------------------
-# Main loop
-# ---------------------------------------------------------------------------
-
+def on_geo_object_delete(key: str, geo_object: dict | None) -> None:
+    if geo_object is None:
+        print(f"[GEO OBJECT DELETE] {key}: geo_object is None")
+    else:
+        print(f"[GEO OBJECT DELETE] {key}: {geo_object}")
 
 def run_listener(database_url: str, session_name: str) -> None:
-    stream = DatabaseStream(database_url, session_name)
+    session_name_without_slashes = session_name.strip().strip("/") or "testBed"
+    stream = DatabaseStream(database_url, session_name_without_slashes)
     stream.start()
 
     while True:
         try:
             change: SyncChange = stream.event_queue.get(timeout=0.5)
-            if change.action == "create" and isinstance(change.feature, client_Request):
-                on_request_create(change.key, change.feature)
+            if change.action == "create":
+                if isinstance(change.feature, ClientRequest):
+                    on_request_create(change.key, change.feature)
+                else:
+                    on_geo_object_create(change.key, change.feature)
             elif change.action == "update" and change.feature is not None:
-                on_request_update(change.key, change.feature)
+                if isinstance(change.feature, ClientRequest):
+                    on_request_update(change.key, change.feature)
+                else:
+                    on_geo_object_update(change.key, change.feature)
             elif change.action == "delete":
-                on_request_delete(change.key, change.feature)
+                if isinstance(change.feature, ClientRequest) or change.feature is None:
+                    on_request_delete(change.key, change.feature)
+                else:
+                    on_geo_object_delete(change.key, change.feature)
+            # Removed redundant delete handling
         except KeyboardInterrupt:
             stream.stop()
             print("\nStopped listener.")
@@ -107,10 +79,14 @@ def run_listener(database_url: str, session_name: str) -> None:
             continue
 
 
+# ---------------------------------------------------------------------------
+# Main loop
+# ---------------------------------------------------------------------------
+
+
 def main() -> None:
     print("Firebase Feature Listener")
-    raw_session = input("Session name: ")
-    session_name = normalize_session_name(raw_session)
+    session_name = input("Session name: ")
     run_listener(DEFAULT_DATABASE_URL, session_name)
 
 

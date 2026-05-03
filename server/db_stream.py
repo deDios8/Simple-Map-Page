@@ -1,7 +1,7 @@
 """Firebase RTDB stream initialization and local-dict synchronization.
 
 Responsibilities:
-- Dataclasses and feature models (geo_Feature, client_Request, StreamEvent, SyncChange)
+- Dataclasses and feature models (DBEntry, ClientRequest, StreamEvent, SyncChange)
 - URL construction helpers
 - Snapshot fetching and normalization
 - Stream event parsing and application
@@ -9,8 +9,6 @@ Responsibilities:
 - Background stream worker thread
 - DatabaseStream class: manages the clientRequests listener and exposes a change queue
 """
-
-from __future__ import annotations
 
 import json
 import queue
@@ -24,6 +22,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
+GEO_OBJECTS_NODE = "geoObjects"
 CLIENT_REQUESTS_NODE = "clientRequests"
 
 
@@ -32,27 +31,37 @@ CLIENT_REQUESTS_NODE = "clientRequests"
 # ---------------------------------------------------------------------------
 
 
-class geo_Feature:
-    def __init__(self, geo_object: dict[str, Any]) -> None:
-        self.update_from_geo_object(geo_object)
+class DBEntry:
+    def __init__(self, db_entry: dict[str, Any]) -> None:
+        self.update_from_db_entry(db_entry)
 
-    def update_from_geo_object(self, geo_object: dict[str, Any]) -> None:
-        self.type = geo_object.get("type", "")
-        self.geometry = geo_object.get("geometry", {})
-        self.properties = geo_object.get("properties", {})
-        self.appearance = self.properties.get("appearance", {})
+    def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
+        self.type = db_entry.get("type", "")
+        self.geometry = db_entry.get("geometry", {})
+        self.properties = db_entry.get("properties", {})
         self.id = self.properties.get("id", "")
         self.name = self.properties.get("name", "")
         self.description = self.properties.get("description", "")
         self.coordinates = self.geometry.get("coordinates", [])
 
 
-class client_Request(geo_Feature):
-    def update_from_geo_object(self, geo_object: dict[str, Any]) -> None:
-        super().update_from_geo_object(geo_object)
+class ClientRequest(DBEntry):
+    def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
+        super().update_from_db_entry(db_entry)
         self.requester_id = self.properties.get("requesterId", "")
         self.timestamp = self.properties.get("timestamp", "")
 
+
+class GeoObject(DBEntry):
+    def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
+        super().update_from_db_entry(db_entry)
+        self.appearance = self.properties.get("appearance", {})
+        self.radius = self.properties.get("radius", 0)
+        self.color = self.properties.get("color", "#000000")
+        self.visible = self.properties.get("visible", True) 
+        self.name = self.properties.get("name", "")
+        self.description = self.properties.get("description", "")
+        self.data = self.properties.get("data", {})
 
 @dataclass
 class StreamEvent:
@@ -68,18 +77,12 @@ class SyncChange:
     stream_name: str
     action: str  # "create" | "update" | "delete"
     key: str
-    feature: geo_Feature | None
+    feature: DBEntry | None
 
 
 # ---------------------------------------------------------------------------
 # URL helpers
 # ---------------------------------------------------------------------------
-
-
-def normalize_session_name(raw_value: str) -> str:
-    """Mirror app.js normalizeSessionName behaviour."""
-    without_slashes = raw_value.strip().strip("/")
-    return without_slashes or "testBed"
 
 
 def build_node_url(database_url: str, *path_segments: str) -> str:
@@ -91,6 +94,9 @@ def build_node_url(database_url: str, *path_segments: str) -> str:
 
 def build_client_requests_url(database_url: str, session_name: str) -> str:
     return build_node_url(database_url, session_name, CLIENT_REQUESTS_NODE)
+
+def build_geo_objects_url(database_url: str, session_name: str) -> str:
+    return build_node_url(database_url, session_name, GEO_OBJECTS_NODE)
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +141,10 @@ def _fetch_snapshot(url: str) -> dict[str, dict[str, Any]]:
 
 def fetch_client_requests(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
     return _fetch_snapshot(build_client_requests_url(database_url, session_name))
+
+
+def fetch_geo_objects(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
+    return _fetch_snapshot(build_geo_objects_url(database_url, session_name))
 
 
 # ---------------------------------------------------------------------------
@@ -225,16 +235,16 @@ def apply_stream_event(local_state: dict[str, Any], event: StreamEvent) -> None:
 
 def _build_feature_index(
     raw_objects: dict[str, Any],
-    factory: type[geo_Feature] = geo_Feature,
-) -> dict[str, geo_Feature]:
+    factory: type[DBEntry] = DBEntry,
+) -> dict[str, DBEntry]:
     return {k: factory(v) for k, v in raw_objects.items() if isinstance(v, dict)}
 
 
 def _sync_feature_index(
-    feature_index: dict[str, geo_Feature],
+    feature_index: dict[str, DBEntry],
     before_state: dict[str, Any],
     after_state: dict[str, Any],
-    factory: type[geo_Feature] = geo_Feature,
+    factory: type[DBEntry] = DBEntry,
 ) -> list[SyncChange]:
     changes: list[SyncChange] = []
     before_keys = set(before_state)
@@ -265,10 +275,45 @@ def _sync_feature_index(
             feature_index[key] = created
             changes.append(SyncChange("", "create", key, created))
         else:
-            existing.update_from_geo_object(after_obj)
+            existing.update_from_db_entry(after_obj)
             changes.append(SyncChange("", "update", key, existing))
 
     return changes
+
+
+# ---------------------------------------------------------------------------
+# DB write helpers
+# ---------------------------------------------------------------------------
+
+
+def put_db_entry(
+    database_url: str, session_name: str, key: str, db_entry: dict[str, Any], NODE: str = GEO_OBJECTS_NODE
+) -> None:
+    """Write (overwrite) a single geoObject entry by key."""
+    url = build_node_url(database_url, session_name, NODE, key)
+    data = json.dumps(db_entry).encode("utf-8")
+    req = Request(url, data=data, method="PUT", headers={"Content-Type": "application/json"})
+    with urlopen(req) as response:
+        response.read()
+
+
+def patch_db_entry(
+    database_url: str, session_name: str, key: str, fields: dict[str, Any], node: str = GEO_OBJECTS_NODE
+) -> None:
+    """Merge-update specific fields of a database entry by key."""
+    url = build_node_url(database_url, session_name, node, key)
+    data = json.dumps(fields).encode("utf-8")
+    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
+    with urlopen(req) as response:
+        response.read()
+
+
+def delete_db_entry(database_url: str, session_name: str, key: str, node: str = GEO_OBJECTS_NODE) -> None:
+    """Delete a geoObject entry by key."""
+    url = build_node_url(database_url, session_name, node, key)
+    req = Request(url, method="DELETE")
+    with urlopen(req) as response:
+        response.read()
 
 
 # ---------------------------------------------------------------------------
@@ -288,6 +333,7 @@ def _iter_stream_from_url(url: str):
 
         for raw_line in response:
             line = raw_line.decode("utf-8").strip()
+            print(f"PARSED SSE LINE: '{line}' (event_type={event_type}, data_lines={data_lines})")
 
             if not line:
                 if event_type and data_lines:
@@ -324,10 +370,10 @@ def _run_stream_worker(
     session_name: str,
     stream_name: str,
     local_state: dict[str, Any],
-    feature_index: dict[str, geo_Feature],
+    feature_index: dict[str, DBEntry],
     fetch_snapshot: Callable[[str, str], dict[str, dict[str, Any]]],
     iter_stream: Callable[[str, str], Any],
-    factory: type[geo_Feature],
+    factory: type[DBEntry],
     output_queue: queue.Queue[SyncChange],
     stop_event: threading.Event,
 ) -> None:
@@ -374,16 +420,22 @@ class DatabaseStream:
         self.database_url = database_url
         self.session_name = session_name
         self.request_state: dict[str, Any] = {}
-        self.request_index: dict[str, client_Request] = {}
+        self.geo_object_state: dict[str, Any] = {}
+        self.request_index: dict[str, ClientRequest] = {}
+        self.geo_object_index: dict[str, GeoObject] = {}
         self.event_queue: queue.Queue[SyncChange] = queue.Queue()
         self._stop_event = threading.Event()
-        self._thread: threading.Thread | None = None
+        self._client_request_thread: threading.Thread | None = None
+        self._geo_object_thread: threading.Thread | None = None
 
     def start(self) -> None:
-        def _iter(db: str, session: str):
+        def _iter_client_requests(db: str, session: str):
             yield from _iter_stream_from_url(build_client_requests_url(db, session))
 
-        self._thread = threading.Thread(
+        def _iter_geo_objects(db: str, session: str):
+            yield from _iter_stream_from_url(build_geo_objects_url(db, session))
+
+        self._client_request_thread = threading.Thread(
             target=_run_stream_worker,
             args=(
                 self.database_url,
@@ -392,14 +444,33 @@ class DatabaseStream:
                 self.request_state,
                 self.request_index,
                 fetch_client_requests,
-                _iter,
-                client_Request,
+                _iter_client_requests,
+                ClientRequest,
                 self.event_queue,
                 self._stop_event,
             ),
             daemon=True,
         )
-        self._thread.start()
+
+        self._geo_object_thread = threading.Thread(
+            target=_run_stream_worker,
+            args=(
+                self.database_url,
+                self.session_name,
+                GEO_OBJECTS_NODE,
+                self.geo_object_state,
+                self.geo_object_index,
+                fetch_geo_objects,
+                _iter_geo_objects,
+                GeoObject,
+                self.event_queue,
+                self._stop_event,
+            ),
+            daemon=True,
+        )
+
+        self._client_request_thread.start()
+        self._geo_object_thread.start()
 
     def stop(self) -> None:
         self._stop_event.set()
