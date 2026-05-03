@@ -29,7 +29,6 @@ GEO_OBJECTS_NODE = "geoObjects"
 @dataclass
 class StreamEvent:
 	"""Single Firebase stream event payload."""
-
 	event_type: str
 	path: str
 	data: Any
@@ -40,7 +39,6 @@ def normalize_session_name(raw_value: str) -> str:
 	trimmed = raw_value.strip()
 	without_slashes = trimmed.strip("/")
 	return without_slashes or "testBed"
-
 
 def build_geo_objects_url(database_url: str, session_name: str) -> str:
 	"""Build URL for /<session>/geoObjects.json."""
@@ -183,7 +181,7 @@ def _parse_path(path: str) -> list[str]:
 	return [segment for segment in path.split("/") if segment]
 
 
-def _print_key_diff(previous: dict[str, Any], current: dict[str, Any], prefix: str = "") -> None:
+'''def _print_key_diff(previous: dict[str, Any], current: dict[str, Any], prefix: str = "") -> None:
 	prev_keys = set(previous.keys())
 	curr_keys = set(current.keys())
 
@@ -200,7 +198,7 @@ def _print_key_diff(previous: dict[str, Any], current: dict[str, Any], prefix: s
 			if isinstance(before, dict) and isinstance(after, dict):
 				_print_key_diff(before, after, prefix=f"{prefix}{key}/")
 			else:
-				print(f"[UPDATE] {prefix}{key}")
+				print(f"[UPDATE] {prefix}{key}")'''
 
 
 def apply_stream_event(local_geo_objects: dict[str, Any], stream_event: StreamEvent) -> None:
@@ -214,7 +212,7 @@ def apply_stream_event(local_geo_objects: dict[str, Any], stream_event: StreamEv
 		is_patch = stream_event.event_type == "patch"
 		_set_nested(local_geo_objects, segments, stream_event.data, merge=is_patch)
 
-	_print_key_diff(before, local_geo_objects)
+	# _print_key_diff(before, local_geo_objects)
 
 
 def iter_firebase_stream(database_url: str, session_name: str):
@@ -265,7 +263,7 @@ def iter_firebase_stream(database_url: str, session_name: str):
 				data_lines.append(line.split(":", 1)[1].strip())
 
 
-def run_listener(database_url: str, session_name: str, local_geo_objects: dict[str, Any]) -> None:
+'''def run_listener(database_url: str, session_name: str, local_geo_objects: dict[str, Any]) -> None:
 	"""Keep local dict in sync with Firebase stream events forever."""
 	print(f"Listening for changes at /{session_name}/{GEO_OBJECTS_NODE} ...")
 
@@ -297,9 +295,9 @@ def run_listener(database_url: str, session_name: str, local_geo_objects: dict[s
 			print(f"[WARN] Stream disconnected: {error}")
 			print("[INFO] Reconnecting in 2 seconds...")
 			time.sleep(2)
+'''
 
-
-def main() -> None:
+'''def main() -> None:
 	print("Firebase Session Listener")
 	raw_session = input("Session name: ")
 	session_name = normalize_session_name(raw_session)
@@ -319,3 +317,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+'''
