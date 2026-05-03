@@ -1,5 +1,5 @@
 # TODO
-
+can't create a new session - no geojson object is created
 
 # Instructions for deployment
 
@@ -9,7 +9,7 @@ Remote Hosting URL:
 firebase deploy
 https://geogm-simple-map.web.app
 Local Test:
-cd "c:\Users\dedio\OneDrive\Documents\Programming\python\Simple Map Page"
+cd "c:\Users\dedio\OneDrive\Documents\Programming\python\Simple Map Page\public"
 python -m http.server 8080
 http://localhost:8080/index.html
 

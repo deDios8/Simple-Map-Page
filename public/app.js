@@ -822,6 +822,7 @@ function reconnectObjectListener() {
 
   if (typeof state.listenerUnsubscribe === "function") {
     state.listenerUnsubscribe();
+    applyObjects({});
   }
 
   const objectRef = ref(state.database, getFirebaseCollectionPath());
