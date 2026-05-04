@@ -6,7 +6,7 @@ Responsibilities:
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
 
-import ecs
+import server.ecs_components as ecs_components
 import esper
 import queue
 import time
@@ -33,8 +33,8 @@ class SessionState:
         self.session_name = session_name.strip().strip("/") or "testBed"
 
         # Keep dict-backed state so Firebase keys can map directly to ECS entities.
-        self.GeoObjects: dict[str, ecs.GeoObject] = {}
-        self.ClientRequests: dict[str, ecs.ClientRequest] = {}
+        self.GeoObjects: dict[str, ecs_components.GeoObject] = {}
+        self.ClientRequests: dict[str, ecs_components.ClientRequest] = {}
         self.GeoObjectEntityIds: dict[str, int] = {}
         self.ClientRequestEntityIds: dict[str, int] = {}
 
@@ -59,7 +59,7 @@ class SessionState:
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
-            geo = ecs.GeoObject(
+            geo = ecs_components.GeoObject(
                 id=geo_object.id or key,
                 geometry=geo_object.geometry,
                 properties=geo_object.properties,
@@ -70,29 +70,29 @@ class SessionState:
 
         props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_components.ID)
         id_component.id = props.get("id", geo_object.id or key)
 
-        metadata = esper.component_for_entity(existing_entity_id, ecs.MetaData)
+        metadata = esper.component_for_entity(existing_entity_id, ecs_components.MetaData)
         meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
         metadata.name = meta_data.get("name", "")
         metadata.description = meta_data.get("description", "")
         metadata.type = meta_data.get("type", "")
 
-        appearance = esper.component_for_entity(existing_entity_id, ecs.Appearance)
+        appearance = esper.component_for_entity(existing_entity_id, ecs_components.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         return existing_entity_id
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
-            entity = ecs.ClientRequest(
+            entity = ecs_components.ClientRequest(
                 id=request.id or key,
                 geometry=request.geometry,
                 properties=request.properties,
@@ -103,13 +103,13 @@ class SessionState:
 
         props = request.properties if isinstance(request.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_components.ID)
         id_component.id = props.get("id", request.id or key)
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
 
-        request_params = esper.component_for_entity(existing_entity_id, ecs.ClientRequestProperties)
+        request_params = esper.component_for_entity(existing_entity_id, ecs_components.ClientRequestProperties)
         crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
@@ -164,7 +164,7 @@ class SessionState:
             print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
 
-    def run_listener(self) -> None:
+    def run_db_and_ecs_processor(self) -> None:
         self.stream.start()
         self.debug.start()
         self.debug.print_help()
@@ -228,7 +228,7 @@ def main() -> None:
     print("Firebase Feature Listener")
     session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
-    session_state.run_listener()
+    session_state.run_db_and_ecs_processor()
 
 
 if __name__ == "__main__":
