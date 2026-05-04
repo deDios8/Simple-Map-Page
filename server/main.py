@@ -54,65 +54,60 @@ class SessionState:
             entry = ClientRequestEntry(raw)
             self._upsert_client_request_entity(key, entry)
 
-    def _build_properties_payload(self, feature: GeoObjectEntry | ClientRequestEntry) -> dict:
-        if isinstance(feature.properties, dict):
-            return dict(feature.properties)
-        return {}
-
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
-            properties = self._build_properties_payload(geo_object)
             geo = ecs.GeoObject(
                 id=geo_object.id or key,
                 geometry=geo_object.geometry,
-                properties=properties,
+                properties=geo_object.properties,
             )
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
             return geo.entity_id
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
-        metadata = esper.component_for_entity(existing_entity_id, ecs.MetaData)
-        appearance = esper.component_for_entity(existing_entity_id, ecs.Appearance)
-        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
+        props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
 
-        properties = self._build_properties_payload(geo_object)
-        id_component.id = properties.get("id", geo_object.id or key)
-        meta_data = properties.get("metaData", {}) if isinstance(properties.get("metaData"), dict) else {}
+        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
+        id_component.id = props.get("id", geo_object.id or key)
+
+        metadata = esper.component_for_entity(existing_entity_id, ecs.MetaData)
+        meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
         metadata.name = meta_data.get("name", "")
         metadata.description = meta_data.get("description", "")
         metadata.type = meta_data.get("type", "")
 
-        appearance_data = properties.get("appearance", {}) if isinstance(properties.get("appearance"), dict) else {}
+        appearance = esper.component_for_entity(existing_entity_id, ecs.Appearance)
+        appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
 
+        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         return existing_entity_id
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
-            properties = self._build_properties_payload(request)
             entity = ecs.ClientRequest(
                 id=request.id or key,
                 geometry=request.geometry,
-                properties=properties,
+                properties=request.properties,
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
             return entity.entity_id
 
+        props = request.properties if isinstance(request.properties, dict) else {}
+
         id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
         geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
         request_params = esper.component_for_entity(existing_entity_id, ecs.ClientRequestProperties)
 
-        properties = self._build_properties_payload(request)
-        id_component.id = properties.get("id", request.id or key)
+        id_component.id = props.get("id", request.id or key)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
-        crp = properties.get("clientRequestProperties", {}) if isinstance(properties.get("clientRequestProperties"), dict) else {}
+        crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
         return existing_entity_id
