@@ -334,7 +334,8 @@ def _iter_stream_from_url(url: str):
 
         for raw_line in response:
             line = raw_line.decode("utf-8").strip()
-            print(f"PARSED SSE LINE: '{line}' (event_type={event_type}, data_lines={data_lines})")
+            if event_type and not "keep-alive" in event_type:
+                print(f"PARSED SSE LINE: '{line}' (event_type={event_type}, data_lines={data_lines})")
 
             if not line:
                 if event_type and data_lines:

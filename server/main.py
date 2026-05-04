@@ -1,7 +1,7 @@
 """Firebase Feature Listener — entry point.
 
 Responsibilities:
-- Handlers for clientRequests changes (on_request_create, on_request_update, on_request_delete)
+- Handlers for clientRequests changes (_on_request_create, _on_request_update, _on_request_delete)
 - Write helpers for making changes to the geoObjects node (put, patch, delete)
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
@@ -122,30 +122,30 @@ class SessionState:
             esper.delete_entity(entity_id)
         return entity_id
 
-    def on_request_create(self, key: str, request: ClientRequestEntry) -> None:
+    def _on_request_create(self, key: str, request: ClientRequestEntry) -> None:
         entity_id = self._upsert_client_request_entity(key, request)
         print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
 
-    def on_geo_object_create(self, key: str, geo_object: GeoObjectEntry) -> None:
+    def _on_geo_object_create(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT CREATE] {key}: entity={entity_id}")
 
-    def on_request_update(self, key: str, request: ClientRequestEntry) -> None:
+    def _on_request_update(self, key: str, request: ClientRequestEntry) -> None:
         entity_id = self._upsert_client_request_entity(key, request)
         print(f"[REQUEST UPDATE] {key}: from={request.requester_id}, entity={entity_id}")
 
-    def on_geo_object_update(self, key: str, geo_object: GeoObjectEntry) -> None:
+    def _on_geo_object_update(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT UPDATE] {key}: entity={entity_id}")
 
-    def on_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
+    def _on_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
         entity_id = self._delete_client_request_entity(key)
         if request is None:
             print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
         else:
             print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
-    def on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
+    def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
         entity_id = self._delete_geo_object_entity(key)
         if geo_object is None:
             print(f"[GEO OBJECT DELETE] {key}: geo_object is None, entity={entity_id}")
@@ -323,23 +323,23 @@ class SessionState:
                 change: SyncChange = self.stream.event_queue.get(timeout=0.5)
                 if change.action == "create":
                     if isinstance(change.feature, ClientRequestEntry):
-                        self.on_request_create(change.key, change.feature)
+                        self._on_request_create(change.key, change.feature)
                     else:
-                        self.on_geo_object_create(change.key, change.feature)
+                        self._on_geo_object_create(change.key, change.feature)
                 elif change.action == "update" and change.feature is not None:
                     if isinstance(change.feature, ClientRequestEntry):
-                        self.on_request_update(change.key, change.feature)
+                        self._on_request_update(change.key, change.feature)
                     else:
-                        self.on_geo_object_update(change.key, change.feature)
+                        self._on_geo_object_update(change.key, change.feature)
                 elif change.action == "delete":
                     if change.stream_name == CLIENT_REQUESTS_NODE:
-                        self.on_request_delete(change.key, change.feature)
+                        self._on_request_delete(change.key, change.feature)
                     elif change.stream_name == GEO_OBJECTS_NODE:
-                        self.on_geo_object_delete(change.key, change.feature)
+                        self._on_geo_object_delete(change.key, change.feature)
                     elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
-                        self.on_request_delete(change.key, change.feature)
+                        self._on_request_delete(change.key, change.feature)
                     else:
-                        self.on_geo_object_delete(change.key, change.feature)
+                        self._on_geo_object_delete(change.key, change.feature)
                 # Removed redundant delete handling
             except KeyboardInterrupt:
                 self.stream.stop()
