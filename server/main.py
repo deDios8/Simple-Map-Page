@@ -1,15 +1,17 @@
 """Firebase Feature Listener — entry point.
 
 Responsibilities:
-- Handlers for clientRequests changes (_on_request_create, _on_request_update, _on_request_delete)
+- Handlers for clientRequests changes (_on_client_request_create, _on_client_request_update, _on_client_request_delete)
 - Write helpers for making changes to the geoObjects node (put, patch, delete)
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
 
+import sys
+
 import ecs
 import esper
 import queue
-import threading
+from debug_console import SessionDebugConsole
 from db_stream import (
     DEFAULT_DATABASE_URL,
     CLIENT_REQUESTS_NODE,
@@ -38,7 +40,7 @@ class SessionState:
         self.ClientRequestEntityIds: dict[str, int] = {}
 
         self.stream = DatabaseStream(self.database_url, self.session_name)
-        self.debug_command_queue: queue.Queue[str] = queue.Queue()
+        self.debug = SessionDebugConsole(self)
         self._initialize_from_snapshot()
 
     def _initialize_from_snapshot(self) -> None:
@@ -102,11 +104,12 @@ class SessionState:
         props = request.properties if isinstance(request.properties, dict) else {}
 
         id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
-        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
-        request_params = esper.component_for_entity(existing_entity_id, ecs.ClientRequestProperties)
-
         id_component.id = props.get("id", request.id or key)
+
+        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
+
+        request_params = esper.component_for_entity(existing_entity_id, ecs.ClientRequestProperties)
         crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
@@ -126,28 +129,21 @@ class SessionState:
             esper.delete_entity(entity_id)
         return entity_id
 
-    def _on_request_create(self, key: str, request: ClientRequestEntry) -> None:
-        entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
-
     def _on_geo_object_create(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT CREATE] {key}: entity={entity_id}")
 
-    def _on_request_update(self, key: str, request: ClientRequestEntry) -> None:
+    def _on_client_request_create(self, key: str, request: ClientRequestEntry) -> None:
         entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST UPDATE] {key}: from={request.requester_id}, entity={entity_id}")
+        print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
 
     def _on_geo_object_update(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT UPDATE] {key}: entity={entity_id}")
 
-    def _on_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
-        entity_id = self._delete_client_request_entity(key)
-        if request is None:
-            print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
-        else:
-            print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
+    def _on_client_request_update(self, key: str, request: ClientRequestEntry) -> None:
+        entity_id = self._upsert_client_request_entity(key, request)
+        print(f"[REQUEST UPDATE] {key}: from={request.requester_id}, entity={entity_id}")
 
     def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
         entity_id = self._delete_geo_object_entity(key)
@@ -156,194 +152,39 @@ class SessionState:
         else:
             print(f"[GEO OBJECT DELETE] {key}: entity={entity_id}")
 
-    def _start_debug_console(self) -> None:
-        def _read_commands() -> None:
-            while True:
-                try:
-                    raw = input()
-                except EOFError:
-                    return
-                except KeyboardInterrupt:
-                    return
-
-                command = raw.strip()
-                if not command:
-                    continue
-                self.debug_command_queue.put(command)
-
-        thread = threading.Thread(target=_read_commands, daemon=True)
-        thread.start()
-
-    def _print_debug_help(self) -> None:
-        print(
-            "[DEBUG] Commands: "
-            "help | stats | world | list [geo|req] [count] | "
-            "dump <key> | dumpgeo <key> | dumpreq <key>"
-        )
-
-    def _print_debug_stats(self) -> None:
-        print(
-            "[DEBUG] "
-            f"geoObjects={len(self.GeoObjects)} "
-            f"geoEntityIds={len(self.GeoObjectEntityIds)} "
-            f"clientRequests={len(self.ClientRequests)} "
-            f"requestEntityIds={len(self.ClientRequestEntityIds)}"
-        )
-
-    def _print_world_stats(self) -> None:
-        id_count = len(list(esper.get_component(ecs.ID)))
-        metadata_count = len(list(esper.get_component(ecs.MetaData)))
-        appearance_count = len(list(esper.get_component(ecs.Appearance)))
-        geometry_count = len(list(esper.get_component(ecs.Geometry)))
-        request_count = len(list(esper.get_component(ecs.ClientRequestProperties)))
-
-        geo_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs.ID)
-        }
-        request_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs.ClientRequestProperties)
-        }
-        all_entities = geo_entities | request_entities
-
-        print(
-            "[DEBUG][world] "
-            f"entities={len(all_entities)} "
-            f"id={id_count} meta={metadata_count} appearance={appearance_count} geometry={geometry_count} "
-            f"requestParameters={request_count}"
-        )
-
-    def _print_debug_list(self, subject: str, count: int) -> None:
-        if subject == "geo":
-            keys = sorted(self.GeoObjectEntityIds.keys())
-            print(f"[DEBUG] geo keys ({len(keys)} total): {keys[:count]}")
-            return
-        if subject == "req":
-            keys = sorted(self.ClientRequestEntityIds.keys())
-            print(f"[DEBUG] req keys ({len(keys)} total): {keys[:count]}")
-            return
-        print("[DEBUG] list usage: list [geo|req] [count]")
-
-    def _print_geo_dump(self, key: str) -> bool:
-        entity_id = self.GeoObjectEntityIds.get(key)
-        if entity_id is None:
-            return False
-        id_component = esper.component_for_entity(entity_id, ecs.ID)
-        metadata = esper.component_for_entity(entity_id, ecs.MetaData)
-        appearance = esper.component_for_entity(entity_id, ecs.Appearance)
-        geometry = esper.component_for_entity(entity_id, ecs.Geometry)
-        print(
-            "[DEBUG][geo] "
-            f"key={key} entity={entity_id} "
-            f"id={id_component.id} name={metadata.name!r} type={metadata.type!r} "
-            f"description={metadata.description!r} color={appearance.color!r} "
-            f"shape={appearance.shape!r} radius={appearance.radius} "
-            f"coordinates={geometry.coordinates}"
-        )
-        return True
-
-    def _print_request_dump(self, key: str) -> bool:
-        entity_id = self.ClientRequestEntityIds.get(key)
-        if entity_id is None:
-            return False
-        request = esper.component_for_entity(entity_id, ecs.ClientRequestProperties)
-        print(
-            "[DEBUG][req] "
-            f"key={key} entity={entity_id} requester_id={request.requester_id!r} "
-            f"timestamp={request.timestamp!r}"
-        )
-        return True
-
-    def _process_debug_command(self, raw_command: str) -> None:
-        parts = raw_command.split()
-        if not parts:
-            return
-
-        command = parts[0].lower()
-
-        if command == "help":
-            self._print_debug_help()
-            return
-        if command == "stats":
-            self._print_debug_stats()
-            return
-        if command == "world":
-            self._print_world_stats()
-            return
-        if command == "list":
-            subject = "geo"
-            count = 10
-            if len(parts) >= 2:
-                subject = parts[1].lower()
-            if len(parts) >= 3:
-                try:
-                    count = max(1, int(parts[2]))
-                except ValueError:
-                    print("[DEBUG] count must be an integer")
-                    return
-            self._print_debug_list(subject, count)
-            return
-        if command == "dumpgeo":
-            if len(parts) < 2:
-                print("[DEBUG] dumpgeo usage: dumpgeo <key>")
-                return
-            if not self._print_geo_dump(parts[1]):
-                print(f"[DEBUG] geo key not found: {parts[1]}")
-            return
-        if command == "dumpreq":
-            if len(parts) < 2:
-                print("[DEBUG] dumpreq usage: dumpreq <key>")
-                return
-            if not self._print_request_dump(parts[1]):
-                print(f"[DEBUG] req key not found: {parts[1]}")
-            return
-        if command == "dump":
-            if len(parts) < 2:
-                print("[DEBUG] dump usage: dump <key>")
-                return
-            key = parts[1]
-            if self._print_geo_dump(key):
-                return
-            if self._print_request_dump(key):
-                return
-            print(f"[DEBUG] key not found in geo or req maps: {key}")
-            return
-
-        print(f"[DEBUG] Unknown command: {raw_command}")
-
-    def _drain_debug_commands(self) -> None:
-        while True:
-            try:
-                command = self.debug_command_queue.get_nowait()
-            except queue.Empty:
-                return
-            self._process_debug_command(command)
+    def _on_client_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
+        entity_id = self._delete_client_request_entity(key)
+        if request is None:
+            print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
+        else:
+            print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
     def run_listener(self) -> None:
         self.stream.start()
-        self._start_debug_console()
-        self._print_debug_help()
+        self.debug.start()
+        self.debug.print_help()
 
         while True:
             try:
-                self._drain_debug_commands()
+                self.debug.drain_commands()
                 change: SyncChange = self.stream.event_queue.get(timeout=0.5)
                 if change.action == "create":
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_request_create(change.key, change.feature)
+                        self._on_client_request_create(change.key, change.feature)
                     else:
                         self._on_geo_object_create(change.key, change.feature)
                 elif change.action == "update" and change.feature is not None:
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_request_update(change.key, change.feature)
+                        self._on_client_request_update(change.key, change.feature)
                     else:
                         self._on_geo_object_update(change.key, change.feature)
                 elif change.action == "delete":
                     if change.stream_name == CLIENT_REQUESTS_NODE:
-                        self._on_request_delete(change.key, change.feature)
+                        self._on_client_request_delete(change.key, change.feature)
                     elif change.stream_name == GEO_OBJECTS_NODE:
                         self._on_geo_object_delete(change.key, change.feature)
                     elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
-                        self._on_request_delete(change.key, change.feature)
+                        self._on_client_request_delete(change.key, change.feature)
                     else:
                         self._on_geo_object_delete(change.key, change.feature)
                 # Removed redundant delete handling
@@ -352,7 +193,7 @@ class SessionState:
                 print("\nStopped listener.")
                 return
             except queue.Empty:
-                self._drain_debug_commands()
+                self.debug.drain_commands()
                 continue
 
 
