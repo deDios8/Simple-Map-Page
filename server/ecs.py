@@ -41,22 +41,23 @@ class GeoObject:
         self.entity_id = new_entity_id
         appearance = properties.get("appearance", {}) if isinstance(properties, dict) else {}
         nested_data = properties.get("data", {}) if isinstance(properties, dict) else {}
+        meta_data = properties.get("metaData", {}) if isinstance(properties, dict) else {}
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, Geometry(coordinates=geometry.get("coordinates", [0,0])))
         esper.add_component(
             new_entity_id,
             MetaData(
-                name=properties.get("name", ""),
-                type=nested_data.get("type", properties.get("type", "")),
-                description=properties.get("description", ""),
+                name=meta_data.get("name", ""),
+                type=meta_data.get("type", nested_data.get("type", "")),
+                description=meta_data.get("description", ""),
             ),
         )
         esper.add_component(
             new_entity_id,
             Appearance(
-                color=appearance.get("color", properties.get("color", "")),
-                shape=appearance.get("shape", properties.get("shape", "")),
-                radius=appearance.get("radius", properties.get("radius", 0)),
+                color=appearance.get("color", ""),
+                shape=appearance.get("shape", ""),
+                radius=appearance.get("radius", 0),
             ),
         )
 
@@ -64,12 +65,13 @@ class ClientRequest:
     def __init__(self, id: str, geometry: dict, properties: dict) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
+        crp = properties.get("clientRequestProperties", {}) if isinstance(properties, dict) else {}
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, Geometry(coordinates=geometry.get("coordinates", [0,0])))
         esper.add_component(
             new_entity_id,
             ClientRequestProperties(
-                requester_id=properties.get("requesterId", ""),
-                timestamp=properties.get("timestamp", ""),
+                requester_id=crp.get("requesterId", ""),
+                timestamp=crp.get("timestamp", ""),
             ),
         )

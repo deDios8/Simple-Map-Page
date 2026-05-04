@@ -79,16 +79,15 @@ class SessionState:
 
         properties = self._build_properties_payload(geo_object)
         id_component.id = properties.get("id", geo_object.id or key)
-        metadata.name = properties.get("name", "")
-        metadata.description = properties.get("description", "")
-
-        nested_data = properties.get("data", {}) if isinstance(properties.get("data"), dict) else {}
-        metadata.type = nested_data.get("type", properties.get("type", ""))
+        meta_data = properties.get("metaData", {}) if isinstance(properties.get("metaData"), dict) else {}
+        metadata.name = meta_data.get("name", "")
+        metadata.description = meta_data.get("description", "")
+        metadata.type = meta_data.get("type", "")
 
         appearance_data = properties.get("appearance", {}) if isinstance(properties.get("appearance"), dict) else {}
-        appearance.color = appearance_data.get("color", properties.get("color", ""))
-        appearance.shape = appearance_data.get("shape", properties.get("shape", ""))
-        appearance.radius = appearance_data.get("radius", properties.get("radius", 0))
+        appearance.color = appearance_data.get("color", "")
+        appearance.shape = appearance_data.get("shape", "")
+        appearance.radius = appearance_data.get("radius", 0)
 
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         return existing_entity_id
@@ -113,8 +112,9 @@ class SessionState:
         properties = self._build_properties_payload(request)
         id_component.id = properties.get("id", request.id or key)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
-        request_params.requester_id = properties.get("requesterId", "")
-        request_params.timestamp = properties.get("timestamp", "")
+        crp = properties.get("clientRequestProperties", {}) if isinstance(properties.get("clientRequestProperties"), dict) else {}
+        request_params.requester_id = crp.get("requesterId", "")
+        request_params.timestamp = crp.get("timestamp", "")
         return existing_entity_id
 
     def _delete_geo_object_entity(self, key: str) -> int | None:

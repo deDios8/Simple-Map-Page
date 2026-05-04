@@ -30,13 +30,16 @@ const demoGeoObjects = {
     },
     properties: {
       id: "downtown",
-      name: "Downtown Pin",
+      metaData: {
+        name: "Downtown Pin",
+        description: "Current point of interest.",
+        type: "pin",
+      },
       appearance: {
         color: "#0b8f87",
         visible: true,
         radius: 12,
       },
-      description: "Current point of interest.",
       data: {
         category: "pin",
         priority: "high",
@@ -51,13 +54,16 @@ const demoGeoObjects = {
     },
     properties: {
       id: "hiddenMarker",
-      name: "Hidden Marker",
+      metaData: {
+        name: "Hidden Marker",
+        description: "This stays hidden until visibility is enabled.",
+        type: "",
+      },
       appearance: {
         color: "#5e718c",
         visible: false,
         radius: 8,
       },
-      description: "This stays hidden until visibility is enabled.",
       data: {
         category: "standby",
       },
@@ -77,12 +83,15 @@ const demoGeoObjects = {
     },
     properties: {
       id: "stagingZone",
-      name: "Staging Zone",
+      metaData: {
+        name: "Staging Zone",
+        description: "Rectangular work area.",
+        type: "zone",
+      },
       appearance: {
         color: "#d2603f",
         visible: true,
       },
-      description: "Rectangular work area.",
       data: {
         access: "restricted",
         supervisor: "Ops A",
@@ -92,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.5",
+  version: "1.0.6b",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -124,6 +133,7 @@ const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
 const deleteObjectButton = document.querySelector("#delete-object-button");
 const fieldName = document.querySelector("#field-name");
+const fieldType = document.querySelector("#field-type");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
 const fieldLatitude = document.querySelector("#field-latitude");
@@ -134,6 +144,7 @@ const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
   fieldName,
+  fieldType,
   fieldColor,
   fieldVisible,
   fieldLatitude,
@@ -239,6 +250,7 @@ function bindUi() {
     const fallbackRadius = Number.isFinite(objectEntry.properties?.appearance?.radius)
       ? objectEntry.properties.appearance.radius
       : null;
+    const currentMetaData = objectEntry.properties?.metaData || {};
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
     const nextRadius = Number.isFinite(parsedRadius) ? parsedRadius : fallbackRadius;
@@ -256,14 +268,18 @@ function bindUi() {
       geometry: nextGeometry,
       properties: {
         ...objectEntry.properties,
-        name: fieldName.value.trim() || objectEntry.properties.name || state.selectedId,
+        metaData: {
+          ...currentMetaData,
+          name: fieldName.value.trim() || currentMetaData.name || state.selectedId,
+          description: fieldDescription.value.trim(),
+          type: fieldType.value.trim(),
+        },
         appearance: {
           ...objectEntry.properties?.appearance,
           color: fieldColor.value,
           visible: fieldVisible.checked,
           radius: nextRadius,
         },
-        description: fieldDescription.value.trim(),
         data: parsedExtra,
       },
     };
@@ -434,13 +450,16 @@ function createUserObject() {
     },
     properties: {
       id: state.userId,
-      name: state.userId,
+      metaData: {
+        name: state.userId,
+        description: "Live user location.",
+        type: "user",
+      },
       appearance: {
         color: "#000000",
         visible: true,
         radius: 9,
       },
-      description: "Live user location.",
       data: {},
     },
   };
@@ -532,9 +551,11 @@ async function submitClientRequest(requestId) {
       coordinates: [lng, lat],
     },
     properties: {
-      timestamp,
-      requesterId: state.userId,
       id: requestId,
+      clientRequestProperties: {
+        requesterId: state.userId,
+        timestamp,
+      },
     },
   };
 
@@ -646,6 +667,7 @@ function polygonStyle(feature) {
 
 function buildPopupMarkup(feature) {
   const properties = feature.properties || {};
+  const metaData = properties.metaData || {};
   const extraData = properties.data || {};
   const extraItems = Object.entries(extraData)
     .map(([key, value]) => `<li><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</li>`)
@@ -653,8 +675,8 @@ function buildPopupMarkup(feature) {
 
   return `
     <div>
-      <strong>${escapeHtml(properties.name || properties.id || "Untitled object")}</strong>
-      <p>${escapeHtml(properties.description || "No description available.")}</p>
+      <strong>${escapeHtml(metaData.name || properties.id || "Untitled object")}</strong>
+      <p>${escapeHtml(metaData.description || "No description available.")}</p>
       ${extraItems ? `<ul class="popup-details">${extraItems}</ul>` : ""}
     </div>
   `;
@@ -670,7 +692,7 @@ function renderObjectList() {
           const color = feature.properties?.appearance?.color || "#0b8f87";
           const visible = feature.properties?.appearance?.visible ? "Visible" : "Hidden";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
-          const name = escapeHtml(feature.properties?.name || id || "Unnamed object");
+          const name = escapeHtml(feature.properties?.metaData?.name || id || "Unnamed object");
           const type = escapeHtml(feature.geometry?.type || "Unknown");
 
           return `
@@ -732,15 +754,17 @@ function populateEditor(id) {
     return;
   }
 
+  const metaData = feature.properties?.metaData || {};
   editorForm.hidden = false;
-  editorEmptyState.textContent = `Editing ${feature.properties?.name || id}`;
-  fieldName.value = feature.properties?.name || "";
+  editorEmptyState.textContent = `Editing ${metaData.name || id}`;
+  fieldName.value = metaData.name || "";
+  fieldType.value = metaData.type || "";
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
   fieldVisible.checked = Boolean(feature.properties?.appearance?.visible);
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
-  fieldDescription.value = feature.properties?.description || "";
+  fieldDescription.value = metaData.description || "";
   fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
   applyEditorPermissions();
 }

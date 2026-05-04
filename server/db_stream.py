@@ -40,27 +40,30 @@ class DBEntry:
         self.geometry = db_entry.get("geometry", {})
         self.properties = db_entry.get("properties", {})
         self.id = self.properties.get("id", "")
-        self.name = self.properties.get("name", "")
-        self.description = self.properties.get("description", "")
+        meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
+        self.name = meta_data.get("name", "")
+        self.description = meta_data.get("description", "")
         self.coordinates = self.geometry.get("coordinates", [])
 
 
 class ClientRequestEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
-        self.requester_id = self.properties.get("requesterId", "")
-        self.timestamp = self.properties.get("timestamp", "")
+        crp = self.properties.get("clientRequestProperties", {}) if isinstance(self.properties.get("clientRequestProperties"), dict) else {}
+        self.requester_id = crp.get("requesterId", "")
+        self.timestamp = crp.get("timestamp", "")
 
 
 class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
         self.appearance = self.properties.get("appearance", {})
-        self.radius = self.properties.get("radius", 0)
-        self.color = self.properties.get("color", "#000000")
-        self.visible = self.properties.get("visible", True) 
-        self.name = self.properties.get("name", "")
-        self.description = self.properties.get("description", "")
+        self.radius = self.appearance.get("radius", 0) if isinstance(self.appearance, dict) else 0
+        self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
+        self.visible = self.appearance.get("visible", True) if isinstance(self.appearance, dict) else True
+        meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
+        self.name = meta_data.get("name", "")
+        self.description = meta_data.get("description", "")
         self.data = self.properties.get("data", {})
 
 @dataclass
