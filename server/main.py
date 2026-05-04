@@ -54,40 +54,41 @@ class SessionState:
             entry = ClientRequestEntry(raw)
             self._upsert_client_request_entity(key, entry)
 
-    def _build_geo_data_payload(self, geo_object: GeoObjectEntry) -> dict:
-        payload = dict(geo_object.data or {})
-        appearance = geo_object.appearance if isinstance(geo_object.appearance, dict) else {}
-        payload.setdefault("name", geo_object.name)
-        payload.setdefault("description", geo_object.description)
-        payload.setdefault("color", appearance.get("color", geo_object.color))
-        payload.setdefault("radius", appearance.get("radius", geo_object.radius))
-        payload.setdefault("shape", appearance.get("shape", ""))
-        return payload
+    def _build_properties_payload(self, feature: GeoObjectEntry | ClientRequestEntry) -> dict:
+        if isinstance(feature.properties, dict):
+            return dict(feature.properties)
+        return {}
 
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
+            properties = self._build_properties_payload(geo_object)
             geo = ecs.GeoObject(
                 id=geo_object.id or key,
                 geometry=geo_object.geometry,
-                data=self._build_geo_data_payload(geo_object),
+                properties=properties,
             )
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
             return geo.entity_id
 
+        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
         metadata = esper.component_for_entity(existing_entity_id, ecs.MetaData)
         appearance = esper.component_for_entity(existing_entity_id, ecs.Appearance)
         geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
 
-        metadata.id = geo_object.id or key
-        metadata.name = geo_object.name
-        metadata.description = geo_object.description
+        properties = self._build_properties_payload(geo_object)
+        id_component.id = properties.get("id", geo_object.id or key)
+        metadata.name = properties.get("name", "")
+        metadata.description = properties.get("description", "")
 
-        appearance_data = geo_object.appearance if isinstance(geo_object.appearance, dict) else {}
-        appearance.color = appearance_data.get("color", geo_object.color)
-        appearance.shape = appearance_data.get("shape", "")
-        appearance.radius = appearance_data.get("radius", geo_object.radius)
+        nested_data = properties.get("data", {}) if isinstance(properties.get("data"), dict) else {}
+        metadata.type = nested_data.get("type", properties.get("type", ""))
+
+        appearance_data = properties.get("appearance", {}) if isinstance(properties.get("appearance"), dict) else {}
+        appearance.color = appearance_data.get("color", properties.get("color", ""))
+        appearance.shape = appearance_data.get("shape", properties.get("shape", ""))
+        appearance.radius = appearance_data.get("radius", properties.get("radius", 0))
 
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         return existing_entity_id
@@ -95,17 +96,25 @@ class SessionState:
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
+            properties = self._build_properties_payload(request)
             entity = ecs.ClientRequest(
-                requester_id=request.requester_id,
-                timestamp=request.timestamp,
+                id=request.id or key,
+                geometry=request.geometry,
+                properties=properties,
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
             return entity.entity_id
 
-        request_params = esper.component_for_entity(existing_entity_id, ecs.RequestParameters)
-        request_params.requester_id = request.requester_id
-        request_params.timestamp = request.timestamp
+        id_component = esper.component_for_entity(existing_entity_id, ecs.ID)
+        geometry = esper.component_for_entity(existing_entity_id, ecs.Geometry)
+        request_params = esper.component_for_entity(existing_entity_id, ecs.ClientRequestProperties)
+
+        properties = self._build_properties_payload(request)
+        id_component.id = properties.get("id", request.id or key)
+        geometry.coordinates = request.geometry.get("coordinates", [0, 0])
+        request_params.requester_id = properties.get("requesterId", "")
+        request_params.timestamp = properties.get("timestamp", "")
         return existing_entity_id
 
     def _delete_geo_object_entity(self, key: str) -> int | None:
@@ -187,23 +196,24 @@ class SessionState:
         )
 
     def _print_world_stats(self) -> None:
+        id_count = len(list(esper.get_component(ecs.ID)))
         metadata_count = len(list(esper.get_component(ecs.MetaData)))
         appearance_count = len(list(esper.get_component(ecs.Appearance)))
         geometry_count = len(list(esper.get_component(ecs.Geometry)))
-        request_count = len(list(esper.get_component(ecs.RequestParameters)))
+        request_count = len(list(esper.get_component(ecs.ClientRequestProperties)))
 
         geo_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs.MetaData)
+            entity_id for entity_id, _ in esper.get_component(ecs.ID)
         }
         request_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs.RequestParameters)
+            entity_id for entity_id, _ in esper.get_component(ecs.ClientRequestProperties)
         }
         all_entities = geo_entities | request_entities
 
         print(
             "[DEBUG][world] "
             f"entities={len(all_entities)} "
-            f"meta={metadata_count} appearance={appearance_count} geometry={geometry_count} "
+            f"id={id_count} meta={metadata_count} appearance={appearance_count} geometry={geometry_count} "
             f"requestParameters={request_count}"
         )
 
@@ -222,13 +232,14 @@ class SessionState:
         entity_id = self.GeoObjectEntityIds.get(key)
         if entity_id is None:
             return False
+        id_component = esper.component_for_entity(entity_id, ecs.ID)
         metadata = esper.component_for_entity(entity_id, ecs.MetaData)
         appearance = esper.component_for_entity(entity_id, ecs.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs.Geometry)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
-            f"id={metadata.id} name={metadata.name!r} type={metadata.type!r} "
+            f"id={id_component.id} name={metadata.name!r} type={metadata.type!r} "
             f"description={metadata.description!r} color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates}"
@@ -239,7 +250,7 @@ class SessionState:
         entity_id = self.ClientRequestEntityIds.get(key)
         if entity_id is None:
             return False
-        request = esper.component_for_entity(entity_id, ecs.RequestParameters)
+        request = esper.component_for_entity(entity_id, ecs.ClientRequestProperties)
         print(
             "[DEBUG][req] "
             f"key={key} entity={entity_id} requester_id={request.requester_id!r} "
