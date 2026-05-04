@@ -6,11 +6,10 @@ Responsibilities:
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
 
-import sys
-
 import ecs
 import esper
 import queue
+import time
 from debug_console import SessionDebugConsole
 from db_stream import (
     DEFAULT_DATABASE_URL,
@@ -55,6 +54,7 @@ class SessionState:
         for key, raw in client_requests.items():
             entry = ClientRequestEntry(raw)
             self._upsert_client_request_entity(key, entry)
+
 
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
@@ -115,6 +115,7 @@ class SessionState:
         request_params.timestamp = crp.get("timestamp", "")
         return existing_entity_id
 
+
     def _delete_geo_object_entity(self, key: str) -> int | None:
         entity_id = self.GeoObjectEntityIds.pop(key, None)
         self.GeoObjects.pop(key, None)
@@ -129,6 +130,7 @@ class SessionState:
             esper.delete_entity(entity_id)
         return entity_id
 
+
     def _on_geo_object_create(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT CREATE] {key}: entity={entity_id}")
@@ -137,6 +139,7 @@ class SessionState:
         entity_id = self._upsert_client_request_entity(key, request)
         print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
 
+
     def _on_geo_object_update(self, key: str, geo_object: GeoObjectEntry) -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT UPDATE] {key}: entity={entity_id}")
@@ -144,6 +147,7 @@ class SessionState:
     def _on_client_request_update(self, key: str, request: ClientRequestEntry) -> None:
         entity_id = self._upsert_client_request_entity(key, request)
         print(f"[REQUEST UPDATE] {key}: from={request.requester_id}, entity={entity_id}")
+
 
     def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
         entity_id = self._delete_geo_object_entity(key)
@@ -159,15 +163,39 @@ class SessionState:
         else:
             print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
+
     def run_listener(self) -> None:
         self.stream.start()
         self.debug.start()
         self.debug.print_help()
 
+        ticks_per_second = 2.0
+        tick_dt = 1.0 / ticks_per_second
+        next_tick = time.perf_counter()
+
         while True:
             try:
                 self.debug.drain_commands()
-                change: SyncChange = self.stream.event_queue.get(timeout=0.5)
+
+                # Run ECS ticks on schedule while avoiding runaway catch-up.
+                now = time.perf_counter()
+                tick_steps = 0
+                max_catchup_steps = 5
+                while now >= next_tick and tick_steps < max_catchup_steps:
+                    esper.process()
+                    next_tick += tick_dt
+                    tick_steps += 1
+
+                # If far behind, resync the schedule to keep the loop stable.
+                if now - next_tick > 1.0:
+                    next_tick = now + tick_dt
+
+                # Wait for DB events, but never longer than time until next tick.
+                time_until_tick = max(0.0, next_tick - time.perf_counter())
+                wait_timeout = min(time_until_tick, 0.1)
+
+                # Handle DB events as they come in, but don't let them block the loop indefinitely.
+                change: SyncChange = self.stream.event_queue.get(timeout=wait_timeout)
                 if change.action == "create":
                     if isinstance(change.feature, ClientRequestEntry):
                         self._on_client_request_create(change.key, change.feature)
@@ -187,19 +215,13 @@ class SessionState:
                         self._on_client_request_delete(change.key, change.feature)
                     else:
                         self._on_geo_object_delete(change.key, change.feature)
-                # Removed redundant delete handling
             except KeyboardInterrupt:
                 self.stream.stop()
                 print("\nStopped listener.")
                 return
             except queue.Empty:
-                self.debug.drain_commands()
                 continue
 
-
-# ---------------------------------------------------------------------------
-# Main loop
-# ---------------------------------------------------------------------------
 
 
 def main() -> None:
