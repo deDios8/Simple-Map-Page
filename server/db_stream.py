@@ -1,7 +1,7 @@
 """Firebase RTDB stream initialization and local-dict synchronization.
 
 Responsibilities:
-- Dataclasses and feature models (DBEntry, ClientRequest, StreamEvent, SyncChange)
+- Dataclasses and feature models (DBEntry, ClientRequestEntry, StreamEvent, SyncChange)
 - URL construction helpers
 - Snapshot fetching and normalization
 - Stream event parsing and application
@@ -45,14 +45,14 @@ class DBEntry:
         self.coordinates = self.geometry.get("coordinates", [])
 
 
-class ClientRequest(DBEntry):
+class ClientRequestEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
         self.requester_id = self.properties.get("requesterId", "")
         self.timestamp = self.properties.get("timestamp", "")
 
 
-class GeoObject(DBEntry):
+class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
         self.appearance = self.properties.get("appearance", {})
@@ -94,6 +94,7 @@ def build_node_url(database_url: str, *path_segments: str) -> str:
 
 def build_client_requests_url(database_url: str, session_name: str) -> str:
     return build_node_url(database_url, session_name, CLIENT_REQUESTS_NODE)
+
 
 def build_geo_objects_url(database_url: str, session_name: str) -> str:
     return build_node_url(database_url, session_name, GEO_OBJECTS_NODE)
@@ -421,8 +422,8 @@ class DatabaseStream:
         self.session_name = session_name
         self.request_state: dict[str, Any] = {}
         self.geo_object_state: dict[str, Any] = {}
-        self.request_index: dict[str, ClientRequest] = {}
-        self.geo_object_index: dict[str, GeoObject] = {}
+        self.request_index: dict[str, ClientRequestEntry] = {}
+        self.geo_object_index: dict[str, GeoObjectEntry] = {}
         self.event_queue: queue.Queue[SyncChange] = queue.Queue()
         self._stop_event = threading.Event()
         self._client_request_thread: threading.Thread | None = None
@@ -445,7 +446,7 @@ class DatabaseStream:
                 self.request_index,
                 fetch_client_requests,
                 _iter_client_requests,
-                ClientRequest,
+                ClientRequestEntry,
                 self.event_queue,
                 self._stop_event,
             ),
@@ -462,7 +463,7 @@ class DatabaseStream:
                 self.geo_object_index,
                 fetch_geo_objects,
                 _iter_geo_objects,
-                GeoObject,
+                GeoObjectEntry,
                 self.event_queue,
                 self._stop_event,
             ),
