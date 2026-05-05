@@ -57,22 +57,25 @@ class ClientRequestEntry(DBEntry):
 class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
+
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 0) if isinstance(self.appearance, dict) else 0
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
         self.visible = self.appearance.get("visible", True) if isinstance(self.appearance, dict) else True
+
         meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
         self.name = meta_data.get("name", "")
         self.description = meta_data.get("description", "")
-        self.data = self.properties.get("data", {})
         
-        # Extract StatA data
         stat_a_data = self.properties.get("statA", {}) if isinstance(self.properties.get("statA"), dict) else {}
         self.stat_a_name = stat_a_data.get("name", "")
         self.stat_a_type = stat_a_data.get("type", "")
         self.stat_a_value = stat_a_data.get("value", 0)
         self.stat_a_max_value = stat_a_data.get("max_value", 100)
         self.stat_a_min_value = stat_a_data.get("min_value", 0)
+
+        self.data = self.properties.get("data", {})
+
 
 @dataclass
 class StreamEvent:

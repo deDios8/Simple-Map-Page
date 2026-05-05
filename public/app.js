@@ -444,7 +444,7 @@ function promptUserId() {
 
     const drawerTitle = document.querySelector("#drawer-session-title");
     if (drawerTitle) {
-      drawerTitle.textContent = sessionName;
+      drawerTitle.textContent = `${state.userId}'s ${sessionName}`;
     }
 
     reconnectObjectListener();
