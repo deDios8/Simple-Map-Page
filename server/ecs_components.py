@@ -14,6 +14,14 @@ class MetaData:
         self.type = type
         self.description = description
 
+class IsUser:
+    def __init__(self) -> None:
+        self.is_user = True
+
+class IsZone:
+    def __init__(self) -> None:
+        self.is_zone = True
+
 class Appearance:
     def __init__(self, color: str, shape: str, radius: int) -> None:
         self.color = color
@@ -38,14 +46,12 @@ class StatA:
         self.max_value = max_value
         self.min_value = min_value
 
-class StatAModifierA:
-    def __init__(self, name: str, type: str, increment: float, time_to_live: int = 5) -> None:
+class StatusA:
+    def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:
         self.name = name
         self.type = type
-        self.increment = increment
-        self.time_to_live = time_to_live
-
-
+        self.strength = strength
+        self.time_until_expire = time_until_expire
 
 
 # ---------------------------------------------------------------------------

@@ -52,6 +52,28 @@ class SessionState:
             self._upsert_client_request_entity(key, entry)
 
 
+    def _sync_geo_type_marker_components(self, entity_id: int, is_user: bool) -> None:
+        if is_user:
+            try:
+                esper.remove_component(entity_id, ecs_components.IsZone)
+            except KeyError:
+                pass
+            try:
+                esper.component_for_entity(entity_id, ecs_components.IsUser)
+            except KeyError:
+                esper.add_component(entity_id, ecs_components.IsUser())
+            return
+
+        try:
+            esper.remove_component(entity_id, ecs_components.IsUser)
+        except KeyError:
+            pass
+        try:
+            esper.component_for_entity(entity_id, ecs_components.IsZone)
+        except KeyError:
+            esper.add_component(entity_id, ecs_components.IsZone())
+
+
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
@@ -62,6 +84,7 @@ class SessionState:
             )
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
+            self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
             
             # Add StatA component if stat data exists
             if geo_object.stat_a_name or geo_object.stat_a_type:
@@ -97,6 +120,7 @@ class SessionState:
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
+        self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
         
         # Update or add StatA component
         try:
@@ -155,9 +179,9 @@ class SessionState:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
         print(f"[GEO OBJECT {action.upper()}] {key}: entity={entity_id}")
 
-    def _on_client_request_update_create(self, key: str, request: ClientRequestEntry) -> None:
+    def _on_client_request_update_create(self, key: str, request: ClientRequestEntry, action: str = "CREATE") -> None:
         entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
+        print(f"[REQUEST {action.upper()}] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def _delete_geo_object_entity(self, key: str) -> int | None:

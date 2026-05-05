@@ -475,6 +475,7 @@ function createUserObject() {
     },
     properties: {
       id: state.userId,
+      is_user: true,
       metaData: {
         name: state.userId,
         description: "Live user location.",
@@ -611,6 +612,28 @@ function applyObjects(nextObjects) {
   }
 }
 
+function normalizeIsUserValue(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "y", "on"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "0", "no", "n", "off", ""].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
 function normalizeObjects(rawObjects) {
   if (Array.isArray(rawObjects)) {
     return rawObjects.reduce((accumulator, entry, index) => {
@@ -624,6 +647,7 @@ function normalizeObjects(rawObjects) {
         properties: {
           ...entry.properties,
           id,
+          is_user: normalizeIsUserValue(entry.properties?.is_user),
         },
       };
       return accumulator;
@@ -640,6 +664,7 @@ function normalizeObjects(rawObjects) {
       properties: {
         ...entry.properties,
         id: entry.properties?.id || key,
+        is_user: normalizeIsUserValue(entry.properties?.is_user),
       },
     };
     return accumulator;
@@ -830,13 +855,21 @@ function applyEditorPermissions() {
 }
 
 async function persistObject(id, nextEntry) {
+  const normalizedEntry = {
+    ...nextEntry,
+    properties: {
+      ...(nextEntry?.properties || {}),
+      is_user: normalizeIsUserValue(nextEntry?.properties?.is_user),
+    },
+  };
+
   if (state.firebaseReady && state.database) {
-    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: nextEntry });
+    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: normalizedEntry });
   }
 
   applyObjects({
     ...state.objects,
-    [id]: nextEntry,
+    [id]: normalizedEntry,
   });
 }
 
