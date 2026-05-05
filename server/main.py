@@ -6,7 +6,7 @@ Responsibilities:
 - Main loop that wires the DatabaseStream event queue to the handlers
 """
 
-import server.ecs_components as ecs_components
+import ecs_components
 import esper
 import queue
 import time
@@ -66,6 +66,20 @@ class SessionState:
             )
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
+            
+            # Add StatA component if stat data exists
+            if geo_object.stat_a_name or geo_object.stat_a_type:
+                esper.add_component(
+                    geo.entity_id,
+                    ecs_components.StatA(
+                        name=geo_object.stat_a_name,
+                        type=geo_object.stat_a_type,
+                        value=geo_object.stat_a_value,
+                        max_value=geo_object.stat_a_max_value,
+                        min_value=geo_object.stat_a_min_value,
+                    ),
+                )
+            
             return geo.entity_id
 
         props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
@@ -87,6 +101,31 @@ class SessionState:
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
+        
+        # Update or add StatA component
+        try:
+            stat_a = esper.component_for_entity(existing_entity_id, ecs_components.StatA)
+            stat_a_data = props.get("statA", {}) if isinstance(props.get("statA"), dict) else {}
+            stat_a.name = stat_a_data.get("name", "")
+            stat_a.type = stat_a_data.get("type", "")
+            stat_a.value = stat_a_data.get("value", 0)
+            stat_a.max_value = stat_a_data.get("max_value", 100)
+            stat_a.min_value = stat_a_data.get("min_value", 0)
+        except KeyError:
+            # Component doesn't exist yet, add it if data is present
+            stat_a_data = props.get("statA", {}) if isinstance(props.get("statA"), dict) else {}
+            if stat_a_data.get("name") or stat_a_data.get("type"):
+                esper.add_component(
+                    existing_entity_id,
+                    ecs_components.StatA(
+                        name=stat_a_data.get("name", ""),
+                        type=stat_a_data.get("type", ""),
+                        value=stat_a_data.get("value", 0),
+                        max_value=stat_a_data.get("max_value", 100),
+                        min_value=stat_a_data.get("min_value", 0),
+                    ),
+                )
+        
         return existing_entity_id
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:

@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.7",
+  version: "1.0.7c",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -140,6 +140,9 @@ const fieldLatitude = document.querySelector("#field-latitude");
 const fieldLongitude = document.querySelector("#field-longitude");
 const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
+const fieldStatName = document.querySelector("#field-stat-name");
+const fieldStatValue = document.querySelector("#field-stat-value");
+const fieldStatType = document.querySelector("#field-stat-type");
 const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
@@ -151,6 +154,9 @@ const editableFields = [
   fieldLongitude,
   fieldRadius,
   fieldDescription,
+  fieldStatName,
+  fieldStatValue,
+  fieldStatType,
   fieldExtra,
 ];
 
@@ -244,6 +250,8 @@ function bindUi() {
     const parsedLatitude = Number.parseFloat(fieldLatitude.value.trim());
     const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
+    const parsedStatValue = Number.parseFloat(fieldStatValue.value.trim());
+    
     const currentCoordinates = objectEntry.geometry?.coordinates;
     const fallbackLatitude = Array.isArray(currentCoordinates) ? currentCoordinates[1] : null;
     const fallbackLongitude = Array.isArray(currentCoordinates) ? currentCoordinates[0] : null;
@@ -251,6 +259,10 @@ function bindUi() {
       ? objectEntry.properties.appearance.radius
       : null;
     const currentMetaData = objectEntry.properties?.metaData || {};
+    const currentStatA = objectEntry.properties?.statA || {};
+    const statMin = Number.isFinite(currentStatA.min_value) ? currentStatA.min_value : 0;
+    const statMax = Number.isFinite(currentStatA.max_value) ? currentStatA.max_value : 100;
+    
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
     const nextRadius = Number.isFinite(parsedRadius) ? parsedRadius : fallbackRadius;
@@ -262,6 +274,18 @@ function bindUi() {
         coordinates: [nextLongitude, nextLatitude],
       };
     }
+
+    const nextStatValueRaw = Number.isFinite(parsedStatValue) ? parsedStatValue : (currentStatA.value || 0);
+    const nextStatValue = Math.min(statMax, Math.max(statMin, nextStatValueRaw));
+
+    // Build statA object with defaults
+    const nextStatA = {
+      name: fieldStatName.value.trim() || currentStatA.name || "",
+      type: fieldStatType.value.trim() || currentStatA.type || "",
+      value: nextStatValue,
+      max_value: statMax,
+      min_value: statMin,
+    };
 
     const nextEntry = {
       ...objectEntry,
@@ -281,6 +305,7 @@ function bindUi() {
           radius: nextRadius,
         },
         data: parsedExtra,
+        statA: nextStatA,
       },
     };
 
@@ -755,6 +780,7 @@ function populateEditor(id) {
   }
 
   const metaData = feature.properties?.metaData || {};
+  const statA = feature.properties?.statA || {};
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
@@ -765,6 +791,14 @@ function populateEditor(id) {
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = metaData.description || "";
+  fieldStatName.value = statA.name || "";
+  fieldStatValue.value = Number.isFinite(statA.value) ? String(statA.value) : "";
+  fieldStatType.value = statA.type || "";
+
+  const statMin = Number.isFinite(statA.min_value) ? statA.min_value : 0;
+  const statMax = Number.isFinite(statA.max_value) ? statA.max_value : 100;
+  fieldStatValue.setAttribute("title", `Valid range: ${statMin} to ${statMax}`);
+  
   fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
   applyEditorPermissions();
 }

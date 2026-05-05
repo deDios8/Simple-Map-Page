@@ -30,6 +30,22 @@ class ClientRequestProperties:
         self.requester_id = requester_id
         self.timestamp = timestamp
 
+class StatA:
+    def __init__(self, name: str, type: str, value: int, max_value: int = 100, min_value: int = 0) -> None:
+        self.name = name
+        self.type = type
+        self.value = value
+        self.max_value = max_value
+        self.min_value = min_value
+
+class StatAModifierA:
+    def __init__(self, name: str, type: str, increment: float, time_to_live: int = 5) -> None:
+        self.name = name
+        self.type = type
+        self.increment = increment
+        self.time_to_live = time_to_live
+
+
 
 
 # ---------------------------------------------------------------------------

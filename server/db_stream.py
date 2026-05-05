@@ -65,6 +65,14 @@ class GeoObjectEntry(DBEntry):
         self.name = meta_data.get("name", "")
         self.description = meta_data.get("description", "")
         self.data = self.properties.get("data", {})
+        
+        # Extract StatA data
+        stat_a_data = self.properties.get("statA", {}) if isinstance(self.properties.get("statA"), dict) else {}
+        self.stat_a_name = stat_a_data.get("name", "")
+        self.stat_a_type = stat_a_data.get("type", "")
+        self.stat_a_value = stat_a_data.get("value", 0)
+        self.stat_a_max_value = stat_a_data.get("max_value", 100)
+        self.stat_a_min_value = stat_a_data.get("min_value", 0)
 
 @dataclass
 class StreamEvent:

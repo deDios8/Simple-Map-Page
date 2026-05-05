@@ -255,6 +255,7 @@ body {
   display: grid;
   gap: 8px;
   font-weight: 600;
+  min-width: 0;
 }
 
 .coordinates-row {
@@ -274,7 +275,18 @@ body {
   align-self: end;
 }
 
+.stat-a-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-a-row label {
+  min-width: 0;
+}
+
 .editor-form input[type="text"],
+.editor-form input[type="number"],
 .editor-form input[type="color"],
 .editor-form textarea {
   width: 100%;

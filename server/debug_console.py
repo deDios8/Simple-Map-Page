@@ -8,7 +8,7 @@ import queue
 import threading
 from typing import Protocol
 
-import server.ecs_components as ecs_components
+import ecs_components
 import esper
 
 
@@ -97,13 +97,15 @@ class SessionDebugConsole:
         metadata = esper.component_for_entity(entity_id, ecs_components.MetaData)
         appearance = esper.component_for_entity(entity_id, ecs_components.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs_components.Geometry)
+        stat_a = esper.component_for_entity(entity_id, ecs_components.StatA)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
             f"id={id_component.id} name={metadata.name!r} type={metadata.type!r} "
             f"description={metadata.description!r} color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
-            f"coordinates={geometry.coordinates}"
+            f"coordinates={geometry.coordinates} "
+            f"statA_name={stat_a.name!r} statA_type={stat_a.type!r} statA_value={stat_a.value} statA_max={stat_a.max_value} statA_min={stat_a.min_value}"
         )
         return True
 
