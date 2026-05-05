@@ -1,9 +1,5 @@
-"""Firebase Feature Listener — entry point.
-
-Responsibilities:
-- Handlers for clientRequests changes (_on_client_request_create, _on_client_request_update, _on_client_request_delete)
-- Write helpers for making changes to the geoObjects node (put, patch, delete)
-- Main loop that wires the DatabaseStream event queue to the handlers
+"""
+Main server application that listens to Firebase database changes and updates the ECS world accordingly.
 """
 
 import ecs_components
@@ -155,6 +151,15 @@ class SessionState:
         return existing_entity_id
 
 
+    def _on_geo_object_update_create(self, key: str, geo_object: GeoObjectEntry, action: str="UPDATE") -> None:
+        entity_id = self._upsert_geo_object_entity(key, geo_object)
+        print(f"[GEO OBJECT {action.upper()}] {key}: entity={entity_id}")
+
+    def _on_client_request_update_create(self, key: str, request: ClientRequestEntry) -> None:
+        entity_id = self._upsert_client_request_entity(key, request)
+        print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
+
+
     def _delete_geo_object_entity(self, key: str) -> int | None:
         entity_id = self.GeoObjectEntityIds.pop(key, None)
         self.GeoObjects.pop(key, None)
@@ -168,24 +173,6 @@ class SessionState:
         if entity_id is not None:
             esper.delete_entity(entity_id)
         return entity_id
-
-
-    def _on_geo_object_create(self, key: str, geo_object: GeoObjectEntry) -> None:
-        entity_id = self._upsert_geo_object_entity(key, geo_object)
-        print(f"[GEO OBJECT CREATE] {key}: entity={entity_id}")
-
-    def _on_client_request_create(self, key: str, request: ClientRequestEntry) -> None:
-        entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST CREATE] {key}: from={request.requester_id}, entity={entity_id}")
-
-
-    def _on_geo_object_update(self, key: str, geo_object: GeoObjectEntry) -> None:
-        entity_id = self._upsert_geo_object_entity(key, geo_object)
-        print(f"[GEO OBJECT UPDATE] {key}: entity={entity_id}")
-
-    def _on_client_request_update(self, key: str, request: ClientRequestEntry) -> None:
-        entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST UPDATE] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
@@ -237,14 +224,14 @@ class SessionState:
                 change: SyncChange = self.stream.event_queue.get(timeout=wait_timeout)
                 if change.action == "create":
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_client_request_create(change.key, change.feature)
+                        self._on_client_request_update_create(change.key, change.feature, action="CREATE")
                     else:
-                        self._on_geo_object_create(change.key, change.feature)
+                        self._on_geo_object_update_create(change.key, change.feature, action="CREATE")
                 elif change.action == "update" and change.feature is not None:
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_client_request_update(change.key, change.feature)
+                        self._on_client_request_update_create(change.key, change.feature, action="UPDATE")
                     else:
-                        self._on_geo_object_update(change.key, change.feature)
+                        self._on_geo_object_update_create(change.key, change.feature, action="UPDATE")
                 elif change.action == "delete":
                     if change.stream_name == CLIENT_REQUESTS_NODE:
                         self._on_client_request_delete(change.key, change.feature)
@@ -260,7 +247,6 @@ class SessionState:
                 return
             except queue.Empty:
                 continue
-
 
 
 def main() -> None:
