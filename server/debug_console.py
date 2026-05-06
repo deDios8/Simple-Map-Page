@@ -97,7 +97,10 @@ class SessionDebugConsole:
         metadata = esper.component_for_entity(entity_id, ecs_components.MetaData)
         appearance = esper.component_for_entity(entity_id, ecs_components.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs_components.Geometry)
-        stat_a = esper.component_for_entity(entity_id, ecs_components.StatA)
+        try:
+            stat_a = esper.component_for_entity(entity_id, ecs_components.StatA)
+        except Exception:
+            stat_a = None
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
