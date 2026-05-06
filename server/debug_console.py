@@ -46,8 +46,52 @@ class SessionDebugConsole:
         print(
             "[DEBUG] Commands: "
             "help | stats | world | list [geo|req] [count] | "
-            "dump <key> | dumpgeo <key> | dumpreq <key>"
+            "dump <key> | dumpgeo <key> | dumpreq <key> | "
+            "zoneborders [key]"
         )
+
+    def _zone_borders_payload(self, entity_id: int) -> dict[str, dict[str, list[str]]]:
+        payload: dict[str, dict[str, list[str]]] = {}
+
+        within = esper.try_component(entity_id, ecs_components.WithinZones)
+        if within is not None:
+            payload["withinZones"] = {"zone_ids": [str(zone_id) for zone_id in within.zone_ids]}
+
+        entered = esper.try_component(entity_id, ecs_components.EnteredZones)
+        if entered is not None:
+            payload["enteredZones"] = {"zone_ids": [str(zone_id) for zone_id in entered.zone_ids]}
+
+        exited = esper.try_component(entity_id, ecs_components.ExitedZones)
+        if exited is not None:
+            payload["exitedZones"] = {"zone_ids": [str(zone_id) for zone_id in exited.zone_ids]}
+
+        return payload
+
+    def _print_zone_borders_for_key(self, key: str) -> bool:
+        if key in self._state.GeoObjectEntityIds:
+            entity_id = self._state.GeoObjectEntityIds[key]
+            payload = self._zone_borders_payload(entity_id)
+            print(f"[DEBUG][zoneBorders][geo] key={key} entity={entity_id} payload={payload}")
+            return True
+
+        if key in self._state.ClientRequestEntityIds:
+            entity_id = self._state.ClientRequestEntityIds[key]
+            payload = self._zone_borders_payload(entity_id)
+            print(f"[DEBUG][zoneBorders][req] key={key} entity={entity_id} payload={payload}")
+            return True
+
+        return False
+
+    def _print_zone_borders_all(self) -> None:
+        for key in sorted(self._state.GeoObjectEntityIds.keys()):
+            entity_id = self._state.GeoObjectEntityIds[key]
+            payload = self._zone_borders_payload(entity_id)
+            print(f"[DEBUG][zoneBorders][geo] key={key} entity={entity_id} payload={payload}")
+
+        for key in sorted(self._state.ClientRequestEntityIds.keys()):
+            entity_id = self._state.ClientRequestEntityIds[key]
+            payload = self._zone_borders_payload(entity_id)
+            print(f"[DEBUG][zoneBorders][req] key={key} entity={entity_id} payload={payload}")
 
     def _print_debug_stats(self) -> None:
         print(
@@ -177,6 +221,13 @@ class SessionDebugConsole:
             if self._print_request_dump(key):
                 return
             print(f"[DEBUG] key not found in geo or req maps: {key}")
+            return
+        if command == "zoneborders":
+            if len(parts) >= 2:
+                if not self._print_zone_borders_for_key(parts[1]):
+                    print(f"[DEBUG] key not found in geo or req maps: {parts[1]}")
+                return
+            self._print_zone_borders_all()
             return
 
         print(f"[DEBUG] Unknown command: {raw_command}")

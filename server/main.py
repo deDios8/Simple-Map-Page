@@ -3,6 +3,7 @@ Main server application that listens to Firebase database changes and updates th
 """
 
 import ecs_components
+import ecs_processors
 import esper
 import queue
 import time
@@ -33,10 +34,99 @@ class SessionState:
         self.ClientRequests: dict[str, ecs_components.ClientRequest] = {}
         self.GeoObjectEntityIds: dict[str, int] = {}
         self.ClientRequestEntityIds: dict[str, int] = {}
+        self._zone_borders_cache: dict[tuple[str, str], dict | None] = {}
 
         self.stream = DatabaseStream(self.database_url, self.session_name)
         self.debug = SessionDebugConsole(self)
         self._initialize_from_snapshot()
+        esper.add_processor(ecs_processors.CheckZoneEntryExit())
+
+
+    def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
+        if not isinstance(zone_ids, list):
+            return []
+        normalized: list[str] = []
+        for zone_id in zone_ids:
+            if zone_id is None:
+                continue
+            normalized.append(str(zone_id))
+        return normalized
+
+    def _sync_zone_component_from_payload(
+        self,
+        entity_id: int,
+        payload: dict,
+        payload_key: str,
+        component_type: type,
+    ) -> None:
+        entry = payload.get(payload_key)
+        zone_ids = self._normalize_zone_ids(entry.get("zone_ids")) if isinstance(entry, dict) else None
+        if zone_ids is None:
+            try:
+                esper.remove_component(entity_id, component_type)
+            except KeyError:
+                pass
+            return
+        esper.add_component(entity_id, component_type(zone_ids=zone_ids))
+
+    def _apply_zone_borders_from_properties(self, entity_id: int, props: dict) -> None:
+        zone_borders = props.get("zoneBorders") if isinstance(props, dict) else None
+        payload = zone_borders if isinstance(zone_borders, dict) else {}
+        self._sync_zone_component_from_payload(
+            entity_id,
+            payload,
+            "withinZones",
+            ecs_components.WithinZones,
+        )
+        self._sync_zone_component_from_payload(
+            entity_id,
+            payload,
+            "enteredZones",
+            ecs_components.EnteredZones,
+        )
+        self._sync_zone_component_from_payload(
+            entity_id,
+            payload,
+            "exitedZones",
+            ecs_components.ExitedZones,
+        )
+
+    def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
+        zone_borders: dict[str, dict[str, list[str]]] = {}
+
+        within = esper.try_component(entity_id, ecs_components.WithinZones)
+        if within is not None:
+            zone_borders["withinZones"] = {"zone_ids": self._normalize_zone_ids(within.zone_ids)}
+
+        entered = esper.try_component(entity_id, ecs_components.EnteredZones)
+        if entered is not None:
+            zone_borders["enteredZones"] = {"zone_ids": self._normalize_zone_ids(entered.zone_ids)}
+
+        exited = esper.try_component(entity_id, ecs_components.ExitedZones)
+        if exited is not None:
+            zone_borders["exitedZones"] = {"zone_ids": self._normalize_zone_ids(exited.zone_ids)}
+
+        return zone_borders or None
+
+    def _patch_zone_borders(self, node: str, key: str, entity_id: int) -> None:
+        payload = self._build_zone_borders_payload(entity_id)
+        cache_key = (node, key)
+        if self._zone_borders_cache.get(cache_key) == payload:
+            return
+        patch_db_entry(
+            self.database_url,
+            self.session_name,
+            key,
+            {"properties/zoneBorders": payload},
+            node=node,
+        )
+        self._zone_borders_cache[cache_key] = payload
+
+    def _sync_zone_borders_to_database(self) -> None:
+        for key, entity_id in self.GeoObjectEntityIds.items():
+            self._patch_zone_borders(GEO_OBJECTS_NODE, key, entity_id)
+        for key, entity_id in self.ClientRequestEntityIds.items():
+            self._patch_zone_borders(CLIENT_REQUESTS_NODE, key, entity_id)
 
     def _initialize_from_snapshot(self) -> None:
         geo_objects = fetch_geo_objects(self.database_url, self.session_name)
@@ -84,6 +174,7 @@ class SessionState:
             )
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
+            self._apply_zone_borders_from_properties(geo.entity_id, geo_object.properties)
             self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
             
             # Add StatA component if stat data exists
@@ -132,6 +223,7 @@ class SessionState:
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
+        self._apply_zone_borders_from_properties(existing_entity_id, props)
         self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
         
         # Update or add StatA component
@@ -191,6 +283,7 @@ class SessionState:
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
+            self._apply_zone_borders_from_properties(entity.entity_id, request.properties)
             return entity.entity_id
 
         props = request.properties if isinstance(request.properties, dict) else {}
@@ -205,6 +298,7 @@ class SessionState:
         crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
+        self._apply_zone_borders_from_properties(existing_entity_id, props)
         return existing_entity_id
 
 
@@ -266,6 +360,7 @@ class SessionState:
                 max_catchup_steps = 5
                 while now >= next_tick and tick_steps < max_catchup_steps:
                     esper.process()
+                    self._sync_zone_borders_to_database()
                     next_tick += tick_dt
                     tick_steps += 1
 
