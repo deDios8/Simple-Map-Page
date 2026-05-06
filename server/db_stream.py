@@ -89,6 +89,12 @@ class GeoObjectEntry(DBEntry):
         self.stat_a_max_value = stat_a_data.get("max_value", 100)
         self.stat_a_min_value = stat_a_data.get("min_value", 0)
 
+        status_a_data = self.properties.get("statusA", {}) if isinstance(self.properties.get("statusA"), dict) else {}
+        self.status_a_name = status_a_data.get("name", "")
+        self.status_a_type = status_a_data.get("type", "")
+        self.status_a_strength = status_a_data.get("strength", 0)
+        self.status_a_time_until_expire = status_a_data.get("time_until_expire", 5)
+
         self.data = self.properties.get("data", {})
 
 

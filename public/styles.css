@@ -285,6 +285,16 @@ body {
   min-width: 0;
 }
 
+.status-a-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.status-a-row label {
+  min-width: 0;
+}
+
 .editor-form input[type="text"],
 .editor-form input[type="number"],
 .editor-form input[type="color"],

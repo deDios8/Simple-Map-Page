@@ -98,6 +98,18 @@ class SessionState:
                         min_value=geo_object.stat_a_min_value,
                     ),
                 )
+
+            # Add StatusA component if status data exists
+            if geo_object.status_a_name or geo_object.status_a_type:
+                esper.add_component(
+                    geo.entity_id,
+                    ecs_components.StatusA(
+                        name=geo_object.status_a_name,
+                        type=geo_object.status_a_type,
+                        strength=geo_object.status_a_strength,
+                        time_until_expire=geo_object.status_a_time_until_expire,
+                    ),
+                )
             
             return geo.entity_id
 
@@ -143,6 +155,27 @@ class SessionState:
                         value=stat_a_data.get("value", 0),
                         max_value=stat_a_data.get("max_value", 100),
                         min_value=stat_a_data.get("min_value", 0),
+                    ),
+                )
+
+        # Update or add StatusA component
+        try:
+            status_a = esper.component_for_entity(existing_entity_id, ecs_components.StatusA)
+            status_a_data = props.get("statusA", {}) if isinstance(props.get("statusA"), dict) else {}
+            status_a.name = status_a_data.get("name", "")
+            status_a.type = status_a_data.get("type", "")
+            status_a.strength = status_a_data.get("strength", 0)
+            status_a.time_until_expire = status_a_data.get("time_until_expire", 5)
+        except KeyError:
+            status_a_data = props.get("statusA", {}) if isinstance(props.get("statusA"), dict) else {}
+            if status_a_data.get("name") or status_a_data.get("type"):
+                esper.add_component(
+                    existing_entity_id,
+                    ecs_components.StatusA(
+                        name=status_a_data.get("name", ""),
+                        type=status_a_data.get("type", ""),
+                        strength=status_a_data.get("strength", 0),
+                        time_until_expire=status_a_data.get("time_until_expire", 5),
                     ),
                 )
         

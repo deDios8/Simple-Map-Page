@@ -38,7 +38,7 @@ class ClientRequestProperties:
         self.requester_id = requester_id
         self.timestamp = timestamp
 
-class StatA:
+class StatA: # Custom Stat
     def __init__(self, name: str, type: str, value: int, max_value: int = 100, min_value: int = 0) -> None:
         self.name = name
         self.type = type
@@ -46,12 +46,25 @@ class StatA:
         self.max_value = max_value
         self.min_value = min_value
 
-class StatusA:
+class StatusA: # Custom Status
     def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:
         self.name = name
         self.type = type
         self.strength = strength
         self.time_until_expire = time_until_expire
+
+class WithinZones:
+    def __init__(self, zone_ids: list) -> None:
+        self.zone_ids = zone_ids
+
+class EnteredZones:
+    def __init__(self, zone_ids: list) -> None:
+        self.zone_ids = zone_ids
+
+class ExitedZones:
+    def __init__(self, zone_ids: list) -> None:
+        self.zone_ids = zone_ids
+
 
 
 # ---------------------------------------------------------------------------

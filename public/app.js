@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "1.0.7c",
+  version: "0.0.8a",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -116,6 +116,7 @@ const state = {
   trackingInterval: null,
   listenerActive: true,
   listenerUnsubscribe: null,
+  pendingUserSetup: false,
 };
 
 const locationStatus = document.querySelector("#location-status");
@@ -143,6 +144,9 @@ const fieldDescription = document.querySelector("#field-description");
 const fieldStatName = document.querySelector("#field-stat-name");
 const fieldStatValue = document.querySelector("#field-stat-value");
 const fieldStatType = document.querySelector("#field-stat-type");
+const fieldStatusName = document.querySelector("#field-status-name");
+const fieldStatusType = document.querySelector("#field-status-type");
+const fieldStatusStrength = document.querySelector("#field-status-strength");
 const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
@@ -157,6 +161,9 @@ const editableFields = [
   fieldStatName,
   fieldStatValue,
   fieldStatType,
+  fieldStatusName,
+  fieldStatusType,
+  fieldStatusStrength,
   fieldExtra,
 ];
 
@@ -260,6 +267,7 @@ function bindUi() {
       : null;
     const currentMetaData = objectEntry.properties?.metaData || {};
     const currentStatA = objectEntry.properties?.statA || {};
+    const currentStatusA = objectEntry.properties?.statusA || {};
     const statMin = Number.isFinite(currentStatA.min_value) ? currentStatA.min_value : 0;
     const statMax = Number.isFinite(currentStatA.max_value) ? currentStatA.max_value : 100;
     
@@ -287,6 +295,14 @@ function bindUi() {
       min_value: statMin,
     };
 
+    const parsedStatusStrength = Number.parseFloat(fieldStatusStrength.value.trim());
+    const nextStatusA = {
+      name: fieldStatusName.value.trim() || currentStatusA.name || "",
+      type: fieldStatusType.value.trim() || currentStatusA.type || "",
+      strength: Number.isFinite(parsedStatusStrength) ? parsedStatusStrength : (currentStatusA.strength || 0),
+      time_until_expire: currentStatusA.time_until_expire ?? 5,
+    };
+
     const nextEntry = {
       ...objectEntry,
       geometry: nextGeometry,
@@ -306,6 +322,7 @@ function bindUi() {
         },
         data: parsedExtra,
         statA: nextStatA,
+        statusA: nextStatusA,
       },
     };
 
@@ -369,10 +386,10 @@ function locateUser() {
       ];
       state.userLocation = latLng;
 
-      if (state.userId && !state.objects[state.userId]) {
+      if (state.userId && !state.objects[state.userId] && !state.pendingUserSetup) {
         createUserObject();
-      } 
-      if (state.userId && !state.trackingInterval) {
+      }
+      if (state.userId && !state.trackingInterval && !state.pendingUserSetup) {
         startCoordinateTracking();
       }
 
@@ -450,13 +467,9 @@ function promptUserId() {
     reconnectObjectListener();
     modal.hidden = true;
 
-    if (state.userLocation) {
-      if (!state.objects[state.userId]) {
-        createUserObject();
-      } else {
-        startCoordinateTracking();
-      }
-    }
+    // Defer createUserObject/startCoordinateTracking until the first Firebase
+    // snapshot arrives in applyObjects, so existing data is not overwritten.
+    state.pendingUserSetup = true;
   });
 }
 
@@ -466,14 +479,17 @@ function createUserObject() {
   }
 
   const [lat, lng] = state.userLocation;
+  const existing = state.objects[state.userId];
 
   const userFeature = {
+    ...existing,
     type: "Feature",
     geometry: {
       type: "Point",
       coordinates: [lng, lat],
     },
     properties: {
+      ...existing?.properties,
       id: state.userId,
       is_user: true,
       metaData: {
@@ -485,8 +501,9 @@ function createUserObject() {
         color: "#000000",
         visible: true,
         radius: 9,
+        ...existing?.properties?.appearance,
       },
-      data: {},
+      data: existing?.properties?.data || {},
     },
   };
 
@@ -600,6 +617,15 @@ function applyObjects(nextObjects) {
   state.objects = normalizeObjects(nextObjects);
   renderLayer();
   renderObjectList();
+
+  if (state.pendingUserSetup && state.userId && state.userLocation) {
+    state.pendingUserSetup = false;
+    if (!state.objects[state.userId]) {
+      createUserObject();
+    } else {
+      startCoordinateTracking();
+    }
+  }
 
   if (state.selectedId && !state.objects[state.selectedId]) {
     state.selectedId = null;
@@ -806,6 +832,7 @@ function populateEditor(id) {
 
   const metaData = feature.properties?.metaData || {};
   const statA = feature.properties?.statA || {};
+  const statusA = feature.properties?.statusA || {};
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
@@ -823,7 +850,11 @@ function populateEditor(id) {
   const statMin = Number.isFinite(statA.min_value) ? statA.min_value : 0;
   const statMax = Number.isFinite(statA.max_value) ? statA.max_value : 100;
   fieldStatValue.setAttribute("title", `Valid range: ${statMin} to ${statMax}`);
-  
+
+  fieldStatusName.value = statusA.name || "";
+  fieldStatusType.value = statusA.type || "";
+  fieldStatusStrength.value = Number.isFinite(statusA.strength) ? String(statusA.strength) : "";
+
   fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
   applyEditorPermissions();
 }
