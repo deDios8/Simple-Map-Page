@@ -34,9 +34,34 @@ class Geometry:
         self.type = "Point"  # Assuming all geo objects are points for simplicity; can be extended to support other types
 
 class ClientRequestProperties:
-    def __init__(self, requester_id: str, timestamp: str) -> None:
+    def __init__(self, requester_id: str, timestamp: str, request_type: str = "") -> None:
         self.requester_id = requester_id
         self.timestamp = timestamp
+        self.request_type = request_type
+
+
+class NewLocation:
+    def __init__(self, requester_id: str) -> None:
+        self.requester_id = requester_id
+
+
+# Backward-compatible alias for earlier typo spelling.
+class NewLocataion(NewLocation):
+    pass
+
+
+class EditedObject:
+    def __init__(self, target_id: str, target_path: str, form_data: dict) -> None:
+        self.target_id = target_id
+        self.target_path = target_path
+        self.form_data = form_data if isinstance(form_data, dict) else {}
+
+
+class DeletedObject:
+    def __init__(self, target_id: str, target_path: str) -> None:
+        self.target_id = target_id
+        self.target_path = target_path
+
 
 class StatA: # Custom Stat
     def __init__(self, name: str, type: str, value: int, max_value: int = 100, min_value: int = 0) -> None:
@@ -114,5 +139,6 @@ class ClientRequest:
             ClientRequestProperties(
                 requester_id=crp.get("requesterId", ""),
                 timestamp=crp.get("timestamp", ""),
+                request_type=crp.get("type", ""),
             ),
         )

@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.11c",
+  version: "0.0.12",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -326,16 +326,16 @@ function bindUi() {
       },
     };
 
-    saveStatus.textContent = state.firebaseReady ? "Saving to Firebase..." : "Saving locally...";
+    saveStatus.textContent = state.firebaseReady ? "Sending edit request..." : "Saving locally...";
 
     try {
-      await persistObject(state.selectedId, nextEntry);
+      await submitEditedObjectRequest(state.selectedId, nextEntry);
       saveStatus.textContent = state.firebaseReady
-        ? "Saved. Remote updates will sync automatically."
+        ? "Edit request sent. Server will apply updates shortly."
         : "Saved locally. Add Firebase config to sync remotely.";
     } catch (error) {
       console.error(error);
-      saveStatus.textContent = "Save failed. Check Firebase configuration and permissions.";
+      saveStatus.textContent = "Edit request failed. Check Firebase configuration and permissions.";
     }
   });
 
@@ -351,16 +351,16 @@ function bindUi() {
     }
 
     const deletingId = state.selectedId;
-    saveStatus.textContent = state.firebaseReady ? "Deleting from Firebase..." : "Deleting locally...";
+    saveStatus.textContent = state.firebaseReady ? "Sending delete request..." : "Deleting locally...";
 
     try {
-      await deleteObject(deletingId);
+      await submitDeletedObjectRequest(deletingId);
       saveStatus.textContent = state.firebaseReady
-        ? "Deleted. Remote updates will sync automatically."
+        ? "Delete request sent. Server will remove the object shortly."
         : "Deleted locally. Add Firebase config to sync remotely.";
     } catch (error) {
       console.error(error);
-      saveStatus.textContent = "Delete failed. Check Firebase configuration and permissions.";
+      saveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
     }
   });
 }
@@ -477,41 +477,13 @@ function createUserObject() {
   if (!state.userId || !state.userLocation) {
     return;
   }
-
   const [lat, lng] = state.userLocation;
-  const existing = state.objects[state.userId];
-
-  const userFeature = {
-    ...existing,
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [lng, lat],
-    },
-    properties: {
-      ...existing?.properties,
-      id: state.userId,
-      is_user: true,
-      metaData: {
-        name: state.userId,
-        description: "Live user location.",
-        type: "user",
-      },
-      appearance: {
-        color: "#000000",
-        visible: true,
-        radius: 9,
-        ...existing?.properties?.appearance,
-      },
-      data: existing?.properties?.data || {},
-    },
-  };
-
-  if (userFeature.properties && Object.prototype.hasOwnProperty.call(userFeature.properties, "zoneBorders")) {
-    delete userFeature.properties.zoneBorders;
-  }
-
-  persistObject(state.userId, userFeature);
+  void submitTypedClientRequest({
+    requestId: state.userId,
+    requestType: "new_location",
+    coordinates: [lng, lat],
+    quiet: true,
+  });
   startCoordinateTracking();
 }
 
@@ -525,31 +497,32 @@ function startCoordinateTracking() {
       return;
     }
 
-    const existing = state.objects[state.userId];
-    if (!existing) {
-      return;
-    }
-
     const [lat, lng] = state.userLocation;
 
-    const updated = {
-      ...existing,
-      geometry: {
-        ...existing.geometry,
-        coordinates: [lng, lat],
-      },
-    };
+    const existing = state.objects[state.userId];
+    if (existing) {
+      const updated = {
+        ...existing,
+        geometry: {
+          ...existing.geometry,
+          coordinates: [lng, lat],
+        },
+      };
 
-    if (updated.properties && Object.prototype.hasOwnProperty.call(updated.properties, "zoneBorders")) {
-      delete updated.properties.zoneBorders;
+      if (updated.properties && Object.prototype.hasOwnProperty.call(updated.properties, "zoneBorders")) {
+        delete updated.properties.zoneBorders;
+      }
+
+      state.objects[state.userId] = updated;
+      renderLayer();
     }
 
-    state.objects[state.userId] = updated;
-    renderLayer();
-
-    if (state.firebaseReady && state.database) {
-      update(ref(state.database, getFirebaseCollectionPath()), { [state.userId]: updated });
-    }
+    void submitTypedClientRequest({
+      requestId: state.userId,
+      requestType: "new_location",
+      coordinates: [lng, lat],
+      quiet: true,
+    });
   }, 2000);
 }
 
@@ -577,35 +550,66 @@ function toggleListener() {
 }
 
 async function submitClientRequest(requestId) {
-  if (!state.firebaseReady || !state.database) {
-    locationStatus.textContent = "Request unavailable: Firebase is not ready.";
-    return;
-  }
-
-  if (!state.userId) {
-    locationStatus.textContent = "Request unavailable: enter your ID first.";
-    return;
-  }
-
   if (!state.userLocation) {
     locationStatus.textContent = "Request unavailable: waiting for location fix.";
     return;
   }
 
   const [lat, lng] = state.userLocation;
+  await submitTypedClientRequest({
+    requestId,
+    requestType: "button_click",
+    coordinates: [lng, lat],
+    successMessage: `${requestId} sent`,
+  });
+}
+
+async function submitTypedClientRequest({
+  requestId,
+  requestType,
+  coordinates,
+  clientRequestProperties = {},
+  properties = {},
+  successMessage = "Request sent",
+  quiet = false,
+}) {
+  if (!state.firebaseReady || !state.database) {
+    if (!quiet) {
+      locationStatus.textContent = "Request unavailable: Firebase is not ready.";
+    }
+    return;
+  }
+
+  if (!state.userId) {
+    if (!quiet) {
+      locationStatus.textContent = "Request unavailable: enter your ID first.";
+    }
+    return;
+  }
+
+  if (!Array.isArray(coordinates) || coordinates.length < 2) {
+    if (!quiet) {
+      locationStatus.textContent = "Request unavailable: invalid coordinates.";
+    }
+    return;
+  }
+
   const timestamp = new Date().toISOString();
-  const requestKey = `${Date.now()}-${state.userId}-${requestId.replace(/\s+/g, "-")}`;
+  const requestKey = `${Date.now()}-${state.userId}-${String(requestId).replace(/\s+/g, "-")}`;
   const requestFeature = {
     type: "Feature",
     geometry: {
       type: "Point",
-      coordinates: [lng, lat],
+      coordinates,
     },
     properties: {
       id: requestId,
+      ...properties,
       clientRequestProperties: {
         requesterId: state.userId,
         timestamp,
+        type: requestType,
+        ...clientRequestProperties,
       },
     },
   };
@@ -614,11 +618,72 @@ async function submitClientRequest(requestId) {
     await update(ref(state.database, getFirebaseClientRequestPath()), {
       [requestKey]: requestFeature,
     });
-    locationStatus.textContent = `${requestId} sent at ${timestamp}`;
+    if (!quiet) {
+      locationStatus.textContent = `${successMessage} at ${timestamp}`;
+    }
   } catch (error) {
     console.error(error);
-    locationStatus.textContent = "Request failed. Check Firebase permissions and connection.";
+    if (!quiet) {
+      locationStatus.textContent = "Request failed. Check Firebase permissions and connection.";
+    }
+    throw error;
   }
+}
+
+async function submitEditedObjectRequest(targetId, nextEntry) {
+  const coordinates = Array.isArray(nextEntry?.geometry?.coordinates)
+    ? nextEntry.geometry.coordinates
+    : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
+
+  const formData = {
+    name: fieldName.value.trim(),
+    type: fieldType.value.trim(),
+    color: fieldColor.value,
+    visible: fieldVisible.checked,
+    latitude: fieldLatitude.value.trim(),
+    longitude: fieldLongitude.value.trim(),
+    radius: fieldRadius.value.trim(),
+    description: fieldDescription.value.trim(),
+    statName: fieldStatName.value.trim(),
+    statValue: fieldStatValue.value.trim(),
+    statType: fieldStatType.value.trim(),
+    statusName: fieldStatusName.value.trim(),
+    statusType: fieldStatusType.value.trim(),
+    statusStrength: fieldStatusStrength.value.trim(),
+    extraData: nextEntry?.properties?.data || {},
+  };
+
+  await submitTypedClientRequest({
+    requestId: `edit-${targetId}`,
+    requestType: "edited_object",
+    coordinates,
+    clientRequestProperties: {
+      targetId,
+      targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
+    },
+    properties: {
+      formData,
+    },
+    successMessage: `Edit request for ${targetId} sent`,
+  });
+}
+
+async function submitDeletedObjectRequest(targetId) {
+  const selected = state.objects[targetId];
+  const coordinates = Array.isArray(selected?.geometry?.coordinates)
+    ? selected.geometry.coordinates
+    : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
+
+  await submitTypedClientRequest({
+    requestId: `delete-${targetId}`,
+    requestType: "deleted_object",
+    coordinates,
+    clientRequestProperties: {
+      targetId,
+      targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
+    },
+    successMessage: `Delete request for ${targetId} sent`,
+  });
 }
 
 function applyObjects(nextObjects) {
@@ -917,16 +982,6 @@ async function persistObject(id, nextEntry) {
     ...state.objects,
     [id]: normalizedEntry,
   });
-}
-
-async function deleteObject(id) {
-  if (state.firebaseReady && state.database) {
-    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: null });
-  }
-
-  const nextObjects = { ...state.objects };
-  delete nextObjects[id];
-  applyObjects(nextObjects);
 }
 
 function escapeHtml(value) {

@@ -24,6 +24,7 @@ from urllib.request import Request, urlopen
 DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
 GEO_OBJECTS_NODE = "geoObjects"
 CLIENT_REQUESTS_NODE = "clientRequests"
+CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +53,10 @@ class ClientRequestEntry(DBEntry):
         crp = self.properties.get("clientRequestProperties", {}) if isinstance(self.properties.get("clientRequestProperties"), dict) else {}
         self.requester_id = crp.get("requesterId", "")
         self.timestamp = crp.get("timestamp", "")
+        self.request_type = crp.get("type", "")
+        self.target_id = crp.get("targetId", "")
+        self.target_path = crp.get("targetPath", "")
+        self.form_data = self.properties.get("formData", {}) if isinstance(self.properties.get("formData"), dict) else {}
 
 
 def _normalize_is_user(value: Any) -> bool:

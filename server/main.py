@@ -11,6 +11,7 @@ from debug_console import SessionDebugConsole
 from db_stream import (
     DEFAULT_DATABASE_URL,
     CLIENT_REQUESTS_NODE,
+    CLIENT_REQUESTS_PROCESSED_NODE,
     GEO_OBJECTS_NODE,
     DatabaseStream,
     SyncChange,
@@ -39,9 +40,6 @@ class SessionState:
         self.stream = DatabaseStream(self.database_url, self.session_name)
         self.debug = SessionDebugConsole(self)
         self._initialize_from_snapshot()
-        esper.add_processor(ecs_processors.CheckZoneEntryExit())
-        # insert other processors here
-        esper.add_processor(ecs_processors.RemoveZoneEntryExit())
 
 
     def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
@@ -183,6 +181,319 @@ class SessionState:
         except KeyError:
             esper.add_component(entity_id, ecs_components.IsZone())
 
+    def _find_geo_object_key_by_identifier(self, identifier: str) -> str | None:
+        if not identifier:
+            return None
+        if identifier in self.GeoObjectEntityIds:
+            return identifier
+
+        for key, entity_id in self.GeoObjectEntityIds.items():
+            id_component = esper.try_component(entity_id, ecs_components.ID)
+            if id_component is not None and str(id_component.id) == identifier:
+                return key
+        return None
+
+    def _extract_geo_key_from_target_path(self, target_path: str) -> str:
+        if not isinstance(target_path, str):
+            return ""
+
+        segments = [segment for segment in target_path.strip().split("/") if segment]
+        if not segments:
+            return ""
+
+        if GEO_OBJECTS_NODE in segments:
+            index = segments.index(GEO_OBJECTS_NODE)
+            if index + 1 < len(segments):
+                return segments[index + 1]
+
+        return segments[-1]
+
+    def _consume_client_request(self, request_entity_id: int) -> None:
+        for component_type in (
+            ecs_components.NewLocation,
+            ecs_components.NewLocataion,
+            ecs_components.EditedObject,
+            ecs_components.DeletedObject,
+        ):
+            try:
+                esper.remove_component(request_entity_id, component_type)
+            except KeyError:
+                pass
+
+        request_key: str | None = None
+        for key, entity_id in self.ClientRequestEntityIds.items():
+            if entity_id == request_entity_id:
+                request_key = key
+                break
+
+        if request_key is not None:
+            # Evict from tracking dicts immediately so _sync_dirty_zone_borders_to_database
+            # cannot patch this key back into clientRequests after it is deleted.
+            self.ClientRequestEntityIds.pop(request_key, None)
+            self.ClientRequests.pop(request_key, None)
+
+        # Remove the ECS entity now so zone processors don't act on it again.
+        try:
+            esper.delete_entity(request_entity_id)
+        except Exception:
+            pass
+
+        if request_key is not None:
+            try:
+                raw_entry = self.stream.request_state.get(request_key)
+                if isinstance(raw_entry, dict):
+                    put_db_entry(
+                        self.database_url,
+                        self.session_name,
+                        request_key,
+                        raw_entry,
+                        NODE=CLIENT_REQUESTS_PROCESSED_NODE,
+                    )
+                delete_db_entry(
+                    self.database_url,
+                    self.session_name,
+                    request_key,
+                    node=CLIENT_REQUESTS_NODE,
+                )
+            except Exception as error:
+                print(f"[REQUEST CONSUME ERROR] {request_key}: {error}")
+
+    def apply_new_location_request(self, request_entity_id: int) -> None:
+        request_geometry = esper.try_component(request_entity_id, ecs_components.Geometry)
+        request_props = esper.try_component(request_entity_id, ecs_components.ClientRequestProperties)
+        if request_geometry is None or request_props is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        coordinates = request_geometry.coordinates
+        if not isinstance(coordinates, list) or len(coordinates) < 2:
+            self._consume_client_request(request_entity_id)
+            return
+
+        requester_id = str(request_props.requester_id or "").strip()
+        if not requester_id:
+            self._consume_client_request(request_entity_id)
+            return
+
+        lon = coordinates[0]
+        lat = coordinates[1]
+        try:
+            lon = float(lon)
+            lat = float(lat)
+        except (TypeError, ValueError):
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_key = self._find_geo_object_key_by_identifier(requester_id) or requester_id
+        target_entity_id = self.GeoObjectEntityIds.get(target_key)
+
+        if target_entity_id is None:
+            new_user_entry = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [lon, lat],
+                },
+                "properties": {
+                    "id": requester_id,
+                    "is_user": True,
+                    "metaData": {
+                        "name": requester_id,
+                        "description": "Live user location.",
+                        "type": "user",
+                    },
+                    "appearance": {
+                        "color": "#000000",
+                        "visible": True,
+                        "radius": 9,
+                    },
+                    "data": {},
+                },
+            }
+            put_db_entry(
+                self.database_url,
+                self.session_name,
+                target_key,
+                new_user_entry,
+                NODE=GEO_OBJECTS_NODE,
+            )
+            target_entity_id = self._upsert_geo_object_entity(target_key, GeoObjectEntry(new_user_entry))
+
+        geometry = esper.component_for_entity(target_entity_id, ecs_components.Geometry)
+        geometry.coordinates = [lon, lat]
+        esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
+
+        patch_db_entry(
+            self.database_url,
+            self.session_name,
+            target_key,
+            {"geometry/coordinates": [lon, lat]},
+            node=GEO_OBJECTS_NODE,
+        )
+        self._consume_client_request(request_entity_id)
+
+    def apply_edited_object_request(self, request_entity_id: int) -> None:
+        edited = esper.try_component(request_entity_id, ecs_components.EditedObject)
+        if edited is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_key = (
+            self._find_geo_object_key_by_identifier(edited.target_id)
+            or self._find_geo_object_key_by_identifier(self._extract_geo_key_from_target_path(edited.target_path))
+        )
+        if target_key is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_entity_id = self.GeoObjectEntityIds.get(target_key)
+        if target_entity_id is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
+
+        metadata = esper.component_for_entity(target_entity_id, ecs_components.MetaData)
+        appearance = esper.component_for_entity(target_entity_id, ecs_components.Appearance)
+        geometry = esper.component_for_entity(target_entity_id, ecs_components.Geometry)
+
+        def _to_bool(value: object, fallback: bool) -> bool:
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                normalized = value.strip().lower()
+                if normalized in {"true", "1", "yes", "y", "on"}:
+                    return True
+                if normalized in {"false", "0", "no", "n", "off", ""}:
+                    return False
+            if isinstance(value, (int, float)):
+                return value != 0
+            return fallback
+
+        def _to_float(value: object, fallback: float) -> float:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return fallback
+
+        metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
+        metadata.type = str(form_data.get("type", metadata.type) or metadata.type)
+        metadata.description = str(form_data.get("description", metadata.description) or metadata.description)
+
+        appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
+        appearance.radius = _to_float(form_data.get("radius"), float(appearance.radius))
+
+        visible_fallback = True
+        geo_snapshot = self.stream.geo_object_state.get(target_key)
+        if isinstance(geo_snapshot, dict):
+            props = geo_snapshot.get("properties") if isinstance(geo_snapshot.get("properties"), dict) else {}
+            appearance_snapshot = props.get("appearance") if isinstance(props.get("appearance"), dict) else {}
+            visible_fallback = bool(appearance_snapshot.get("visible", True))
+        appearance_visible = _to_bool(form_data.get("visible"), visible_fallback)
+
+        lat = _to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
+        lon = _to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
+        geometry.coordinates = [lon, lat]
+        esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
+
+        stat_a_payload = {
+            "name": str(form_data.get("statName", "") or ""),
+            "type": str(form_data.get("statType", "") or ""),
+            "value": _to_float(form_data.get("statValue"), 0.0),
+            "max_value": 100,
+            "min_value": 0,
+        }
+        if stat_a_payload["name"] or stat_a_payload["type"]:
+            stat_a = esper.try_component(target_entity_id, ecs_components.StatA)
+            if stat_a is None:
+                esper.add_component(
+                    target_entity_id,
+                    ecs_components.StatA(
+                        name=stat_a_payload["name"],
+                        type=stat_a_payload["type"],
+                        value=stat_a_payload["value"],
+                        max_value=stat_a_payload["max_value"],
+                        min_value=stat_a_payload["min_value"],
+                    ),
+                )
+            else:
+                stat_a.name = stat_a_payload["name"]
+                stat_a.type = stat_a_payload["type"]
+                stat_a.value = stat_a_payload["value"]
+                stat_a.max_value = stat_a_payload["max_value"]
+                stat_a.min_value = stat_a_payload["min_value"]
+
+        status_a_payload = {
+            "name": str(form_data.get("statusName", "") or ""),
+            "type": str(form_data.get("statusType", "") or ""),
+            "strength": _to_float(form_data.get("statusStrength"), 0.0),
+            "time_until_expire": 5,
+        }
+        if status_a_payload["name"] or status_a_payload["type"]:
+            status_a = esper.try_component(target_entity_id, ecs_components.StatusA)
+            if status_a is None:
+                esper.add_component(
+                    target_entity_id,
+                    ecs_components.StatusA(
+                        name=status_a_payload["name"],
+                        type=status_a_payload["type"],
+                        strength=status_a_payload["strength"],
+                        time_until_expire=status_a_payload["time_until_expire"],
+                    ),
+                )
+            else:
+                status_a.name = status_a_payload["name"]
+                status_a.type = status_a_payload["type"]
+                status_a.strength = status_a_payload["strength"]
+                status_a.time_until_expire = status_a_payload["time_until_expire"]
+
+        extra_data = form_data.get("extraData")
+        if not isinstance(extra_data, dict):
+            extra_data = {}
+
+        patch_db_entry(
+            self.database_url,
+            self.session_name,
+            target_key,
+            {
+                "geometry/coordinates": [lon, lat],
+                "properties/metaData/name": metadata.name,
+                "properties/metaData/type": metadata.type,
+                "properties/metaData/description": metadata.description,
+                "properties/appearance/color": appearance.color,
+                "properties/appearance/radius": appearance.radius,
+                "properties/appearance/visible": appearance_visible,
+                "properties/data": extra_data,
+                "properties/statA": stat_a_payload,
+                "properties/statusA": status_a_payload,
+            },
+            node=GEO_OBJECTS_NODE,
+        )
+        self._consume_client_request(request_entity_id)
+
+    def apply_deleted_object_request(self, request_entity_id: int) -> None:
+        deleted = esper.try_component(request_entity_id, ecs_components.DeletedObject)
+        if deleted is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_key = (
+            self._find_geo_object_key_by_identifier(deleted.target_id)
+            or self._find_geo_object_key_by_identifier(self._extract_geo_key_from_target_path(deleted.target_path))
+        )
+        if target_key is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        self._delete_geo_object_entity(target_key)
+        delete_db_entry(
+            self.database_url,
+            self.session_name,
+            target_key,
+            node=GEO_OBJECTS_NODE,
+        )
+        self._consume_client_request(request_entity_id)
+
 
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
@@ -303,6 +614,31 @@ class SessionState:
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
+            request_params = esper.component_for_entity(entity.entity_id, ecs_components.ClientRequestProperties)
+            request_type = str(request_params.request_type or "").strip().lower()
+            if request_type == "new_location":
+                esper.add_component(
+                    entity.entity_id,
+                    ecs_components.NewLocation(requester_id=request_params.requester_id),
+                )
+            elif request_type == "edited_object":
+                form_data = request.form_data if isinstance(request.form_data, dict) else {}
+                esper.add_component(
+                    entity.entity_id,
+                    ecs_components.EditedObject(
+                        target_id=request.target_id,
+                        target_path=request.target_path,
+                        form_data=form_data,
+                    ),
+                )
+            elif request_type == "deleted_object":
+                esper.add_component(
+                    entity.entity_id,
+                    ecs_components.DeletedObject(
+                        target_id=request.target_id,
+                        target_path=request.target_path,
+                    ),
+                )
             self._apply_zone_borders_from_properties(entity.entity_id, request.properties)
             return entity.entity_id
 
@@ -318,6 +654,44 @@ class SessionState:
         crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
+        request_params.request_type = crp.get("type", "")
+
+        for marker_component in (
+            ecs_components.NewLocation,
+            ecs_components.NewLocataion,
+            ecs_components.EditedObject,
+            ecs_components.DeletedObject,
+        ):
+            try:
+                esper.remove_component(existing_entity_id, marker_component)
+            except KeyError:
+                pass
+
+        request_type = str(request_params.request_type or "").strip().lower()
+        if request_type == "new_location":
+            esper.add_component(
+                existing_entity_id,
+                ecs_components.NewLocation(requester_id=request_params.requester_id),
+            )
+        elif request_type == "edited_object":
+            form_data = props.get("formData", {}) if isinstance(props.get("formData"), dict) else {}
+            esper.add_component(
+                existing_entity_id,
+                ecs_components.EditedObject(
+                    target_id=crp.get("targetId", ""),
+                    target_path=crp.get("targetPath", ""),
+                    form_data=form_data,
+                ),
+            )
+        elif request_type == "deleted_object":
+            esper.add_component(
+                existing_entity_id,
+                ecs_components.DeletedObject(
+                    target_id=crp.get("targetId", ""),
+                    target_path=crp.get("targetPath", ""),
+                ),
+            )
+
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         return existing_entity_id
 
@@ -366,7 +740,7 @@ class SessionState:
         self.debug.start()
         self.debug.print_help()
 
-        ticks_per_second = 2.0
+        ticks_per_second = 20.0
         tick_dt = 1.0 / ticks_per_second
         next_tick = time.perf_counter()
 
@@ -425,7 +799,11 @@ def main() -> None:
     print("Firebase Feature Listener")
     session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
+    esper.add_processor(ecs_processors.ApplyClientRequests(session_state))
+    esper.add_processor(ecs_processors.CheckZoneEntryExit())
+    esper.add_processor(ecs_processors.RemoveZoneEntryExit())
     session_state.run_db_and_ecs_processor()
+
 
 
 if __name__ == "__main__":

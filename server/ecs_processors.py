@@ -4,6 +4,22 @@ import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
 
+
+class ApplyClientRequests(esper.Processor):
+    def __init__(self, session_state) -> None:
+        super().__init__()
+        self.session_state = session_state
+
+    def process(self) -> None:
+        for entity_id, _marker in list(esper.get_component(ecs_components.NewLocation)):
+            self.session_state.apply_new_location_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_components.EditedObject)):
+            self.session_state.apply_edited_object_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_components.DeletedObject)):
+            self.session_state.apply_deleted_object_request(entity_id)
+
 class AdjustRadius(esper.Processor):
     def __init__(self, radius_increment: int) -> None:
         super().__init__()
