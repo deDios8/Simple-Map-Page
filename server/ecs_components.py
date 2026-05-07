@@ -66,6 +66,11 @@ class ExitedZones:
         self.zone_ids = zone_ids
 
 
+class ZoneBordersDirty:
+    def __init__(self) -> None:
+        self.is_dirty = True
+
+
 
 # ---------------------------------------------------------------------------
 # Entities

@@ -40,6 +40,8 @@ class SessionState:
         self.debug = SessionDebugConsole(self)
         self._initialize_from_snapshot()
         esper.add_processor(ecs_processors.CheckZoneEntryExit())
+        # insert other processors here
+        esper.add_processor(ecs_processors.RemoveZoneEntryExit())
 
 
     def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
@@ -127,6 +129,24 @@ class SessionState:
             self._patch_zone_borders(GEO_OBJECTS_NODE, key, entity_id)
         for key, entity_id in self.ClientRequestEntityIds.items():
             self._patch_zone_borders(CLIENT_REQUESTS_NODE, key, entity_id)
+
+    def _sync_dirty_zone_borders_to_database(self) -> None:
+        geo_by_entity = {entity_id: key for key, entity_id in self.GeoObjectEntityIds.items()}
+        req_by_entity = {entity_id: key for key, entity_id in self.ClientRequestEntityIds.items()}
+
+        for entity_id, _ in list(esper.get_component(ecs_components.ZoneBordersDirty)):
+            geo_key = geo_by_entity.get(entity_id)
+            req_key = req_by_entity.get(entity_id)
+
+            if geo_key is not None:
+                self._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
+            elif req_key is not None:
+                self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
+
+            try:
+                esper.remove_component(entity_id, ecs_components.ZoneBordersDirty)
+            except KeyError:
+                pass
 
     def _initialize_from_snapshot(self) -> None:
         geo_objects = fetch_geo_objects(self.database_url, self.session_name)
@@ -360,7 +380,7 @@ class SessionState:
                 max_catchup_steps = 5
                 while now >= next_tick and tick_steps < max_catchup_steps:
                     esper.process()
-                    self._sync_zone_borders_to_database()
+                    self._sync_dirty_zone_borders_to_database()
                     next_tick += tick_dt
                     tick_steps += 1
 

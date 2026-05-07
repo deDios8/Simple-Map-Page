@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.11a",
+  version: "0.0.11c",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -507,6 +507,10 @@ function createUserObject() {
     },
   };
 
+  if (userFeature.properties && Object.prototype.hasOwnProperty.call(userFeature.properties, "zoneBorders")) {
+    delete userFeature.properties.zoneBorders;
+  }
+
   persistObject(state.userId, userFeature);
   startCoordinateTracking();
 }
@@ -535,6 +539,10 @@ function startCoordinateTracking() {
         coordinates: [lng, lat],
       },
     };
+
+    if (updated.properties && Object.prototype.hasOwnProperty.call(updated.properties, "zoneBorders")) {
+      delete updated.properties.zoneBorders;
+    }
 
     state.objects[state.userId] = updated;
     renderLayer();
@@ -893,6 +901,13 @@ async function persistObject(id, nextEntry) {
       is_user: normalizeIsUserValue(nextEntry?.properties?.is_user),
     },
   };
+
+  if (
+    normalizedEntry.properties
+    && Object.prototype.hasOwnProperty.call(normalizedEntry.properties, "zoneBorders")
+  ) {
+    delete normalizedEntry.properties.zoneBorders;
+  }
 
   if (state.firebaseReady && state.database) {
     await update(ref(state.database, getFirebaseCollectionPath()), { [id]: normalizedEntry });
