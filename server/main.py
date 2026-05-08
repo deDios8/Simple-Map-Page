@@ -211,7 +211,6 @@ class SessionState:
     def _consume_client_request(self, request_entity_id: int) -> None:
         for component_type in (
             ecs_components.NewLocation,
-            ecs_components.NewLocataion,
             ecs_components.EditedObject,
             ecs_components.DeletedObject,
         ):
@@ -658,7 +657,6 @@ class SessionState:
 
         for marker_component in (
             ecs_components.NewLocation,
-            ecs_components.NewLocataion,
             ecs_components.EditedObject,
             ecs_components.DeletedObject,
         ):

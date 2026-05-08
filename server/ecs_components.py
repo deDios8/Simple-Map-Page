@@ -45,11 +45,6 @@ class NewLocation:
         self.requester_id = requester_id
 
 
-# Backward-compatible alias for earlier typo spelling.
-class NewLocataion(NewLocation):
-    pass
-
-
 class EditedObject:
     def __init__(self, target_id: str, target_path: str, form_data: dict) -> None:
         self.target_id = target_id
