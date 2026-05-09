@@ -465,7 +465,7 @@ body {
   color: var(--text);
 }
 
-.editor-form.is-collapsed > * {
+.editor-form.is-collapsed > :not(.editor-bottom-spacer) {
   display: none;
 }
 
