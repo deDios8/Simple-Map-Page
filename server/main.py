@@ -506,6 +506,39 @@ class SessionState:
             },
             node=GEO_OBJECTS_NODE,
         )
+
+        # Mirror the patched values into the stream's local state so that the
+        # echo stream event Firebase sends back does not revert the ECS update.
+        # Without this, partial stream events (e.g. only geometry arriving first)
+        # would call _upsert_geo_object_entity with stale properties and undo the
+        # stats/statuses change that was just applied above.
+        stream_obj = self.stream.geo_object_state.get(target_key)
+        if isinstance(stream_obj, dict):
+            geo = stream_obj.setdefault("geometry", {})
+            if isinstance(geo, dict):
+                geo["coordinates"] = [lon, lat]
+            props = stream_obj.setdefault("properties", {})
+            if isinstance(props, dict):
+                meta = props.setdefault("metaData", {})
+                if isinstance(meta, dict):
+                    meta["name"] = metadata.name
+                    meta["type"] = metadata.type
+                    meta["description"] = metadata.description
+                appr = props.setdefault("appearance", {})
+                if isinstance(appr, dict):
+                    appr["color"] = appearance.color
+                    appr["radius"] = appearance.radius
+                    appr["visible"] = appearance_visible
+                props["data"] = extra_data
+                if next_stats_payload:
+                    props["stats"] = next_stats_payload
+                else:
+                    props.pop("stats", None)
+                if next_statuses_payload:
+                    props["statuses"] = next_statuses_payload
+                else:
+                    props.pop("statuses", None)
+
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_object_request(self, request_entity_id: int) -> None:

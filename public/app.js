@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.018a",
+  version: "0.1.019",
   map: null,
   userMarker: null,
   geoJsonLayer: null,

@@ -274,6 +274,12 @@ def _set_nested(target: dict[str, Any], segments: list[str], value: Any, merge: 
             for k, v in value.items():
                 if v is None:
                     target.pop(k, None)
+                elif "/" in k:
+                    # Firebase multi-path key (e.g. "properties/stats"): treat
+                    # the slash as a path separator and recurse rather than
+                    # setting a literal slash-keyed entry in the dict.
+                    sub_segs = [s for s in k.split("/") if s]
+                    _set_nested(target, sub_segs, v, merge=False)
                 else:
                     target[k] = v
         else:
@@ -292,6 +298,10 @@ def _set_nested(target: dict[str, Any], segments: list[str], value: Any, merge: 
         for ck, cv in value.items():
             if cv is None:
                 existing.pop(ck, None)
+            elif "/" in ck:
+                # Same multi-path handling one level down.
+                sub_segs = [s for s in ck.split("/") if s]
+                _set_nested(existing, sub_segs, cv, merge=False)
             else:
                 existing[ck] = cv
     else:
