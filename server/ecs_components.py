@@ -84,8 +84,7 @@ class Statuses:
         self.items = items if isinstance(items, dict) else {}
 
 
-class StatusA(Status): # Legacy alias for single-status callers
-    pass
+
 
 class WithinZones:
     def __init__(self, zone_ids: list) -> None:

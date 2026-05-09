@@ -138,17 +138,7 @@ class SessionState:
             if normalized_statuses:
                 return normalized_statuses
 
-        legacy_status = props.get("statusA") if isinstance(props.get("statusA"), dict) else {}
-        if legacy_status.get("name") or legacy_status.get("type"):
-            fallback_key = str(legacy_status.get("name", "") or "statusA")
-            return {
-                fallback_key: {
-                    "name": str(legacy_status.get("name", "") or ""),
-                    "type": str(legacy_status.get("type", "") or ""),
-                    "strength": legacy_status.get("strength", 0),
-                    "time_until_expire": legacy_status.get("time_until_expire", 5),
-                }
-            }
+
 
         return {}
 
@@ -176,10 +166,7 @@ class SessionState:
         elif statuses_component is not None:
             esper.remove_component(entity_id, ecs_components.Statuses)
 
-        try:
-            esper.remove_component(entity_id, ecs_components.StatusA)
-        except KeyError:
-            pass
+
 
         return normalized_statuses
 
@@ -492,30 +479,8 @@ class SessionState:
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
-        current_statuses_component = esper.try_component(target_entity_id, ecs_components.Statuses)
-        current_statuses = dict(current_statuses_component.items) if current_statuses_component is not None else {}
-        current_primary_status_key = next(iter(current_statuses), "statusA")
-        status_a_payload = {
-            "name": str(form_data.get("statusName", "") or ""),
-            "type": str(form_data.get("statusType", "") or ""),
-            "strength": _to_float(form_data.get("statusStrength"), 0.0),
-            "time_until_expire": _to_float(form_data.get("statusTimeUntilExpire"), 5.0),
-        }
-        statuses_payload = form_data.get("statuses") if isinstance(form_data.get("statuses"), dict) else current_statuses
-        if not isinstance(statuses_payload, dict):
-            statuses_payload = {}
-        next_statuses_payload = {
-            str(key): value
-            for key, value in statuses_payload.items()
-            if isinstance(key, str) and isinstance(value, dict)
-        }
-        if status_a_payload["name"] or status_a_payload["type"]:
-            next_primary_status_key = status_a_payload["name"] or current_primary_status_key
-            if current_primary_status_key != next_primary_status_key:
-                next_statuses_payload.pop(current_primary_status_key, None)
-            next_statuses_payload[next_primary_status_key] = status_a_payload
-        else:
-            next_statuses_payload.pop(current_primary_status_key, None)
+        statuses_payload = form_data.get("statuses") if isinstance(form_data.get("statuses"), dict) else {}
+        next_statuses_payload = self._normalize_statuses_payload({"statuses": statuses_payload})
 
         self._sync_statuses_component(target_entity_id, {"statuses": next_statuses_payload})
 
@@ -538,7 +503,6 @@ class SessionState:
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
                 "properties/statuses": next_statuses_payload,
-                "properties/statusA": status_a_payload,
             },
             node=GEO_OBJECTS_NODE,
         )

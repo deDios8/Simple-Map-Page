@@ -115,17 +115,6 @@ def _normalize_statuses(properties: dict[str, Any]) -> dict[str, dict[str, Any]]
         if normalized_statuses:
             return normalized_statuses
 
-    status_a_data = properties.get("statusA", {}) if isinstance(properties.get("statusA"), dict) else {}
-    if status_a_data.get("name") or status_a_data.get("type"):
-        fallback_key = str(status_a_data.get("name", "") or "statusA")
-        return {
-            fallback_key: {
-                "name": str(status_a_data.get("name", "") or ""),
-                "type": str(status_a_data.get("type", "") or ""),
-                "strength": status_a_data.get("strength", 0),
-                "time_until_expire": status_a_data.get("time_until_expire", 5),
-            }
-        }
 
     return {}
 
@@ -147,11 +136,6 @@ class GeoObjectEntry(DBEntry):
         self.stats = _normalize_stats(self.properties)
 
         self.statuses = _normalize_statuses(self.properties)
-        primary_status = next(iter(self.statuses.values()), {})
-        self.status_a_name = primary_status.get("name", "")
-        self.status_a_type = primary_status.get("type", "")
-        self.status_a_strength = primary_status.get("strength", 0)
-        self.status_a_time_until_expire = primary_status.get("time_until_expire", 5)
 
         self.data = self.properties.get("data", {})
 
@@ -396,30 +380,8 @@ def patch_db_entry(
 ) -> None:
     """Merge-update specific fields of a database entry by key."""
 
-    def _expand_patch_fields(flat_fields: dict[str, Any]) -> dict[str, Any]:
-        expanded: dict[str, Any] = {}
-        for field_path, value in flat_fields.items():
-            if "/" not in field_path:
-                expanded[field_path] = value
-                continue
-
-            path_parts = [part for part in field_path.split("/") if part]
-            if not path_parts:
-                continue
-
-            current = expanded
-            for part in path_parts[:-1]:
-                next_node = current.get(part)
-                if not isinstance(next_node, dict):
-                    next_node = {}
-                    current[part] = next_node
-                current = next_node
-            current[path_parts[-1]] = value
-
-        return expanded
-
     url = build_node_url(database_url, session_name, node, key)
-    data = json.dumps(_expand_patch_fields(fields)).encode("utf-8")
+    data = json.dumps(fields).encode("utf-8")
     req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
     with urlopen(req) as response:
         response.read()

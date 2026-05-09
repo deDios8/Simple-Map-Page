@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.14",
+  version: "0.0.16",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -255,21 +255,6 @@ function normalizeStatuses(properties) {
     }
   }
 
-  const legacyStatus = properties?.statusA;
-  if (legacyStatus && typeof legacyStatus === "object" && !Array.isArray(legacyStatus)) {
-    const fallbackKey = String(legacyStatus.name || "statusA").trim();
-    if (legacyStatus.name || legacyStatus.type) {
-      return {
-        [fallbackKey]: {
-          name: String(legacyStatus.name || ""),
-          type: String(legacyStatus.type || ""),
-          strength: Number.isFinite(legacyStatus.strength) ? legacyStatus.strength : 0,
-          time_until_expire: Number.isFinite(legacyStatus.time_until_expire) ? legacyStatus.time_until_expire : 5,
-        },
-      };
-    }
-  }
-
   return {};
 }
 
@@ -278,7 +263,7 @@ function getPrimaryStatus(properties) {
   const [primaryKey] = Object.keys(statuses);
   if (!primaryKey) {
     return {
-      key: "statusA",
+      key: "primary",
       status: createDefaultStatus(),
       statuses,
     };
@@ -470,9 +455,7 @@ function collectStatusesFromEditor(options = {}) {
     }
   }
 
-  if (!primaryStatus) {
-    primaryStatus = { key: "statusA", status: createDefaultStatus() };
-  }
+
 
   if (!allowEmpty && rows.length > 0 && !Object.keys(statuses).length) {
     return {
@@ -709,16 +692,9 @@ function bindUi() {
       };
     }
 
+
     const nextStats = collectedStats.stats;
     const nextStatuses = collectedStatuses.statuses;
-    const primaryStatus = collectedStatuses.primaryStatus?.status || createDefaultStatus();
-    const nextStatusA = {
-      name: primaryStatus.name || "",
-      type: primaryStatus.type || "",
-      strength: Number.isFinite(primaryStatus.strength) ? primaryStatus.strength : 0,
-      time_until_expire: Number.isFinite(primaryStatus.time_until_expire) ? primaryStatus.time_until_expire : 5,
-    };
-
     const nextEntry = {
       ...objectEntry,
       geometry: nextGeometry,
@@ -739,7 +715,6 @@ function bindUi() {
         data: parsedExtra,
         stats: nextStats,
         statuses: nextStatuses,
-        statusA: nextStatusA,
       },
     };
 
@@ -1052,7 +1027,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     ? nextEntry.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
-  const primaryStatus = getPrimaryStatus(nextEntry?.properties || {}).status;
   const formData = {
     name: fieldName.value.trim(),
     type: fieldType.value.trim(),
@@ -1064,10 +1038,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
     statuses: nextEntry?.properties?.statuses || {},
-    statusName: primaryStatus.name || "",
-    statusType: primaryStatus.type || "",
-    statusStrength: Number.isFinite(primaryStatus.strength) ? String(primaryStatus.strength) : "",
-    statusTimeUntilExpire: Number.isFinite(primaryStatus.time_until_expire) ? String(primaryStatus.time_until_expire) : "",
     extraData: nextEntry?.properties?.data || {},
   };
 
@@ -1151,39 +1121,73 @@ function normalizeIsUserValue(value) {
   return false;
 }
 
+function inferGeometryType(coordinates) {
+  if (!Array.isArray(coordinates) || coordinates.length < 2) {
+    return "";
+  }
+
+  const first = coordinates[0];
+  if (typeof first === "number") {
+    return "Point";
+  }
+  if (Array.isArray(first) && typeof first[0] === "number") {
+    return "LineString";
+  }
+  if (Array.isArray(first) && Array.isArray(first[0]) && typeof first[0][0] === "number") {
+    return "Polygon";
+  }
+  return "";
+}
+
+function normalizeFeatureEntry(key, entry, fallbackId) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const properties = entry.properties && typeof entry.properties === "object" ? entry.properties : {};
+  const geometry = entry.geometry && typeof entry.geometry === "object" ? entry.geometry : {};
+  const coordinates = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+  const geometryType = geometry.type || inferGeometryType(coordinates);
+  if (!geometryType) {
+    return null;
+  }
+
+  return {
+    ...entry,
+    type: entry.type || "Feature",
+    geometry: {
+      ...geometry,
+      type: geometryType,
+      coordinates,
+    },
+    properties: {
+      ...properties,
+      id: properties.id || key || fallbackId,
+      is_user: normalizeIsUserValue(properties.is_user),
+    },
+  };
+}
+
 function normalizeObjects(rawObjects) {
   if (Array.isArray(rawObjects)) {
     return rawObjects.reduce((accumulator, entry, index) => {
-      if (!entry) {
+      const normalizedEntry = normalizeFeatureEntry(`item-${index}`, entry, `item-${index}`);
+      if (!normalizedEntry) {
         return accumulator;
       }
 
-      const id = entry.properties?.id || `item-${index}`;
-      accumulator[id] = {
-        ...entry,
-        properties: {
-          ...entry.properties,
-          id,
-          is_user: normalizeIsUserValue(entry.properties?.is_user),
-        },
-      };
+      accumulator[normalizedEntry.properties.id] = normalizedEntry;
       return accumulator;
     }, {});
   }
 
   return Object.entries(rawObjects).reduce((accumulator, [key, entry]) => {
-    if (!entry) {
+    const normalizedEntry = normalizeFeatureEntry(key, entry, key);
+    if (!normalizedEntry) {
       return accumulator;
     }
 
-    accumulator[key] = {
-      ...entry,
-      properties: {
-        ...entry.properties,
-        id: entry.properties?.id || key,
-        is_user: normalizeIsUserValue(entry.properties?.is_user),
-      },
-    };
+    accumulator[key] = normalizedEntry;
     return accumulator;
   }, {});
 }
