@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.018",
+  version: "0.1.018a",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -225,6 +225,10 @@ function setStatusesSectionCollapsed(isCollapsed) {
     statusesSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.statuses));
   }
   saveCollapseState();
+}
+
+function nameToKey(name) {
+  return String(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
 }
 
 function createDefaultStat() {
@@ -363,16 +367,13 @@ function renderStatsEditor(stats) {
       const rowLabel = index === 0 ? "Primary stat" : `Stat ${index + 1}`;
 
       return `
-        <article class="stat-row" data-stat-index="${index}">
+        <article class="stat-row" data-stat-index="${index}" data-key="${escapeHtml(String(key || ""))}">
           <div class="stat-row-actions">
             <span class="stat-row-meta">${rowLabel}</span>
+            <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
             <button class="stat-remove-button" type="button" data-action="remove-stat">Remove</button>
           </div>
           <div class="stat-row-grid">
-            <label>
-              Key
-              <input type="text" data-field="key" value="${escapeHtml(String(key || ""))}" placeholder="health" />
-            </label>
             <label>
               Name
               <input type="text" data-field="name" value="${escapeHtml(String(safeStat.name || ""))}" placeholder="Health" />
@@ -435,16 +436,13 @@ function renderStatusesEditor(statuses) {
       const rowLabel = index === 0 ? "Primary status" : `Status ${index + 1}`;
 
       return `
-        <article class="status-row" data-status-index="${index}">
+        <article class="status-row" data-status-index="${index}" data-key="${escapeHtml(String(key || ""))}">
           <div class="stat-row-actions">
             <span class="stat-row-meta">${rowLabel}</span>
+            <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
             <button class="status-remove-button" type="button" data-action="remove-status">Remove</button>
           </div>
           <div class="status-row-grid">
-            <label>
-              Key
-              <input type="text" data-field="key" value="${escapeHtml(String(key || ""))}" placeholder="burning" />
-            </label>
             <label>
               Name
               <input type="text" data-field="name" value="${escapeHtml(String(safeStatus.name || ""))}" placeholder="Burning" />
@@ -492,17 +490,17 @@ function collectStatusesFromEditor(options = {}) {
 
   for (const [index, row] of rows.entries()) {
     const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
-    const keyValue = getValue("key").trim();
+    const originalKey = row.getAttribute("data-key") || "";
     const name = getValue("name").trim();
     const type = getValue("type").trim();
     const rawStrength = Number.parseFloat(getValue("strength").trim());
     const rawTimeUntilExpire = Number.parseFloat(getValue("time_until_expire").trim());
 
-    if (!keyValue && !name && !type && !getValue("strength").trim() && !getValue("time_until_expire").trim()) {
+    if (!name && !type && !getValue("strength").trim() && !getValue("time_until_expire").trim()) {
       continue;
     }
 
-    const nextKey = keyValue || name || `status-${index + 1}`;
+    const nextKey = nameToKey(name) || originalKey || `status-${index + 1}`;
     if (Object.prototype.hasOwnProperty.call(statuses, nextKey)) {
       return {
         statuses: {},
@@ -548,14 +546,14 @@ function collectStatsFromEditor(options = {}) {
 
   for (const [index, row] of rows.entries()) {
     const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
-    const keyValue = getValue("key").trim();
+    const originalKey = row.getAttribute("data-key") || "";
     const name = getValue("name").trim();
     const type = getValue("type").trim();
     const rawValue = Number.parseFloat(getValue("value").trim());
     const rawMin = Number.parseFloat(getValue("min_value").trim());
     const rawMax = Number.parseFloat(getValue("max_value").trim());
 
-    if (!keyValue && !name && !type && !getValue("value").trim() && !getValue("min_value").trim() && !getValue("max_value").trim()) {
+    if (!name && !type && !getValue("value").trim() && !getValue("min_value").trim() && !getValue("max_value").trim()) {
       continue;
     }
 
@@ -570,7 +568,7 @@ function collectStatsFromEditor(options = {}) {
     }
 
     const value = Number.isFinite(rawValue) ? rawValue : 0;
-    const nextKey = keyValue || name || `stat-${index + 1}`;
+    const nextKey = nameToKey(name) || originalKey || `stat-${index + 1}`;
     if (Object.prototype.hasOwnProperty.call(stats, nextKey)) {
       return {
         stats: {},
