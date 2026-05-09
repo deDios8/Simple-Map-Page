@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.16",
+  version: "0.0.17",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -145,6 +145,11 @@ const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
 const statusesList = document.querySelector("#statuses-list");
 const addStatusButton = document.querySelector("#add-status-button");
+const editorFormToggle = document.querySelector("#editor-form-toggle");
+const statsSectionToggle = document.querySelector("#stats-section-toggle");
+const statusesSectionToggle = document.querySelector("#statuses-section-toggle");
+const statsSection = document.querySelector(".stats-section");
+const statusesSection = document.querySelector(".statuses-section");
 const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
@@ -158,6 +163,39 @@ const editableFields = [
   fieldDescription,
   fieldExtra,
 ];
+
+const editorCollapseState = {
+  form: true,
+  stats: true,
+  statuses: true,
+};
+
+function setEditorFormCollapsed(isCollapsed) {
+  editorCollapseState.form = Boolean(isCollapsed);
+  editorForm.classList.toggle("is-collapsed", editorCollapseState.form);
+  if (editorFormToggle) {
+    editorFormToggle.textContent = editorCollapseState.form ? "Expand editor" : "Collapse editor";
+    editorFormToggle.setAttribute("aria-expanded", String(!editorCollapseState.form));
+  }
+}
+
+function setStatsSectionCollapsed(isCollapsed) {
+  editorCollapseState.stats = Boolean(isCollapsed);
+  statsSection?.classList.toggle("is-collapsed", editorCollapseState.stats);
+  if (statsSectionToggle) {
+    statsSectionToggle.textContent = editorCollapseState.stats ? "Expand" : "Collapse";
+    statsSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.stats));
+  }
+}
+
+function setStatusesSectionCollapsed(isCollapsed) {
+  editorCollapseState.statuses = Boolean(isCollapsed);
+  statusesSection?.classList.toggle("is-collapsed", editorCollapseState.statuses);
+  if (statusesSectionToggle) {
+    statusesSectionToggle.textContent = editorCollapseState.statuses ? "Expand" : "Collapse";
+    statusesSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.statuses));
+  }
+}
 
 function createDefaultStat() {
   return {
@@ -547,6 +585,9 @@ init();
 
 function init() {
   renderVersionInfo();
+  setEditorFormCollapsed(true);
+  setStatsSectionCollapsed(true);
+  setStatusesSectionCollapsed(true);
   initMap();
   bindUi();
   locateUser();
@@ -599,6 +640,15 @@ function bindUi() {
   });
   addStatusButton?.addEventListener("click", () => {
     addEmptyStatusRow();
+  });
+  editorFormToggle?.addEventListener("click", () => {
+    setEditorFormCollapsed(!editorCollapseState.form);
+  });
+  statsSectionToggle?.addEventListener("click", () => {
+    setStatsSectionCollapsed(!editorCollapseState.stats);
+  });
+  statusesSectionToggle?.addEventListener("click", () => {
+    setStatusesSectionCollapsed(!editorCollapseState.statuses);
   });
   statsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-stat"]');
@@ -1329,6 +1379,9 @@ function populateEditor(id) {
   const stats = normalizeStats(feature.properties);
   const statuses = normalizeStatuses(feature.properties);
   editorForm.hidden = false;
+  setEditorFormCollapsed(true);
+  setStatsSectionCollapsed(true);
+  setStatusesSectionCollapsed(true);
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
   fieldType.value = metaData.type || "";
@@ -1349,6 +1402,9 @@ function showEmptyEditor() {
   editorForm.hidden = true;
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
+  setEditorFormCollapsed(true);
+  setStatsSectionCollapsed(true);
+  setStatusesSectionCollapsed(true);
   renderStatsEditor({});
   renderStatusesEditor({});
   applyEditorPermissions();

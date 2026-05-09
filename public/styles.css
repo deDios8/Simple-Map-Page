@@ -251,6 +251,16 @@ body {
   gap: 4px;
 }
 
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-toggle {
+  min-width: 88px;
+}
+
 .editor-form label {
   display: grid;
   gap: 8px;
@@ -278,6 +288,10 @@ body {
 .stats-section {
   display: grid;
   gap: 12px;
+}
+
+.stats-section.is-collapsed .stats-list {
+  display: none;
 }
 
 .stats-header {
@@ -348,6 +362,10 @@ body {
 .statuses-section {
   display: grid;
   gap: 12px;
+}
+
+.statuses-section.is-collapsed .statuses-list {
+  display: none;
 }
 
 .statuses-header {
@@ -445,6 +463,10 @@ body {
   background: rgba(255, 255, 255, 0.88);
   padding: 12px 14px;
   color: var(--text);
+}
+
+.editor-form.is-collapsed > * {
+  display: none;
 }
 
 .editor-form input[type="color"] {

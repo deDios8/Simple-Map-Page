@@ -62,6 +62,7 @@
             <div class="editor-header">
               <!-- <h2>Edit object</h2> -->
               <h2 id="editor-empty-state">Select an object to edit.</h2>
+              <button id="editor-form-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="editor-form">Expand editor</button>
             </div>
 
             <form id="editor-form" class="editor-form" hidden>
@@ -132,7 +133,10 @@
               <section class="stats-section" aria-labelledby="stats-heading">
                 <div class="stats-header">
                   <h3 id="stats-heading">Stats</h3>
-                  <button id="add-stat-button" class="text-button" type="button">Add stat</button>
+                  <div class="section-actions">
+                    <button id="stats-section-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="stats-list">Expand</button>
+                    <button id="add-stat-button" class="text-button" type="button">Add stat</button>
+                  </div>
                 </div>
                 <div id="stats-list" class="stats-list"></div>
               </section>
@@ -140,7 +144,10 @@
               <section class="statuses-section" aria-labelledby="statuses-heading">
                 <div class="statuses-header">
                   <h3 id="statuses-heading">Statuses</h3>
-                  <button id="add-status-button" class="text-button" type="button">Add status</button>
+                  <div class="section-actions">
+                    <button id="statuses-section-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="statuses-list">Expand</button>
+                    <button id="add-status-button" class="text-button" type="button">Add status</button>
+                  </div>
                 </div>
                 <div id="statuses-list" class="statuses-list"></div>
               </section>
