@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.12",
+  version: "0.0.13",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -199,22 +199,6 @@ function normalizeStats(properties) {
     }
   }
 
-  const legacyStat = properties?.statA;
-  if (legacyStat && typeof legacyStat === "object" && !Array.isArray(legacyStat)) {
-    const fallbackKey = String(legacyStat.name || "statA").trim();
-    if (legacyStat.name || legacyStat.type) {
-      return {
-        [fallbackKey]: {
-          name: String(legacyStat.name || ""),
-          type: String(legacyStat.type || ""),
-          value: Number.isFinite(legacyStat.value) ? legacyStat.value : 0,
-          max_value: Number.isFinite(legacyStat.max_value) ? legacyStat.max_value : 100,
-          min_value: Number.isFinite(legacyStat.min_value) ? legacyStat.min_value : 0,
-        },
-      };
-    }
-  }
-
   return {};
 }
 
@@ -223,7 +207,7 @@ function getPrimaryStat(properties) {
   const [primaryKey] = Object.keys(stats);
   if (!primaryKey) {
     return {
-      key: "statA",
+      key: "",
       stat: {
         name: "",
         type: "",
@@ -367,7 +351,7 @@ function collectStatsFromEditor(options = {}) {
   }
 
   if (!primaryStat) {
-    primaryStat = { key: "statA", stat: createDefaultStat() };
+    primaryStat = { key: "", stat: createDefaultStat() };
   }
 
   if (!allowEmpty && rows.length > 0 && !Object.keys(stats).length) {
@@ -545,7 +529,6 @@ function bindUi() {
         },
         data: parsedExtra,
         stats: nextStats,
-        statA: null,
         statusA: nextStatusA,
       },
     };
@@ -859,7 +842,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     ? nextEntry.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
-  const primaryStat = getPrimaryStat({ stats: nextEntry?.properties?.stats || {} }).stat;
   const formData = {
     name: fieldName.value.trim(),
     type: fieldType.value.trim(),
@@ -869,9 +851,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     longitude: fieldLongitude.value.trim(),
     radius: fieldRadius.value.trim(),
     description: fieldDescription.value.trim(),
-    statName: primaryStat.name || "",
-    statValue: Number.isFinite(primaryStat.value) ? String(primaryStat.value) : "",
-    statType: primaryStat.type || "",
     stats: nextEntry?.properties?.stats || {},
     statusName: fieldStatusName.value.trim(),
     statusType: fieldStatusType.value.trim(),

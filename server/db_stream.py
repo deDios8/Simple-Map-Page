@@ -93,19 +93,6 @@ def _normalize_stats(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
         if normalized_stats:
             return normalized_stats
 
-    stat_a_data = properties.get("statA", {}) if isinstance(properties.get("statA"), dict) else {}
-    if stat_a_data.get("name") or stat_a_data.get("type"):
-        fallback_key = str(stat_a_data.get("name", "") or "statA")
-        return {
-            fallback_key: {
-                "name": str(stat_a_data.get("name", "") or ""),
-                "type": str(stat_a_data.get("type", "") or ""),
-                "value": stat_a_data.get("value", 0),
-                "max_value": stat_a_data.get("max_value", 100),
-                "min_value": stat_a_data.get("min_value", 0),
-            }
-        }
-
     return {}
 
 
@@ -124,12 +111,6 @@ class GeoObjectEntry(DBEntry):
         self.description = meta_data.get("description", "")
         
         self.stats = _normalize_stats(self.properties)
-        primary_stat = next(iter(self.stats.values()), {})
-        self.stat_a_name = primary_stat.get("name", "")
-        self.stat_a_type = primary_stat.get("type", "")
-        self.stat_a_value = primary_stat.get("value", 0)
-        self.stat_a_max_value = primary_stat.get("max_value", 100)
-        self.stat_a_min_value = primary_stat.get("min_value", 0)
 
         status_a_data = self.properties.get("statusA", {}) if isinstance(self.properties.get("statusA"), dict) else {}
         self.status_a_name = status_a_data.get("name", "")

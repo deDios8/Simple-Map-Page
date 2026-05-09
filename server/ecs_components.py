@@ -71,10 +71,6 @@ class Stats:
     def __init__(self, items: dict | None = None) -> None:
         self.items = items if isinstance(items, dict) else {}
 
-
-class StatA(Stat): # Legacy alias for single-stat callers
-    pass
-
 class StatusA: # Custom Status
     def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:
         self.name = name

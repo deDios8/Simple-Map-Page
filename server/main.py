@@ -114,19 +114,6 @@ class SessionState:
             if normalized_stats:
                 return normalized_stats
 
-        legacy_stat = props.get("statA") if isinstance(props.get("statA"), dict) else {}
-        if legacy_stat.get("name") or legacy_stat.get("type"):
-            fallback_key = str(legacy_stat.get("name", "") or "statA")
-            return {
-                fallback_key: {
-                    "name": str(legacy_stat.get("name", "") or ""),
-                    "type": str(legacy_stat.get("type", "") or ""),
-                    "value": legacy_stat.get("value", 0),
-                    "max_value": legacy_stat.get("max_value", 100),
-                    "min_value": legacy_stat.get("min_value", 0),
-                }
-            }
-
         return {}
 
     def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
@@ -139,11 +126,6 @@ class SessionState:
                 stats_component.items = normalized_stats
         elif stats_component is not None:
             esper.remove_component(entity_id, ecs_components.Stats)
-
-        try:
-            esper.remove_component(entity_id, ecs_components.StatA)
-        except KeyError:
-            pass
 
         return normalized_stats
 
@@ -451,31 +433,8 @@ class SessionState:
         geometry.coordinates = [lon, lat]
         esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
 
-        current_stats_component = esper.try_component(target_entity_id, ecs_components.Stats)
-        current_stats = dict(current_stats_component.items) if current_stats_component is not None else {}
-        current_primary_key = next(iter(current_stats), "statA")
-        stat_a_payload = {
-            "name": str(form_data.get("statName", "") or ""),
-            "type": str(form_data.get("statType", "") or ""),
-            "value": _to_float(form_data.get("statValue"), 0.0),
-            "max_value": 100,
-            "min_value": 0,
-        }
-        stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else current_stats
-        if not isinstance(stats_payload, dict):
-            stats_payload = {}
-        next_stats_payload = {
-            str(key): value
-            for key, value in stats_payload.items()
-            if isinstance(key, str) and isinstance(value, dict)
-        }
-        if stat_a_payload["name"] or stat_a_payload["type"]:
-            next_primary_key = stat_a_payload["name"] or current_primary_key
-            if current_primary_key != next_primary_key:
-                next_stats_payload.pop(current_primary_key, None)
-            next_stats_payload[next_primary_key] = stat_a_payload
-        else:
-            next_stats_payload.pop(current_primary_key, None)
+        stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
+        next_stats_payload = self._normalize_stats_payload({"stats": stats_payload})
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
@@ -521,7 +480,6 @@ class SessionState:
                 "properties/appearance/visible": appearance_visible,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
-                "properties/statA": None,
                 "properties/statusA": status_a_payload,
             },
             node=GEO_OBJECTS_NODE,
