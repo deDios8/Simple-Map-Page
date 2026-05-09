@@ -71,12 +71,21 @@ class Stats:
     def __init__(self, items: dict | None = None) -> None:
         self.items = items if isinstance(items, dict) else {}
 
-class StatusA: # Custom Status
+class Status:
     def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:
         self.name = name
         self.type = type
         self.strength = strength
         self.time_until_expire = time_until_expire
+
+
+class Statuses:
+    def __init__(self, items: dict | None = None) -> None:
+        self.items = items if isinstance(items, dict) else {}
+
+
+class StatusA(Status): # Legacy alias for single-status callers
+    pass
 
 class WithinZones:
     def __init__(self, zone_ids: list) -> None:

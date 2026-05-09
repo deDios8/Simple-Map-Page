@@ -116,6 +116,42 @@ class SessionState:
 
         return {}
 
+    def _normalize_statuses_payload(self, props: object) -> dict[str, dict]:
+        if not isinstance(props, dict):
+            return {}
+
+        raw_statuses = props.get("statuses")
+        if isinstance(raw_statuses, dict):
+            normalized_statuses: dict[str, dict] = {}
+            for key, raw_status in raw_statuses.items():
+                if not isinstance(raw_status, dict):
+                    continue
+                status_key = str(key).strip() or str(raw_status.get("name", "")).strip()
+                if not status_key:
+                    continue
+                normalized_statuses[status_key] = {
+                    "name": str(raw_status.get("name", "") or ""),
+                    "type": str(raw_status.get("type", "") or ""),
+                    "strength": raw_status.get("strength", 0),
+                    "time_until_expire": raw_status.get("time_until_expire", 5),
+                }
+            if normalized_statuses:
+                return normalized_statuses
+
+        legacy_status = props.get("statusA") if isinstance(props.get("statusA"), dict) else {}
+        if legacy_status.get("name") or legacy_status.get("type"):
+            fallback_key = str(legacy_status.get("name", "") or "statusA")
+            return {
+                fallback_key: {
+                    "name": str(legacy_status.get("name", "") or ""),
+                    "type": str(legacy_status.get("type", "") or ""),
+                    "strength": legacy_status.get("strength", 0),
+                    "time_until_expire": legacy_status.get("time_until_expire", 5),
+                }
+            }
+
+        return {}
+
     def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
         normalized_stats = self._normalize_stats_payload(props)
         stats_component = esper.try_component(entity_id, ecs_components.Stats)
@@ -128,6 +164,24 @@ class SessionState:
             esper.remove_component(entity_id, ecs_components.Stats)
 
         return normalized_stats
+
+    def _sync_statuses_component(self, entity_id: int, props: object) -> dict[str, dict]:
+        normalized_statuses = self._normalize_statuses_payload(props)
+        statuses_component = esper.try_component(entity_id, ecs_components.Statuses)
+        if normalized_statuses:
+            if statuses_component is None:
+                esper.add_component(entity_id, ecs_components.Statuses(items=normalized_statuses))
+            else:
+                statuses_component.items = normalized_statuses
+        elif statuses_component is not None:
+            esper.remove_component(entity_id, ecs_components.Statuses)
+
+        try:
+            esper.remove_component(entity_id, ecs_components.StatusA)
+        except KeyError:
+            pass
+
+        return normalized_statuses
 
     def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
         zone_borders: dict[str, dict[str, list[str]]] = {}
@@ -438,29 +492,32 @@ class SessionState:
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
+        current_statuses_component = esper.try_component(target_entity_id, ecs_components.Statuses)
+        current_statuses = dict(current_statuses_component.items) if current_statuses_component is not None else {}
+        current_primary_status_key = next(iter(current_statuses), "statusA")
         status_a_payload = {
             "name": str(form_data.get("statusName", "") or ""),
             "type": str(form_data.get("statusType", "") or ""),
             "strength": _to_float(form_data.get("statusStrength"), 0.0),
-            "time_until_expire": 5,
+            "time_until_expire": _to_float(form_data.get("statusTimeUntilExpire"), 5.0),
+        }
+        statuses_payload = form_data.get("statuses") if isinstance(form_data.get("statuses"), dict) else current_statuses
+        if not isinstance(statuses_payload, dict):
+            statuses_payload = {}
+        next_statuses_payload = {
+            str(key): value
+            for key, value in statuses_payload.items()
+            if isinstance(key, str) and isinstance(value, dict)
         }
         if status_a_payload["name"] or status_a_payload["type"]:
-            status_a = esper.try_component(target_entity_id, ecs_components.StatusA)
-            if status_a is None:
-                esper.add_component(
-                    target_entity_id,
-                    ecs_components.StatusA(
-                        name=status_a_payload["name"],
-                        type=status_a_payload["type"],
-                        strength=status_a_payload["strength"],
-                        time_until_expire=status_a_payload["time_until_expire"],
-                    ),
-                )
-            else:
-                status_a.name = status_a_payload["name"]
-                status_a.type = status_a_payload["type"]
-                status_a.strength = status_a_payload["strength"]
-                status_a.time_until_expire = status_a_payload["time_until_expire"]
+            next_primary_status_key = status_a_payload["name"] or current_primary_status_key
+            if current_primary_status_key != next_primary_status_key:
+                next_statuses_payload.pop(current_primary_status_key, None)
+            next_statuses_payload[next_primary_status_key] = status_a_payload
+        else:
+            next_statuses_payload.pop(current_primary_status_key, None)
+
+        self._sync_statuses_component(target_entity_id, {"statuses": next_statuses_payload})
 
         extra_data = form_data.get("extraData")
         if not isinstance(extra_data, dict):
@@ -480,6 +537,7 @@ class SessionState:
                 "properties/appearance/visible": appearance_visible,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
+                "properties/statuses": next_statuses_payload,
                 "properties/statusA": status_a_payload,
             },
             node=GEO_OBJECTS_NODE,
@@ -524,18 +582,7 @@ class SessionState:
             self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
             
             self._sync_stats_component(geo.entity_id, geo_object.properties)
-
-            # Add StatusA component if status data exists
-            if geo_object.status_a_name or geo_object.status_a_type:
-                esper.add_component(
-                    geo.entity_id,
-                    ecs_components.StatusA(
-                        name=geo_object.status_a_name,
-                        type=geo_object.status_a_type,
-                        strength=geo_object.status_a_strength,
-                        time_until_expire=geo_object.status_a_time_until_expire,
-                    ),
-                )
+            self._sync_statuses_component(geo.entity_id, geo_object.properties)
             
             return geo.entity_id
 
@@ -562,27 +609,7 @@ class SessionState:
         self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
 
         self._sync_stats_component(existing_entity_id, props)
-
-        # Update or add StatusA component
-        try:
-            status_a = esper.component_for_entity(existing_entity_id, ecs_components.StatusA)
-            status_a_data = props.get("statusA", {}) if isinstance(props.get("statusA"), dict) else {}
-            status_a.name = status_a_data.get("name", "")
-            status_a.type = status_a_data.get("type", "")
-            status_a.strength = status_a_data.get("strength", 0)
-            status_a.time_until_expire = status_a_data.get("time_until_expire", 5)
-        except KeyError:
-            status_a_data = props.get("statusA", {}) if isinstance(props.get("statusA"), dict) else {}
-            if status_a_data.get("name") or status_a_data.get("type"):
-                esper.add_component(
-                    existing_entity_id,
-                    ecs_components.StatusA(
-                        name=status_a_data.get("name", ""),
-                        type=status_a_data.get("type", ""),
-                        strength=status_a_data.get("strength", 0),
-                        time_until_expire=status_a_data.get("time_until_expire", 5),
-                    ),
-                )
+        self._sync_statuses_component(existing_entity_id, props)
         
         return existing_entity_id
 

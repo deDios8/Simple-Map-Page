@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.0.13",
+  version: "0.0.14",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -143,9 +143,8 @@ const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
 const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
-const fieldStatusName = document.querySelector("#field-status-name");
-const fieldStatusType = document.querySelector("#field-status-type");
-const fieldStatusStrength = document.querySelector("#field-status-strength");
+const statusesList = document.querySelector("#statuses-list");
+const addStatusButton = document.querySelector("#add-status-button");
 const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
@@ -157,9 +156,6 @@ const editableFields = [
   fieldLongitude,
   fieldRadius,
   fieldDescription,
-  fieldStatusName,
-  fieldStatusType,
-  fieldStatusStrength,
   fieldExtra,
 ];
 
@@ -171,6 +167,16 @@ function createDefaultStat() {
     value: 0,
     max_value: 100,
     min_value: 0,
+  };
+}
+
+function createDefaultStatus() {
+  return {
+    key: "",
+    name: "",
+    type: "",
+    strength: 0,
+    time_until_expire: 5,
   };
 }
 
@@ -222,6 +228,65 @@ function getPrimaryStat(properties) {
     key: primaryKey,
     stat: stats[primaryKey],
     stats,
+  };
+}
+
+function normalizeStatuses(properties) {
+  const rawStatuses = properties?.statuses;
+  if (rawStatuses && typeof rawStatuses === "object" && !Array.isArray(rawStatuses)) {
+    const nextStatuses = {};
+    for (const [key, rawStatus] of Object.entries(rawStatuses)) {
+      if (!rawStatus || typeof rawStatus !== "object" || Array.isArray(rawStatus)) {
+        continue;
+      }
+      const statusKey = String(key || rawStatus.name || "").trim();
+      if (!statusKey) {
+        continue;
+      }
+      nextStatuses[statusKey] = {
+        name: String(rawStatus.name || ""),
+        type: String(rawStatus.type || ""),
+        strength: Number.isFinite(rawStatus.strength) ? rawStatus.strength : 0,
+        time_until_expire: Number.isFinite(rawStatus.time_until_expire) ? rawStatus.time_until_expire : 5,
+      };
+    }
+    if (Object.keys(nextStatuses).length > 0) {
+      return nextStatuses;
+    }
+  }
+
+  const legacyStatus = properties?.statusA;
+  if (legacyStatus && typeof legacyStatus === "object" && !Array.isArray(legacyStatus)) {
+    const fallbackKey = String(legacyStatus.name || "statusA").trim();
+    if (legacyStatus.name || legacyStatus.type) {
+      return {
+        [fallbackKey]: {
+          name: String(legacyStatus.name || ""),
+          type: String(legacyStatus.type || ""),
+          strength: Number.isFinite(legacyStatus.strength) ? legacyStatus.strength : 0,
+          time_until_expire: Number.isFinite(legacyStatus.time_until_expire) ? legacyStatus.time_until_expire : 5,
+        },
+      };
+    }
+  }
+
+  return {};
+}
+
+function getPrimaryStatus(properties) {
+  const statuses = normalizeStatuses(properties);
+  const [primaryKey] = Object.keys(statuses);
+  if (!primaryKey) {
+    return {
+      key: "statusA",
+      status: createDefaultStatus(),
+      statuses,
+    };
+  }
+  return {
+    key: primaryKey,
+    status: statuses[primaryKey],
+    statuses,
   };
 }
 
@@ -296,6 +361,132 @@ function addEmptyStatRow() {
   nextStats[nextKey] = createDefaultStat();
   renderStatsEditor(nextStats);
   applyEditorPermissions();
+}
+
+function renderStatusesEditor(statuses) {
+  if (!statusesList) {
+    return;
+  }
+
+  const entries = Object.entries(statuses || {});
+  if (!entries.length) {
+    statusesList.innerHTML = '<div class="statuses-empty">No statuses yet. Add one to track temporary effects.</div>';
+    return;
+  }
+
+  statusesList.innerHTML = entries
+    .map(([key, status], index) => {
+      const safeStatus = status && typeof status === "object" ? status : createDefaultStatus();
+      const strength = Number.isFinite(safeStatus.strength) ? safeStatus.strength : 0;
+      const timeUntilExpire = Number.isFinite(safeStatus.time_until_expire) ? safeStatus.time_until_expire : 5;
+      const rowLabel = index === 0 ? "Primary status" : `Status ${index + 1}`;
+
+      return `
+        <article class="status-row" data-status-index="${index}">
+          <div class="stat-row-actions">
+            <span class="stat-row-meta">${rowLabel}</span>
+            <button class="status-remove-button" type="button" data-action="remove-status">Remove</button>
+          </div>
+          <div class="status-row-grid">
+            <label>
+              Key
+              <input type="text" data-field="key" value="${escapeHtml(String(key || ""))}" placeholder="burning" />
+            </label>
+            <label>
+              Name
+              <input type="text" data-field="name" value="${escapeHtml(String(safeStatus.name || ""))}" placeholder="Burning" />
+            </label>
+            <label>
+              Type
+              <input type="text" data-field="type" value="${escapeHtml(String(safeStatus.type || ""))}" placeholder="debuff" />
+            </label>
+          </div>
+          <div class="status-row-grid status-row-grid--timers">
+            <label>
+              Strength
+              <input type="number" step="any" data-field="strength" value="${escapeHtml(String(strength))}" />
+            </label>
+            <label>
+              Ticks Remaining
+              <input type="number" step="1" data-field="time_until_expire" value="${escapeHtml(String(timeUntilExpire))}" />
+            </label>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function addEmptyStatusRow() {
+  const currentStatuses = collectStatusesFromEditor({ allowEmpty: true }).statuses;
+  const nextStatuses = { ...currentStatuses };
+  let index = Object.keys(nextStatuses).length + 1;
+  let nextKey = `status-${index}`;
+  while (Object.prototype.hasOwnProperty.call(nextStatuses, nextKey)) {
+    index += 1;
+    nextKey = `status-${index}`;
+  }
+  nextStatuses[nextKey] = createDefaultStatus();
+  renderStatusesEditor(nextStatuses);
+  applyEditorPermissions();
+}
+
+function collectStatusesFromEditor(options = {}) {
+  const allowEmpty = Boolean(options.allowEmpty);
+  const rows = Array.from(statusesList?.querySelectorAll(".status-row") || []);
+  const statuses = {};
+  let primaryStatus = null;
+
+  for (const [index, row] of rows.entries()) {
+    const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
+    const keyValue = getValue("key").trim();
+    const name = getValue("name").trim();
+    const type = getValue("type").trim();
+    const rawStrength = Number.parseFloat(getValue("strength").trim());
+    const rawTimeUntilExpire = Number.parseFloat(getValue("time_until_expire").trim());
+
+    if (!keyValue && !name && !type && !getValue("strength").trim() && !getValue("time_until_expire").trim()) {
+      continue;
+    }
+
+    const nextKey = keyValue || name || `status-${index + 1}`;
+    if (Object.prototype.hasOwnProperty.call(statuses, nextKey)) {
+      return {
+        statuses: {},
+        primaryStatus: null,
+        error: `Duplicate status key: ${nextKey}`,
+      };
+    }
+
+    const nextStatus = {
+      name,
+      type,
+      strength: Number.isFinite(rawStrength) ? rawStrength : 0,
+      time_until_expire: Number.isFinite(rawTimeUntilExpire) ? rawTimeUntilExpire : 5,
+    };
+    statuses[nextKey] = nextStatus;
+    if (primaryStatus === null) {
+      primaryStatus = { key: nextKey, status: nextStatus };
+    }
+  }
+
+  if (!primaryStatus) {
+    primaryStatus = { key: "statusA", status: createDefaultStatus() };
+  }
+
+  if (!allowEmpty && rows.length > 0 && !Object.keys(statuses).length) {
+    return {
+      statuses: {},
+      primaryStatus,
+      error: null,
+    };
+  }
+
+  return {
+    statuses,
+    primaryStatus,
+    error: null,
+  };
 }
 
 function collectStatsFromEditor(options = {}) {
@@ -423,6 +614,9 @@ function bindUi() {
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
   });
+  addStatusButton?.addEventListener("click", () => {
+    addEmptyStatusRow();
+  });
   statsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-stat"]');
     if (!button) {
@@ -431,6 +625,17 @@ function bindUi() {
     button.closest(".stat-row")?.remove();
     if (!statsList.querySelector(".stat-row")) {
       renderStatsEditor({});
+    }
+    applyEditorPermissions();
+  });
+  statusesList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-status"]');
+    if (!button) {
+      return;
+    }
+    button.closest(".status-row")?.remove();
+    if (!statusesList.querySelector(".status-row")) {
+      renderStatusesEditor({});
     }
     applyEditorPermissions();
   });
@@ -474,8 +679,13 @@ function bindUi() {
     const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
     const collectedStats = collectStatsFromEditor();
+    const collectedStatuses = collectStatusesFromEditor();
     if (collectedStats.error) {
       saveStatus.textContent = collectedStats.error;
+      return;
+    }
+    if (collectedStatuses.error) {
+      saveStatus.textContent = collectedStatuses.error;
       return;
     }
     
@@ -486,7 +696,6 @@ function bindUi() {
       ? objectEntry.properties.appearance.radius
       : null;
     const currentMetaData = objectEntry.properties?.metaData || {};
-    const currentStatusA = objectEntry.properties?.statusA || {};
     
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
@@ -501,13 +710,13 @@ function bindUi() {
     }
 
     const nextStats = collectedStats.stats;
-
-    const parsedStatusStrength = Number.parseFloat(fieldStatusStrength.value.trim());
+    const nextStatuses = collectedStatuses.statuses;
+    const primaryStatus = collectedStatuses.primaryStatus?.status || createDefaultStatus();
     const nextStatusA = {
-      name: fieldStatusName.value.trim() || currentStatusA.name || "",
-      type: fieldStatusType.value.trim() || currentStatusA.type || "",
-      strength: Number.isFinite(parsedStatusStrength) ? parsedStatusStrength : (currentStatusA.strength || 0),
-      time_until_expire: currentStatusA.time_until_expire ?? 5,
+      name: primaryStatus.name || "",
+      type: primaryStatus.type || "",
+      strength: Number.isFinite(primaryStatus.strength) ? primaryStatus.strength : 0,
+      time_until_expire: Number.isFinite(primaryStatus.time_until_expire) ? primaryStatus.time_until_expire : 5,
     };
 
     const nextEntry = {
@@ -529,6 +738,7 @@ function bindUi() {
         },
         data: parsedExtra,
         stats: nextStats,
+        statuses: nextStatuses,
         statusA: nextStatusA,
       },
     };
@@ -842,6 +1052,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     ? nextEntry.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
+  const primaryStatus = getPrimaryStatus(nextEntry?.properties || {}).status;
   const formData = {
     name: fieldName.value.trim(),
     type: fieldType.value.trim(),
@@ -852,9 +1063,11 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     radius: fieldRadius.value.trim(),
     description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
-    statusName: fieldStatusName.value.trim(),
-    statusType: fieldStatusType.value.trim(),
-    statusStrength: fieldStatusStrength.value.trim(),
+    statuses: nextEntry?.properties?.statuses || {},
+    statusName: primaryStatus.name || "",
+    statusType: primaryStatus.type || "",
+    statusStrength: Number.isFinite(primaryStatus.strength) ? String(primaryStatus.strength) : "",
+    statusTimeUntilExpire: Number.isFinite(primaryStatus.time_until_expire) ? String(primaryStatus.time_until_expire) : "",
     extraData: nextEntry?.properties?.data || {},
   };
 
@@ -1110,7 +1323,7 @@ function populateEditor(id) {
 
   const metaData = feature.properties?.metaData || {};
   const stats = normalizeStats(feature.properties);
-  const statusA = feature.properties?.statusA || {};
+  const statuses = normalizeStatuses(feature.properties);
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
@@ -1122,10 +1335,7 @@ function populateEditor(id) {
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = metaData.description || "";
   renderStatsEditor(stats);
-
-  fieldStatusName.value = statusA.name || "";
-  fieldStatusType.value = statusA.type || "";
-  fieldStatusStrength.value = Number.isFinite(statusA.strength) ? String(statusA.strength) : "";
+  renderStatusesEditor(statuses);
 
   fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
   applyEditorPermissions();
@@ -1136,6 +1346,7 @@ function showEmptyEditor() {
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
   renderStatsEditor({});
+  renderStatusesEditor({});
   applyEditorPermissions();
 }
 
@@ -1159,6 +1370,10 @@ function applyEditorPermissions() {
 
   addStatButton.disabled = !isEditable || !isFormVisible;
   statsList.querySelectorAll("input, button").forEach((element) => {
+    element.disabled = !isEditable || !isFormVisible;
+  });
+  addStatusButton.disabled = !isEditable || !isFormVisible;
+  statusesList.querySelectorAll("input, button").forEach((element) => {
     element.disabled = !isEditable || !isFormVisible;
   });
 }

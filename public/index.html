@@ -137,37 +137,13 @@
                 <div id="stats-list" class="stats-list"></div>
               </section>
 
-              <div class="status-a-row">
-                <label>
-                  Status Name
-                  <textarea
-                    id="field-status-name"
-                    name="statusName"
-                    rows="1"
-                    placeholder="Status name"
-                  ></textarea>
-                </label>
-
-                <label>
-                  Strength
-                  <textarea
-                    id="field-status-strength"
-                    name="statusStrength"
-                    rows="1"
-                    placeholder="0"
-                  ></textarea>
-                </label>
-
-                <label>
-                  Status Type
-                  <textarea
-                    id="field-status-type"
-                    name="statusType"
-                    rows="1"
-                    placeholder="Status type"
-                  ></textarea>
-                </label>
-              </div>
+              <section class="statuses-section" aria-labelledby="statuses-heading">
+                <div class="statuses-header">
+                  <h3 id="statuses-heading">Statuses</h3>
+                  <button id="add-status-button" class="text-button" type="button">Add status</button>
+                </div>
+                <div id="statuses-list" class="statuses-list"></div>
+              </section>
 
               <label>
                 Additional data (JSON)

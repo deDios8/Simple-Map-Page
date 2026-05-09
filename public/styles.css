@@ -345,14 +345,66 @@ body {
   background: rgba(255, 255, 255, 0.36);
 }
 
-.status-a-row {
+.statuses-section {
+  display: grid;
+  gap: 12px;
+}
+
+.statuses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.statuses-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.statuses-list {
+  display: grid;
+  gap: 12px;
+}
+
+.status-row {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(20, 48, 42, 0.12);
+}
+
+.status-row-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
-.status-a-row label {
+.status-row-grid--timers {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.status-row label {
   min-width: 0;
+}
+
+.status-remove-button {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(216, 61, 69, 0.12);
+  color: #8a1920;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.statuses-empty {
+  border: 1px dashed rgba(20, 48, 42, 0.2);
+  border-radius: 18px;
+  padding: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.36);
 }
 
 .text-button {
@@ -365,9 +417,22 @@ body {
 }
 
 .text-button:disabled,
-.stat-remove-button:disabled {
+.stat-remove-button:disabled,
+.status-remove-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .status-row-grid,
+  .status-row-grid--timers {
+    grid-template-columns: 1fr;
+  }
+
+  .statuses-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .editor-form input[type="text"],

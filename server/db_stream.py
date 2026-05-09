@@ -96,6 +96,40 @@ def _normalize_stats(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {}
 
 
+def _normalize_statuses(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    statuses_value = properties.get("statuses")
+    if isinstance(statuses_value, dict):
+        normalized_statuses: dict[str, dict[str, Any]] = {}
+        for key, raw_status in statuses_value.items():
+            if not isinstance(raw_status, dict):
+                continue
+            status_key = str(key).strip() or str(raw_status.get("name", "")).strip()
+            if not status_key:
+                continue
+            normalized_statuses[status_key] = {
+                "name": str(raw_status.get("name", "") or ""),
+                "type": str(raw_status.get("type", "") or ""),
+                "strength": raw_status.get("strength", 0),
+                "time_until_expire": raw_status.get("time_until_expire", 5),
+            }
+        if normalized_statuses:
+            return normalized_statuses
+
+    status_a_data = properties.get("statusA", {}) if isinstance(properties.get("statusA"), dict) else {}
+    if status_a_data.get("name") or status_a_data.get("type"):
+        fallback_key = str(status_a_data.get("name", "") or "statusA")
+        return {
+            fallback_key: {
+                "name": str(status_a_data.get("name", "") or ""),
+                "type": str(status_a_data.get("type", "") or ""),
+                "strength": status_a_data.get("strength", 0),
+                "time_until_expire": status_a_data.get("time_until_expire", 5),
+            }
+        }
+
+    return {}
+
+
 class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
@@ -112,11 +146,12 @@ class GeoObjectEntry(DBEntry):
         
         self.stats = _normalize_stats(self.properties)
 
-        status_a_data = self.properties.get("statusA", {}) if isinstance(self.properties.get("statusA"), dict) else {}
-        self.status_a_name = status_a_data.get("name", "")
-        self.status_a_type = status_a_data.get("type", "")
-        self.status_a_strength = status_a_data.get("strength", 0)
-        self.status_a_time_until_expire = status_a_data.get("time_until_expire", 5)
+        self.statuses = _normalize_statuses(self.properties)
+        primary_status = next(iter(self.statuses.values()), {})
+        self.status_a_name = primary_status.get("name", "")
+        self.status_a_type = primary_status.get("type", "")
+        self.status_a_strength = primary_status.get("strength", 0)
+        self.status_a_time_until_expire = primary_status.get("time_until_expire", 5)
 
         self.data = self.properties.get("data", {})
 
@@ -360,8 +395,31 @@ def patch_db_entry(
     database_url: str, session_name: str, key: str, fields: dict[str, Any], node: str = GEO_OBJECTS_NODE
 ) -> None:
     """Merge-update specific fields of a database entry by key."""
+
+    def _expand_patch_fields(flat_fields: dict[str, Any]) -> dict[str, Any]:
+        expanded: dict[str, Any] = {}
+        for field_path, value in flat_fields.items():
+            if "/" not in field_path:
+                expanded[field_path] = value
+                continue
+
+            path_parts = [part for part in field_path.split("/") if part]
+            if not path_parts:
+                continue
+
+            current = expanded
+            for part in path_parts[:-1]:
+                next_node = current.get(part)
+                if not isinstance(next_node, dict):
+                    next_node = {}
+                    current[part] = next_node
+                current = next_node
+            current[path_parts[-1]] = value
+
+        return expanded
+
     url = build_node_url(database_url, session_name, node, key)
-    data = json.dumps(fields).encode("utf-8")
+    data = json.dumps(_expand_patch_fields(fields)).encode("utf-8")
     req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
     with urlopen(req) as response:
         response.read()
