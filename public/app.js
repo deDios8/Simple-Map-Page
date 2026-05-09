@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.019a",
+  version: "0.1.019b",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -368,11 +368,6 @@ function renderStatsEditor(stats) {
 
       return `
         <article class="stat-row" data-stat-index="${index}" data-key="${escapeHtml(String(key || ""))}" data-min="${statMin}" data-max="${statMax}">
-          <div class="stat-row-actions">
-            <span class="stat-row-meta">${rowLabel}</span>
-            <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
-            <button class="stat-remove-button" type="button" data-action="remove-stat">Remove</button>
-          </div>
           <div class="stat-row-grid">
             <label>
               Name
@@ -386,6 +381,7 @@ function renderStatsEditor(stats) {
               Value
               <input type="number" step="any" data-field="value" value="${escapeHtml(String(statValue))}" title="Valid range: ${statMin} to ${statMax}" />
             </label>
+            <button class="stat-remove-button" type="button" data-action="remove-stat" aria-label="Remove stat">✕</button>
           </div>
         </article>
       `;
@@ -427,11 +423,6 @@ function renderStatusesEditor(statuses) {
 
       return `
         <article class="status-row" data-status-index="${index}" data-key="${escapeHtml(String(key || ""))}" data-time-until-expire="${timeUntilExpire}">
-          <div class="stat-row-actions">
-            <span class="stat-row-meta">${rowLabel}</span>
-            <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
-            <button class="status-remove-button" type="button" data-action="remove-status">Remove</button>
-          </div>
           <div class="status-row-grid">
             <label>
               Name
@@ -445,6 +436,7 @@ function renderStatusesEditor(statuses) {
               Strength
               <input type="number" step="any" data-field="strength" value="${escapeHtml(String(strength))}" />
             </label>
+            <button class="status-remove-button" type="button" data-action="remove-status" aria-label="Remove status">✕</button>
           </div>
         </article>
       `;

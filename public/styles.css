@@ -322,29 +322,13 @@ body {
 
 .stat-row-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 0.875fr 0.875fr 0.75fr auto;
   gap: 10px;
+  align-items: end;
 }
 
-.stat-row-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
-
-.stat-row-meta {
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.stat-key-display {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-family: monospace;
-  margin-left: auto;
-  margin-right: 8px;
-  opacity: 0.7;
+.stat-row label {
+  min-width: 0;
 }
 
 .stat-remove-button {
@@ -401,8 +385,9 @@ body {
 
 .status-row-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr 0.5fr auto;
   gap: 10px;
+  align-items: end;
 }
 
 .status-row label {
@@ -443,10 +428,6 @@ body {
 }
 
 @media (max-width: 760px) {
-  .status-row-grid {
-    grid-template-columns: 1fr;
-  }
-
   .statuses-header {
     align-items: stretch;
     flex-direction: column;
@@ -542,12 +523,7 @@ body {
 }
 
 @media (max-width: 760px) {
-  .stat-row-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-header,
-  .stat-row-actions {
+  .stats-header {
     align-items: stretch;
     flex-direction: column;
   }
