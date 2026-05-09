@@ -326,10 +326,6 @@ body {
   gap: 10px;
 }
 
-.stat-row-grid--limits {
-  grid-template-columns: repeat(3, 1fr);
-}
-
 .stat-row-actions {
   display: flex;
   justify-content: space-between;
@@ -409,10 +405,6 @@ body {
   gap: 10px;
 }
 
-.status-row-grid--timers {
-  grid-template-columns: repeat(2, 1fr);
-}
-
 .status-row label {
   min-width: 0;
 }
@@ -451,8 +443,7 @@ body {
 }
 
 @media (max-width: 760px) {
-  .status-row-grid,
-  .status-row-grid--timers {
+  .status-row-grid {
     grid-template-columns: 1fr;
   }
 
@@ -551,8 +542,7 @@ body {
 }
 
 @media (max-width: 760px) {
-  .stat-row-grid,
-  .stat-row-grid--limits {
+  .stat-row-grid {
     grid-template-columns: 1fr;
   }
 

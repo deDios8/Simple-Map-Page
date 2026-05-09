@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.019",
+  version: "0.1.019a",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -367,7 +367,7 @@ function renderStatsEditor(stats) {
       const rowLabel = index === 0 ? "Primary stat" : `Stat ${index + 1}`;
 
       return `
-        <article class="stat-row" data-stat-index="${index}" data-key="${escapeHtml(String(key || ""))}">
+        <article class="stat-row" data-stat-index="${index}" data-key="${escapeHtml(String(key || ""))}" data-min="${statMin}" data-max="${statMax}">
           <div class="stat-row-actions">
             <span class="stat-row-meta">${rowLabel}</span>
             <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
@@ -382,19 +382,9 @@ function renderStatsEditor(stats) {
               Type
               <input type="text" data-field="type" value="${escapeHtml(String(safeStat.type || ""))}" placeholder="resource" />
             </label>
-          </div>
-          <div class="stat-row-grid stat-row-grid--limits">
             <label>
               Value
               <input type="number" step="any" data-field="value" value="${escapeHtml(String(statValue))}" title="Valid range: ${statMin} to ${statMax}" />
-            </label>
-            <label>
-              Min
-              <input type="number" step="any" data-field="min_value" value="${escapeHtml(String(statMin))}" />
-            </label>
-            <label>
-              Max
-              <input type="number" step="any" data-field="max_value" value="${escapeHtml(String(statMax))}" />
             </label>
           </div>
         </article>
@@ -436,7 +426,7 @@ function renderStatusesEditor(statuses) {
       const rowLabel = index === 0 ? "Primary status" : `Status ${index + 1}`;
 
       return `
-        <article class="status-row" data-status-index="${index}" data-key="${escapeHtml(String(key || ""))}">
+        <article class="status-row" data-status-index="${index}" data-key="${escapeHtml(String(key || ""))}" data-time-until-expire="${timeUntilExpire}">
           <div class="stat-row-actions">
             <span class="stat-row-meta">${rowLabel}</span>
             <span class="stat-key-display">key: ${escapeHtml(String(key || ""))}</span>
@@ -451,15 +441,9 @@ function renderStatusesEditor(statuses) {
               Type
               <input type="text" data-field="type" value="${escapeHtml(String(safeStatus.type || ""))}" placeholder="debuff" />
             </label>
-          </div>
-          <div class="status-row-grid status-row-grid--timers">
             <label>
               Strength
               <input type="number" step="any" data-field="strength" value="${escapeHtml(String(strength))}" />
-            </label>
-            <label>
-              Ticks Remaining
-              <input type="number" step="1" data-field="time_until_expire" value="${escapeHtml(String(timeUntilExpire))}" />
             </label>
           </div>
         </article>
@@ -494,9 +478,9 @@ function collectStatusesFromEditor(options = {}) {
     const name = getValue("name").trim();
     const type = getValue("type").trim();
     const rawStrength = Number.parseFloat(getValue("strength").trim());
-    const rawTimeUntilExpire = Number.parseFloat(getValue("time_until_expire").trim());
+    const rawTimeUntilExpire = Number.parseFloat(row.getAttribute("data-time-until-expire") ?? "");
 
-    if (!name && !type && !getValue("strength").trim() && !getValue("time_until_expire").trim()) {
+    if (!name && !type && !getValue("strength").trim()) {
       continue;
     }
 
@@ -550,10 +534,10 @@ function collectStatsFromEditor(options = {}) {
     const name = getValue("name").trim();
     const type = getValue("type").trim();
     const rawValue = Number.parseFloat(getValue("value").trim());
-    const rawMin = Number.parseFloat(getValue("min_value").trim());
-    const rawMax = Number.parseFloat(getValue("max_value").trim());
+    const rawMin = Number.parseFloat(row.getAttribute("data-min") ?? "");
+    const rawMax = Number.parseFloat(row.getAttribute("data-max") ?? "");
 
-    if (!name && !type && !getValue("value").trim() && !getValue("min_value").trim() && !getValue("max_value").trim()) {
+    if (!name && !type && !getValue("value").trim()) {
       continue;
     }
 
