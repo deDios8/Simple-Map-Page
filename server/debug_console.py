@@ -141,10 +141,7 @@ class SessionDebugConsole:
         metadata = esper.component_for_entity(entity_id, ecs_components.MetaData)
         appearance = esper.component_for_entity(entity_id, ecs_components.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs_components.Geometry)
-        try:
-            stat_a = esper.component_for_entity(entity_id, ecs_components.StatA)
-        except Exception:
-            stat_a = None
+        stats = esper.try_component(entity_id, ecs_components.Stats)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
@@ -152,7 +149,7 @@ class SessionDebugConsole:
             f"description={metadata.description!r} color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates} "
-            f"statA_name={stat_a.name!r} statA_type={stat_a.type!r} statA_value={stat_a.value} statA_max={stat_a.max_value} statA_min={stat_a.min_value}"
+            f"stats={stats.items if stats is not None else {}}"
         )
         return True
 

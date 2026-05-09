@@ -58,13 +58,22 @@ class DeletedObject:
         self.target_path = target_path
 
 
-class StatA: # Custom Stat
+class Stat:
     def __init__(self, name: str, type: str, value: int, max_value: int = 100, min_value: int = 0) -> None:
         self.name = name
         self.type = type
         self.value = value
         self.max_value = max_value
         self.min_value = min_value
+
+
+class Stats:
+    def __init__(self, items: dict | None = None) -> None:
+        self.items = items if isinstance(items, dict) else {}
+
+
+class StatA(Stat): # Legacy alias for single-stat callers
+    pass
 
 class StatusA: # Custom Status
     def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:

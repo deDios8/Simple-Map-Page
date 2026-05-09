@@ -141,9 +141,8 @@ const fieldLatitude = document.querySelector("#field-latitude");
 const fieldLongitude = document.querySelector("#field-longitude");
 const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
-const fieldStatName = document.querySelector("#field-stat-name");
-const fieldStatValue = document.querySelector("#field-stat-value");
-const fieldStatType = document.querySelector("#field-stat-type");
+const statsList = document.querySelector("#stats-list");
+const addStatButton = document.querySelector("#add-stat-button");
 const fieldStatusName = document.querySelector("#field-status-name");
 const fieldStatusType = document.querySelector("#field-status-type");
 const fieldStatusStrength = document.querySelector("#field-status-strength");
@@ -158,14 +157,233 @@ const editableFields = [
   fieldLongitude,
   fieldRadius,
   fieldDescription,
-  fieldStatName,
-  fieldStatValue,
-  fieldStatType,
   fieldStatusName,
   fieldStatusType,
   fieldStatusStrength,
   fieldExtra,
 ];
+
+function createDefaultStat() {
+  return {
+    key: "",
+    name: "",
+    type: "",
+    value: 0,
+    max_value: 100,
+    min_value: 0,
+  };
+}
+
+function normalizeStats(properties) {
+  const rawStats = properties?.stats;
+  if (rawStats && typeof rawStats === "object" && !Array.isArray(rawStats)) {
+    const nextStats = {};
+    for (const [key, rawStat] of Object.entries(rawStats)) {
+      if (!rawStat || typeof rawStat !== "object" || Array.isArray(rawStat)) {
+        continue;
+      }
+      const statKey = String(key || rawStat.name || "").trim();
+      if (!statKey) {
+        continue;
+      }
+      nextStats[statKey] = {
+        name: String(rawStat.name || ""),
+        type: String(rawStat.type || ""),
+        value: Number.isFinite(rawStat.value) ? rawStat.value : 0,
+        max_value: Number.isFinite(rawStat.max_value) ? rawStat.max_value : 100,
+        min_value: Number.isFinite(rawStat.min_value) ? rawStat.min_value : 0,
+      };
+    }
+    if (Object.keys(nextStats).length > 0) {
+      return nextStats;
+    }
+  }
+
+  const legacyStat = properties?.statA;
+  if (legacyStat && typeof legacyStat === "object" && !Array.isArray(legacyStat)) {
+    const fallbackKey = String(legacyStat.name || "statA").trim();
+    if (legacyStat.name || legacyStat.type) {
+      return {
+        [fallbackKey]: {
+          name: String(legacyStat.name || ""),
+          type: String(legacyStat.type || ""),
+          value: Number.isFinite(legacyStat.value) ? legacyStat.value : 0,
+          max_value: Number.isFinite(legacyStat.max_value) ? legacyStat.max_value : 100,
+          min_value: Number.isFinite(legacyStat.min_value) ? legacyStat.min_value : 0,
+        },
+      };
+    }
+  }
+
+  return {};
+}
+
+function getPrimaryStat(properties) {
+  const stats = normalizeStats(properties);
+  const [primaryKey] = Object.keys(stats);
+  if (!primaryKey) {
+    return {
+      key: "statA",
+      stat: {
+        name: "",
+        type: "",
+        value: 0,
+        max_value: 100,
+        min_value: 0,
+      },
+      stats,
+    };
+  }
+  return {
+    key: primaryKey,
+    stat: stats[primaryKey],
+    stats,
+  };
+}
+
+function renderStatsEditor(stats) {
+  if (!statsList) {
+    return;
+  }
+
+  const entries = Object.entries(stats || {});
+  if (!entries.length) {
+    statsList.innerHTML = '<div class="stats-empty">No stats yet. Add one to track custom values.</div>';
+    return;
+  }
+
+  statsList.innerHTML = entries
+    .map(([key, stat], index) => {
+      const safeStat = stat && typeof stat === "object" ? stat : createDefaultStat();
+      const statMin = Number.isFinite(safeStat.min_value) ? safeStat.min_value : 0;
+      const statMax = Number.isFinite(safeStat.max_value) ? safeStat.max_value : 100;
+      const statValue = Number.isFinite(safeStat.value) ? safeStat.value : 0;
+      const rowLabel = index === 0 ? "Primary stat" : `Stat ${index + 1}`;
+
+      return `
+        <article class="stat-row" data-stat-index="${index}">
+          <div class="stat-row-actions">
+            <span class="stat-row-meta">${rowLabel}</span>
+            <button class="stat-remove-button" type="button" data-action="remove-stat">Remove</button>
+          </div>
+          <div class="stat-row-grid">
+            <label>
+              Key
+              <input type="text" data-field="key" value="${escapeHtml(String(key || ""))}" placeholder="health" />
+            </label>
+            <label>
+              Name
+              <input type="text" data-field="name" value="${escapeHtml(String(safeStat.name || ""))}" placeholder="Health" />
+            </label>
+            <label>
+              Type
+              <input type="text" data-field="type" value="${escapeHtml(String(safeStat.type || ""))}" placeholder="resource" />
+            </label>
+          </div>
+          <div class="stat-row-grid stat-row-grid--limits">
+            <label>
+              Value
+              <input type="number" step="any" data-field="value" value="${escapeHtml(String(statValue))}" title="Valid range: ${statMin} to ${statMax}" />
+            </label>
+            <label>
+              Min
+              <input type="number" step="any" data-field="min_value" value="${escapeHtml(String(statMin))}" />
+            </label>
+            <label>
+              Max
+              <input type="number" step="any" data-field="max_value" value="${escapeHtml(String(statMax))}" />
+            </label>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function addEmptyStatRow() {
+  const currentStats = collectStatsFromEditor({ allowEmpty: true }).stats;
+  const nextStats = { ...currentStats };
+  let index = Object.keys(nextStats).length + 1;
+  let nextKey = `stat-${index}`;
+  while (Object.prototype.hasOwnProperty.call(nextStats, nextKey)) {
+    index += 1;
+    nextKey = `stat-${index}`;
+  }
+  nextStats[nextKey] = createDefaultStat();
+  renderStatsEditor(nextStats);
+  applyEditorPermissions();
+}
+
+function collectStatsFromEditor(options = {}) {
+  const allowEmpty = Boolean(options.allowEmpty);
+  const rows = Array.from(statsList?.querySelectorAll(".stat-row") || []);
+  const stats = {};
+  let primaryStat = null;
+
+  for (const [index, row] of rows.entries()) {
+    const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
+    const keyValue = getValue("key").trim();
+    const name = getValue("name").trim();
+    const type = getValue("type").trim();
+    const rawValue = Number.parseFloat(getValue("value").trim());
+    const rawMin = Number.parseFloat(getValue("min_value").trim());
+    const rawMax = Number.parseFloat(getValue("max_value").trim());
+
+    if (!keyValue && !name && !type && !getValue("value").trim() && !getValue("min_value").trim() && !getValue("max_value").trim()) {
+      continue;
+    }
+
+    const minValue = Number.isFinite(rawMin) ? rawMin : 0;
+    const maxValue = Number.isFinite(rawMax) ? rawMax : 100;
+    if (maxValue < minValue) {
+      return {
+        stats: {},
+        primaryStat: null,
+        error: `Stat ${index + 1}: max must be greater than or equal to min.`,
+      };
+    }
+
+    const value = Number.isFinite(rawValue) ? rawValue : 0;
+    const nextKey = keyValue || name || `stat-${index + 1}`;
+    if (Object.prototype.hasOwnProperty.call(stats, nextKey)) {
+      return {
+        stats: {},
+        primaryStat: null,
+        error: `Duplicate stat key: ${nextKey}`,
+      };
+    }
+
+    const nextStat = {
+      name,
+      type,
+      value: Math.min(maxValue, Math.max(minValue, value)),
+      max_value: maxValue,
+      min_value: minValue,
+    };
+    stats[nextKey] = nextStat;
+    if (primaryStat === null) {
+      primaryStat = { key: nextKey, stat: nextStat };
+    }
+  }
+
+  if (!primaryStat) {
+    primaryStat = { key: "statA", stat: createDefaultStat() };
+  }
+
+  if (!allowEmpty && rows.length > 0 && !Object.keys(stats).length) {
+    return {
+      stats: {},
+      primaryStat,
+      error: null,
+    };
+  }
+
+  return {
+    stats,
+    primaryStat,
+    error: null,
+  };
+}
 
 init();
 
@@ -218,6 +436,20 @@ function bindUi() {
   requestYButton.addEventListener("click", () => {
     void submitClientRequest("request Y");
   });
+  addStatButton?.addEventListener("click", () => {
+    addEmptyStatRow();
+  });
+  statsList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-stat"]');
+    if (!button) {
+      return;
+    }
+    button.closest(".stat-row")?.remove();
+    if (!statsList.querySelector(".stat-row")) {
+      renderStatsEditor({});
+    }
+    applyEditorPermissions();
+  });
 
   objectList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-id]");
@@ -257,7 +489,11 @@ function bindUi() {
     const parsedLatitude = Number.parseFloat(fieldLatitude.value.trim());
     const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
-    const parsedStatValue = Number.parseFloat(fieldStatValue.value.trim());
+    const collectedStats = collectStatsFromEditor();
+    if (collectedStats.error) {
+      saveStatus.textContent = collectedStats.error;
+      return;
+    }
     
     const currentCoordinates = objectEntry.geometry?.coordinates;
     const fallbackLatitude = Array.isArray(currentCoordinates) ? currentCoordinates[1] : null;
@@ -266,10 +502,7 @@ function bindUi() {
       ? objectEntry.properties.appearance.radius
       : null;
     const currentMetaData = objectEntry.properties?.metaData || {};
-    const currentStatA = objectEntry.properties?.statA || {};
     const currentStatusA = objectEntry.properties?.statusA || {};
-    const statMin = Number.isFinite(currentStatA.min_value) ? currentStatA.min_value : 0;
-    const statMax = Number.isFinite(currentStatA.max_value) ? currentStatA.max_value : 100;
     
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
@@ -283,17 +516,7 @@ function bindUi() {
       };
     }
 
-    const nextStatValueRaw = Number.isFinite(parsedStatValue) ? parsedStatValue : (currentStatA.value || 0);
-    const nextStatValue = Math.min(statMax, Math.max(statMin, nextStatValueRaw));
-
-    // Build statA object with defaults
-    const nextStatA = {
-      name: fieldStatName.value.trim() || currentStatA.name || "",
-      type: fieldStatType.value.trim() || currentStatA.type || "",
-      value: nextStatValue,
-      max_value: statMax,
-      min_value: statMin,
-    };
+    const nextStats = collectedStats.stats;
 
     const parsedStatusStrength = Number.parseFloat(fieldStatusStrength.value.trim());
     const nextStatusA = {
@@ -321,7 +544,8 @@ function bindUi() {
           radius: nextRadius,
         },
         data: parsedExtra,
-        statA: nextStatA,
+        stats: nextStats,
+        statA: null,
         statusA: nextStatusA,
       },
     };
@@ -635,6 +859,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     ? nextEntry.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
+  const primaryStat = getPrimaryStat({ stats: nextEntry?.properties?.stats || {} }).stat;
   const formData = {
     name: fieldName.value.trim(),
     type: fieldType.value.trim(),
@@ -644,9 +869,10 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     longitude: fieldLongitude.value.trim(),
     radius: fieldRadius.value.trim(),
     description: fieldDescription.value.trim(),
-    statName: fieldStatName.value.trim(),
-    statValue: fieldStatValue.value.trim(),
-    statType: fieldStatType.value.trim(),
+    statName: primaryStat.name || "",
+    statValue: Number.isFinite(primaryStat.value) ? String(primaryStat.value) : "",
+    statType: primaryStat.type || "",
+    stats: nextEntry?.properties?.stats || {},
     statusName: fieldStatusName.value.trim(),
     statusType: fieldStatusType.value.trim(),
     statusStrength: fieldStatusStrength.value.trim(),
@@ -904,7 +1130,7 @@ function populateEditor(id) {
   }
 
   const metaData = feature.properties?.metaData || {};
-  const statA = feature.properties?.statA || {};
+  const stats = normalizeStats(feature.properties);
   const statusA = feature.properties?.statusA || {};
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
@@ -916,13 +1142,7 @@ function populateEditor(id) {
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = metaData.description || "";
-  fieldStatName.value = statA.name || "";
-  fieldStatValue.value = Number.isFinite(statA.value) ? String(statA.value) : "";
-  fieldStatType.value = statA.type || "";
-
-  const statMin = Number.isFinite(statA.min_value) ? statA.min_value : 0;
-  const statMax = Number.isFinite(statA.max_value) ? statA.max_value : 100;
-  fieldStatValue.setAttribute("title", `Valid range: ${statMin} to ${statMax}`);
+  renderStatsEditor(stats);
 
   fieldStatusName.value = statusA.name || "";
   fieldStatusType.value = statusA.type || "";
@@ -936,6 +1156,7 @@ function showEmptyEditor() {
   editorForm.hidden = true;
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
+  renderStatsEditor({});
   applyEditorPermissions();
 }
 
@@ -956,6 +1177,11 @@ function applyEditorPermissions() {
   if (saveButton) {
     saveButton.disabled = !isEditable || !isFormVisible;
   }
+
+  addStatButton.disabled = !isEditable || !isFormVisible;
+  statsList.querySelectorAll("input, button").forEach((element) => {
+    element.disabled = !isEditable || !isFormVisible;
+  });
 }
 
 async function persistObject(id, nextEntry) {

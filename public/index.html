@@ -129,37 +129,13 @@
                 ></textarea>
               </label>
 
-              <div class="stat-a-row">
-                <label>
-                  StatA Name
-                  <textarea
-                    id="field-stat-name"
-                    name="statName"
-                    rows="1"
-                    placeholder="Stat name"
-                  ></textarea>
-                </label>
-
-                <label>
-                  StatA Value
-                  <textarea
-                    id="field-stat-value"
-                    name="statValue"
-                    rows="1"
-                    placeholder="0"
-                  ></textarea>
-                </label>
-
-                <label>
-                  StatA Type
-                  <textarea
-                    id="field-stat-type"
-                    name="statType"
-                    rows="1"
-                    placeholder="Stat type"
-                  ></textarea>
-                </label>
-              </div>
+              <section class="stats-section" aria-labelledby="stats-heading">
+                <div class="stats-header">
+                  <h3 id="stats-heading">Stats</h3>
+                  <button id="add-stat-button" class="text-button" type="button">Add stat</button>
+                </div>
+                <div id="stats-list" class="stats-list"></div>
+              </section>
 
               <div class="status-a-row">
                 <label>

@@ -91,6 +91,62 @@ class SessionState:
             ecs_components.ExitedZones,
         )
 
+    def _normalize_stats_payload(self, props: object) -> dict[str, dict]:
+        if not isinstance(props, dict):
+            return {}
+
+        raw_stats = props.get("stats")
+        if isinstance(raw_stats, dict):
+            normalized_stats: dict[str, dict] = {}
+            for key, raw_stat in raw_stats.items():
+                if not isinstance(raw_stat, dict):
+                    continue
+                stat_key = str(key).strip() or str(raw_stat.get("name", "")).strip()
+                if not stat_key:
+                    continue
+                normalized_stats[stat_key] = {
+                    "name": str(raw_stat.get("name", "") or ""),
+                    "type": str(raw_stat.get("type", "") or ""),
+                    "value": raw_stat.get("value", 0),
+                    "max_value": raw_stat.get("max_value", 100),
+                    "min_value": raw_stat.get("min_value", 0),
+                }
+            if normalized_stats:
+                return normalized_stats
+
+        legacy_stat = props.get("statA") if isinstance(props.get("statA"), dict) else {}
+        if legacy_stat.get("name") or legacy_stat.get("type"):
+            fallback_key = str(legacy_stat.get("name", "") or "statA")
+            return {
+                fallback_key: {
+                    "name": str(legacy_stat.get("name", "") or ""),
+                    "type": str(legacy_stat.get("type", "") or ""),
+                    "value": legacy_stat.get("value", 0),
+                    "max_value": legacy_stat.get("max_value", 100),
+                    "min_value": legacy_stat.get("min_value", 0),
+                }
+            }
+
+        return {}
+
+    def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
+        normalized_stats = self._normalize_stats_payload(props)
+        stats_component = esper.try_component(entity_id, ecs_components.Stats)
+        if normalized_stats:
+            if stats_component is None:
+                esper.add_component(entity_id, ecs_components.Stats(items=normalized_stats))
+            else:
+                stats_component.items = normalized_stats
+        elif stats_component is not None:
+            esper.remove_component(entity_id, ecs_components.Stats)
+
+        try:
+            esper.remove_component(entity_id, ecs_components.StatA)
+        except KeyError:
+            pass
+
+        return normalized_stats
+
     def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
         zone_borders: dict[str, dict[str, list[str]]] = {}
 
@@ -395,6 +451,9 @@ class SessionState:
         geometry.coordinates = [lon, lat]
         esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
 
+        current_stats_component = esper.try_component(target_entity_id, ecs_components.Stats)
+        current_stats = dict(current_stats_component.items) if current_stats_component is not None else {}
+        current_primary_key = next(iter(current_stats), "statA")
         stat_a_payload = {
             "name": str(form_data.get("statName", "") or ""),
             "type": str(form_data.get("statType", "") or ""),
@@ -402,25 +461,23 @@ class SessionState:
             "max_value": 100,
             "min_value": 0,
         }
+        stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else current_stats
+        if not isinstance(stats_payload, dict):
+            stats_payload = {}
+        next_stats_payload = {
+            str(key): value
+            for key, value in stats_payload.items()
+            if isinstance(key, str) and isinstance(value, dict)
+        }
         if stat_a_payload["name"] or stat_a_payload["type"]:
-            stat_a = esper.try_component(target_entity_id, ecs_components.StatA)
-            if stat_a is None:
-                esper.add_component(
-                    target_entity_id,
-                    ecs_components.StatA(
-                        name=stat_a_payload["name"],
-                        type=stat_a_payload["type"],
-                        value=stat_a_payload["value"],
-                        max_value=stat_a_payload["max_value"],
-                        min_value=stat_a_payload["min_value"],
-                    ),
-                )
-            else:
-                stat_a.name = stat_a_payload["name"]
-                stat_a.type = stat_a_payload["type"]
-                stat_a.value = stat_a_payload["value"]
-                stat_a.max_value = stat_a_payload["max_value"]
-                stat_a.min_value = stat_a_payload["min_value"]
+            next_primary_key = stat_a_payload["name"] or current_primary_key
+            if current_primary_key != next_primary_key:
+                next_stats_payload.pop(current_primary_key, None)
+            next_stats_payload[next_primary_key] = stat_a_payload
+        else:
+            next_stats_payload.pop(current_primary_key, None)
+
+        self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
         status_a_payload = {
             "name": str(form_data.get("statusName", "") or ""),
@@ -463,7 +520,8 @@ class SessionState:
                 "properties/appearance/radius": appearance.radius,
                 "properties/appearance/visible": appearance_visible,
                 "properties/data": extra_data,
-                "properties/statA": stat_a_payload,
+                "properties/stats": next_stats_payload,
+                "properties/statA": None,
                 "properties/statusA": status_a_payload,
             },
             node=GEO_OBJECTS_NODE,
@@ -507,18 +565,7 @@ class SessionState:
             self._apply_zone_borders_from_properties(geo.entity_id, geo_object.properties)
             self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
             
-            # Add StatA component if stat data exists
-            if geo_object.stat_a_name or geo_object.stat_a_type:
-                esper.add_component(
-                    geo.entity_id,
-                    ecs_components.StatA(
-                        name=geo_object.stat_a_name,
-                        type=geo_object.stat_a_type,
-                        value=geo_object.stat_a_value,
-                        max_value=geo_object.stat_a_max_value,
-                        min_value=geo_object.stat_a_min_value,
-                    ),
-                )
+            self._sync_stats_component(geo.entity_id, geo_object.properties)
 
             # Add StatusA component if status data exists
             if geo_object.status_a_name or geo_object.status_a_type:
@@ -555,30 +602,8 @@ class SessionState:
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
-        
-        # Update or add StatA component
-        try:
-            stat_a = esper.component_for_entity(existing_entity_id, ecs_components.StatA)
-            stat_a_data = props.get("statA", {}) if isinstance(props.get("statA"), dict) else {}
-            stat_a.name = stat_a_data.get("name", "")
-            stat_a.type = stat_a_data.get("type", "")
-            stat_a.value = stat_a_data.get("value", 0)
-            stat_a.max_value = stat_a_data.get("max_value", 100)
-            stat_a.min_value = stat_a_data.get("min_value", 0)
-        except KeyError:
-            # Component doesn't exist yet, add it if data is present
-            stat_a_data = props.get("statA", {}) if isinstance(props.get("statA"), dict) else {}
-            if stat_a_data.get("name") or stat_a_data.get("type"):
-                esper.add_component(
-                    existing_entity_id,
-                    ecs_components.StatA(
-                        name=stat_a_data.get("name", ""),
-                        type=stat_a_data.get("type", ""),
-                        value=stat_a_data.get("value", 0),
-                        max_value=stat_a_data.get("max_value", 100),
-                        min_value=stat_a_data.get("min_value", 0),
-                    ),
-                )
+
+        self._sync_stats_component(existing_entity_id, props)
 
         # Update or add StatusA component
         try:
