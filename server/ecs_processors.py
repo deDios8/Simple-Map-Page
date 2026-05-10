@@ -55,7 +55,7 @@ class CheckZoneEntryExit(esper.Processor):
                     },
                 }
 
-                if self.is_within_zone_2(geometry.coordinates, zone_payload):
+                if self.is_within_zone_intersect(geometry.coordinates, zone_payload):
                     current_zones.add(str(zone_id_component.id))
             
             previous_within = esper.try_component(entity_id, ecs_components.WithinZones)
@@ -72,7 +72,7 @@ class CheckZoneEntryExit(esper.Processor):
                 print(f"[CheckZoneEntryExit] Entity {entity_id} exited zones: {exited_zones}")
                 
 
-    def is_within_zone(self, object_coordinates: list, zone: dict) -> bool:
+    def is_within_zone_distance(self, object_coordinates: list, zone: dict) -> bool:
         # Expected format for Point coordinates is [longitude, latitude].
         if not isinstance(object_coordinates, list) or len(object_coordinates) < 2:
             return False
@@ -119,7 +119,7 @@ class CheckZoneEntryExit(esper.Processor):
         combined_radius_m = max(0.0, object_radius_m) + max(0.0, zone_radius_m)
         return distance_m <= combined_radius_m
 
-    def is_within_zone_2(self, object_coordinates: list, zone: dict) -> bool:
+    def is_within_zone_intersect(self, object_coordinates: list, zone: dict) -> bool:
         if not isinstance(object_coordinates, list) or len(object_coordinates) < 2:
             return False
 

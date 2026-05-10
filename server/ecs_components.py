@@ -100,6 +100,7 @@ class ExitedZones:
 
 
 class ZoneBordersDirty:
+    '''Marker component to indicate that zone borders need to be uploaded to the db.'''
     def __init__(self) -> None:
         self.is_dirty = True
 

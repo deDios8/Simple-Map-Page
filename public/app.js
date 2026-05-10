@@ -102,6 +102,7 @@ const demoGeoObjects = {
 
 const state = {
   version: "0.1.019b",
+  updateFrequency: 2000,
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -968,7 +969,7 @@ function startCoordinateTracking() {
       coordinates: [lng, lat],
       quiet: true,
     });
-  }, 2000);
+  }, state.updateFrequency);
 }
 
 function initFirebaseListener() {

@@ -745,7 +745,7 @@ class SessionState:
         self.debug.start()
         self.debug.print_help()
 
-        ticks_per_second = 20.0
+        ticks_per_second = 2.0
         tick_dt = 1.0 / ticks_per_second
         next_tick = time.perf_counter()
 
