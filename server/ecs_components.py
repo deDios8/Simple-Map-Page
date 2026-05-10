@@ -1,49 +1,48 @@
+from dataclasses import dataclass
 import esper
 
 
 # ---------------------------------------------------------------------------
 # Comonents
 # ---------------------------------------------------------------------------
+@dataclass
 class ID:
-    def __init__(self, id: str) -> None:
-        self.id = id
+    id: str
 
+@dataclass
 class MetaData:
-    def __init__(self, name: str, type: str, description: str) -> None:
-        self.name = name
-        self.type = type
-        self.description = description
+    name: str
+    type: str
+    description: str
 
+@dataclass
 class IsUser:
-    def __init__(self) -> None:
-        self.is_user = True
+    is_user: bool = True
 
+@dataclass
 class IsZone:
-    def __init__(self) -> None:
-        self.is_zone = True
+    is_zone: bool = True
 
+@dataclass
 class Appearance:
-    def __init__(self, color: str, shape: str, radius: int) -> None:
-        self.color = color
-        self.shape = shape
-        self.radius = radius
+    color: str
+    shape: str
+    radius: int
 
+@dataclass
 class Geometry:
-    def __init__(self, coordinates: list) -> None:
-        self.coordinates = coordinates # Longitude, Latitude
-        self.type = "Point"  # Assuming all geo objects are points for simplicity; can be extended to support other types
+    coordinates: list
+    type: str = "Point"  # Assuming all geo objects are points for simplicity; can be extended to support other types
 
+@dataclass
 class ClientRequestProperties:
-    def __init__(self, requester_id: str, timestamp: str, request_type: str = "") -> None:
-        self.requester_id = requester_id
-        self.timestamp = timestamp
-        self.request_type = request_type
+    requester_id: str
+    timestamp: str
+    request_type: str = ""
 
-
+@dataclass
 class NewLocation:
-    def __init__(self, requester_id: str) -> None:
-        self.requester_id = requester_id
-
+    requester_id: str
 
 class EditedObject:
     def __init__(self, target_id: str, target_path: str, form_data: dict) -> None:
@@ -51,33 +50,29 @@ class EditedObject:
         self.target_path = target_path
         self.form_data = form_data if isinstance(form_data, dict) else {}
 
-
+@dataclass
 class DeletedObject:
-    def __init__(self, target_id: str, target_path: str) -> None:
-        self.target_id = target_id
-        self.target_path = target_path
+    target_id: str
+    target_path: str
 
-
+@dataclass
 class Stat:
-    def __init__(self, name: str, type: str, value: int, max_value: int = 100, min_value: int = 0) -> None:
-        self.name = name
-        self.type = type
-        self.value = value
-        self.max_value = max_value
-        self.min_value = min_value
-
+    name: str
+    type: str
+    value: int
+    min_value: int = 0
+    max_value: int = 100
 
 class Stats:
     def __init__(self, items: dict | None = None) -> None:
         self.items = items if isinstance(items, dict) else {}
 
+@dataclass
 class Status:
-    def __init__(self, name: str, type: str, strength: int, time_until_expire: int = 5) -> None:
-        self.name = name
-        self.type = type
-        self.strength = strength
-        self.time_until_expire = time_until_expire
-
+    name: str
+    type: str
+    strength: int
+    time_until_expire: int = 5
 
 class Statuses:
     def __init__(self, items: dict | None = None) -> None:
@@ -85,28 +80,26 @@ class Statuses:
 
 
 
-
+@dataclass
 class WithinZones:
-    def __init__(self, zone_ids: list) -> None:
-        self.zone_ids = zone_ids
+    zone_ids: list
 
+@dataclass
 class NotWithinZones:
-    def __init__(self, zone_ids: list) -> None:
-        self.zone_ids = zone_ids
+    zone_ids: list
 
+@dataclass
 class EnteredZones:
-    def __init__(self, zone_ids: list) -> None:
-        self.zone_ids = zone_ids
+    zone_ids: list
 
+@dataclass
 class ExitedZones:
-    def __init__(self, zone_ids: list) -> None:
-        self.zone_ids = zone_ids
+    zone_ids: list
 
-
+@dataclass
 class ZoneBordersDirty:
     '''Marker component to indicate that zone borders need to be uploaded to the db.'''
-    def __init__(self) -> None:
-        self.is_dirty = True
+    is_dirty: bool = True
 
 
 
@@ -155,3 +148,4 @@ class ClientRequest:
                 request_type=crp.get("type", ""),
             ),
         )
+
