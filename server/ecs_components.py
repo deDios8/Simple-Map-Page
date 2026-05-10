@@ -90,6 +90,10 @@ class WithinZones:
     def __init__(self, zone_ids: list) -> None:
         self.zone_ids = zone_ids
 
+class NotWithinZones:
+    def __init__(self, zone_ids: list) -> None:
+        self.zone_ids = zone_ids
+
 class EnteredZones:
     def __init__(self, zone_ids: list) -> None:
         self.zone_ids = zone_ids

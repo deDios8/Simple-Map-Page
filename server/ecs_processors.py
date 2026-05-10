@@ -174,6 +174,7 @@ class RemoveZoneEntryExit(esper.Processor):
         
     def process(self) -> None:
         for entity_id, entered in list(esper.get_component(ecs_components.EnteredZones)):
+            # WithinZones: add entered zones
             within = esper.try_component(entity_id, ecs_components.WithinZones)
             before_zones = set(within.zone_ids) if within else set()
             within_zones = set(before_zones)
@@ -183,12 +184,28 @@ class RemoveZoneEntryExit(esper.Processor):
             if within_zones != before_zones:
                 esper.add_component(entity_id, ecs_components.ZoneBordersDirty())
 
+            # NotWithinZones: remove entered zones
+            not_within = esper.try_component(entity_id, ecs_components.NotWithinZones)
+            if not_within is not None:
+                before_not = set(not_within.zone_ids)
+                not_within_zones = set(before_not)
+                not_within_zones.difference_update(entered.zone_ids)
+
+                if not_within_zones:
+                    esper.add_component(entity_id, ecs_components.NotWithinZones(zone_ids=list(not_within_zones)))
+                else:
+                    try:
+                        esper.remove_component(entity_id, ecs_components.NotWithinZones)
+                    except KeyError:
+                        pass
+
             try:
                 esper.remove_component(entity_id, ecs_components.EnteredZones)
             except KeyError:
                 pass
 
         for entity_id, exited in list(esper.get_component(ecs_components.ExitedZones)):
+            # WithinZones: remove exited zones
             within = esper.try_component(entity_id, ecs_components.WithinZones)
             if within is not None:
                 before_zones = set(within.zone_ids)
@@ -205,6 +222,14 @@ class RemoveZoneEntryExit(esper.Processor):
 
                 if within_zones != before_zones:
                     esper.add_component(entity_id, ecs_components.ZoneBordersDirty())
+
+            # NotWithinZones: add exited zones
+            not_within = esper.try_component(entity_id, ecs_components.NotWithinZones)
+            before_not = set(not_within.zone_ids) if not_within else set()
+            not_within_zones = set(before_not)
+            not_within_zones.update(exited.zone_ids)
+
+            esper.add_component(entity_id, ecs_components.NotWithinZones(zone_ids=list(not_within_zones)))
 
             try:
                 esper.remove_component(entity_id, ecs_components.ExitedZones)
