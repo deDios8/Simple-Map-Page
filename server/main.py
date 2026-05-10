@@ -703,11 +703,11 @@ class SessionState:
 
     def _on_geo_object_update_create(self, key: str, geo_object: GeoObjectEntry, action: str="UPDATE") -> None:
         entity_id = self._upsert_geo_object_entity(key, geo_object)
-        print(f"[GEO OBJECT {action.upper()}] {key}: entity={entity_id}")
+        # print(f"[GEO OBJECT {action.upper()}] {key}: entity={entity_id}")
 
     def _on_client_request_update_create(self, key: str, request: ClientRequestEntry, action: str = "CREATE") -> None:
         entity_id = self._upsert_client_request_entity(key, request)
-        print(f"[REQUEST {action.upper()}] {key}: from={request.requester_id}, entity={entity_id}")
+        # print(f"[REQUEST {action.upper()}] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def _delete_geo_object_entity(self, key: str) -> int | None:
@@ -727,17 +727,17 @@ class SessionState:
 
     def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
         entity_id = self._delete_geo_object_entity(key)
-        if geo_object is None:
-            print(f"[GEO OBJECT DELETE] {key}: geo_object is None, entity={entity_id}")
-        else:
-            print(f"[GEO OBJECT DELETE] {key}: entity={entity_id}")
+        # if geo_object is None:
+        #     print(f"[GEO OBJECT DELETE] {key}: geo_object is None, entity={entity_id}")
+        # else:
+        #     print(f"[GEO OBJECT DELETE] {key}: entity={entity_id}")
 
     def _on_client_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
         entity_id = self._delete_client_request_entity(key)
-        if request is None:
-            print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
-        else:
-            print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
+        # if request is None:
+        #     print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
+        # else:
+        #     print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def run_db_and_ecs_processor(self) -> None:
@@ -813,3 +813,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -36,14 +36,17 @@ class CheckZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        for entity_id, (geometry,) in esper.get_components(ecs_components.Geometry):
+        for entity_id, (geometry, id_component) in esper.get_components(ecs_components.Geometry, ecs_components.ID):
             current_zones = set()
             for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in esper.get_components(
                     ecs_components.Geometry,
                     ecs_components.Appearance,
                     ecs_components.ID,
                 ):
+                # print(f"[CheckZoneEntryExit] Checking entity {id_component.id} against zone {zone_id_component.id}")
                 if zone_entity_id == entity_id:
+                    continue
+                if id_component.id == zone_id_component.id:
                     continue
 
                 zone_payload = {
@@ -66,10 +69,10 @@ class CheckZoneEntryExit(esper.Processor):
             
             if entered_zones:
                 esper.add_component(entity_id, ecs_components.EnteredZones(zone_ids=list(entered_zones)))
-                print(f"[CheckZoneEntryExit] Entity {entity_id} entered zones: {entered_zones}")
+                print(f"[CheckZoneEntryExit] Entity {id_component.id} entered zones: {entered_zones}")
             if exited_zones:
                 esper.add_component(entity_id, ecs_components.ExitedZones(zone_ids=list(exited_zones)))
-                print(f"[CheckZoneEntryExit] Entity {entity_id} exited zones: {exited_zones}")
+                print(f"[CheckZoneEntryExit] Entity {id_component.id} exited zones: {exited_zones}")
                 
 
     def is_within_zone_distance(self, object_coordinates: list, zone: dict) -> bool:
@@ -235,3 +238,4 @@ class RemoveZoneEntryExit(esper.Processor):
                 esper.remove_component(entity_id, ecs_components.ExitedZones)
             except KeyError:
                 pass
+
