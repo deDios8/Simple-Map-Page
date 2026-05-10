@@ -276,13 +276,14 @@ body {
 
 .appearance-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 0.875fr 0.875fr 0.5fr auto;
   gap: 10px;
-  align-items: end;
+  align-items: start;
 }
 
 .appearance-row .checkbox-row {
-  align-self: end;
+  grid-template-columns: unset;
+  align-items: start;
 }
 
 .stats-section {
