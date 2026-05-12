@@ -14,6 +14,9 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _marker in list(esper.get_component(ecs_components.NewLocation)):
             self.session_state.apply_new_location_request(entity_id)
 
+        for entity_id, _marker in list(esper.get_component(ecs_components.AddObject)):
+            self.session_state.apply_add_object_request(entity_id)
+
         for entity_id, _marker in list(esper.get_component(ecs_components.EditedObject)):
             self.session_state.apply_edited_object_request(entity_id)
 

@@ -410,6 +410,65 @@ class SessionState:
         )
         self._consume_client_request(request_entity_id)
 
+    def apply_add_object_request(self, request_entity_id: int) -> None:
+        request_geometry = esper.try_component(request_entity_id, ecs_components.Geometry)
+        request_props = esper.try_component(request_entity_id, ecs_components.ClientRequestProperties)
+        if request_geometry is None or request_props is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        coordinates = request_geometry.coordinates
+        if not isinstance(coordinates, list) or len(coordinates) < 2:
+            self._consume_client_request(request_entity_id)
+            return
+
+        requester_id = str(request_props.requester_id or "").strip()
+        if not requester_id:
+            self._consume_client_request(request_entity_id)
+            return
+
+        try:
+            lon = float(coordinates[0])
+            lat = float(coordinates[1])
+        except (TypeError, ValueError):
+            self._consume_client_request(request_entity_id)
+            return
+
+        request_id_component = esper.try_component(request_entity_id, ecs_components.ID)
+        new_object_key = f"obj-{requester_id}-{int(time.time() * 1000)}"
+
+        new_object_entry = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat],
+            },
+            "properties": {
+                "id": new_object_key,
+                "metaData": {
+                    "name": f"New Object",
+                    "description": f"Added by {requester_id}.",
+                    "type": "pin",
+                },
+                "appearance": {
+                    "color": "#0b8f87",
+                    "visible": True,
+                    "radius": 10,
+                },
+                "data": {},
+            },
+        }
+
+        put_db_entry(
+            self.database_url,
+            self.session_name,
+            new_object_key,
+            new_object_entry,
+            NODE=GEO_OBJECTS_NODE,
+        )
+        self._upsert_geo_object_entity(new_object_key, GeoObjectEntry(new_object_entry))
+        self._consume_client_request(request_entity_id)
+
     def apply_edited_object_request(self, request_entity_id: int) -> None:
         edited = esper.try_component(request_entity_id, ecs_components.EditedObject)
         if edited is None:
@@ -622,10 +681,16 @@ class SessionState:
             self.ClientRequestEntityIds[key] = entity.entity_id
             request_params = esper.component_for_entity(entity.entity_id, ecs_components.ClientRequestProperties)
             request_type = str(request_params.request_type or "").strip().lower()
+            requested_action = str(request_params.requested_action or "").strip().lower()
             if request_type == "new_location":
                 esper.add_component(
                     entity.entity_id,
                     ecs_components.NewLocation(requester_id=request_params.requester_id),
+                )
+            elif requested_action == "add object":
+                esper.add_component(
+                    entity.entity_id,
+                    ecs_components.AddObject(requester_id=request_params.requester_id),
                 )
             elif request_type == "edited_object":
                 form_data = request.form_data if isinstance(request.form_data, dict) else {}
@@ -664,6 +729,7 @@ class SessionState:
 
         for marker_component in (
             ecs_components.NewLocation,
+            ecs_components.AddObject,
             ecs_components.EditedObject,
             ecs_components.DeletedObject,
         ):
@@ -673,10 +739,16 @@ class SessionState:
                 pass
 
         request_type = str(request_params.request_type or "").strip().lower()
+        requested_action = str(request_params.requested_action or "").strip().lower()
         if request_type == "new_location":
             esper.add_component(
                 existing_entity_id,
                 ecs_components.NewLocation(requester_id=request_params.requester_id),
+            )
+        elif requested_action == "add object":
+            esper.add_component(
+                existing_entity_id,
+                ecs_components.AddObject(requester_id=request_params.requester_id),
             )
         elif request_type == "edited_object":
             form_data = props.get("formData", {}) if isinstance(props.get("formData"), dict) else {}

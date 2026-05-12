@@ -42,6 +42,10 @@ class ClientRequestProperties:
     requested_action: str = ""
 
 @dataclass
+class AddObject:
+    requester_id: str
+
+@dataclass
 class NewLocation:
     requester_id: str
 

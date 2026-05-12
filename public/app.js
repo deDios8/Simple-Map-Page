@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.022",
+  version: "0.1.023",
   updateFrequency: 2000,
   map: null,
   userMarker: null,
