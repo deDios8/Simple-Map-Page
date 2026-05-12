@@ -39,7 +39,7 @@ class CheckZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        for entity_id, (geometry, id_component) in esper.get_components(ecs_components.Geometry, ecs_components.ID):
+        for entity_id, (geometry, id_component, _) in esper.get_components(ecs_components.Geometry, ecs_components.ID, ecs_components.Appearance):
             current_zones = set()
             for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in esper.get_components(
                     ecs_components.Geometry,
