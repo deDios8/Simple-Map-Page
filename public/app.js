@@ -1083,12 +1083,13 @@ async function submitTypedClientRequest({
       coordinates,
     },
     properties: {
-      id: requestId,
+      id: requestKey,
       ...properties,
       clientRequestProperties: {
         requesterId: state.userId,
         timestamp,
         type: requestType,
+        requestedAction: requestId,
         ...clientRequestProperties,
       },
     },

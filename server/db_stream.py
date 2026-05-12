@@ -54,6 +54,7 @@ class ClientRequestEntry(DBEntry):
         self.requester_id = crp.get("requesterId", "")
         self.timestamp = crp.get("timestamp", "")
         self.request_type = crp.get("type", "")
+        self.requested_action = crp.get("requestedAction", "")
         self.target_id = crp.get("targetId", "")
         self.target_path = crp.get("targetPath", "")
         self.form_data = self.properties.get("formData", {}) if isinstance(self.properties.get("formData"), dict) else {}

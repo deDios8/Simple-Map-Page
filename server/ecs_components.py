@@ -39,6 +39,7 @@ class ClientRequestProperties:
     requester_id: str
     timestamp: str
     request_type: str = ""
+    requested_action: str = ""
 
 @dataclass
 class NewLocation:
@@ -146,6 +147,7 @@ class ClientRequest:
                 requester_id=crp.get("requesterId", ""),
                 timestamp=crp.get("timestamp", ""),
                 request_type=crp.get("type", ""),
+                requested_action=crp.get("requestedAction", ""),
             ),
         )
 
