@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.021",
+  version: "0.1.022",
   updateFrequency: 2000,
   map: null,
   userMarker: null,
@@ -118,6 +118,7 @@ const state = {
   listenerActive: true,
   listenerUnsubscribe: null,
   pendingUserSetup: false,
+  coordPickMode: false,
 };
 
 const locationStatus = document.querySelector("#location-status");
@@ -140,6 +141,7 @@ const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
 const fieldLatitude = document.querySelector("#field-latitude");
 const fieldLongitude = document.querySelector("#field-longitude");
+const coordPickButton = document.querySelector("#coord-pick-button");
 const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
 const statsList = document.querySelector("#stats-list");
@@ -605,6 +607,16 @@ function renderVersionInfo() {
   }
 }
 
+function setCoordPickMode(active) {
+  state.coordPickMode = Boolean(active);
+  coordPickButton?.classList.toggle("is-active", state.coordPickMode);
+  const mapEl = document.querySelector("#map");
+  mapEl?.classList.toggle("is-coord-picking", state.coordPickMode);
+  if (coordPickButton) {
+    coordPickButton.setAttribute("aria-pressed", String(state.coordPickMode));
+  }
+}
+
 function initMap() {
   state.map = L.map("map", {
     zoomControl: false,
@@ -612,6 +624,20 @@ function initMap() {
   }).setView([48.21224, -101.31304], 14);
 
   L.control.zoom({ position: "topright" }).addTo(state.map);
+
+  state.map.on("click", (event) => {
+    if (!state.coordPickMode) {
+      return;
+    }
+    const { lat, lng } = event.latlng;
+    if (fieldLatitude) {
+      fieldLatitude.value = String(Math.round(lat * 100000) / 100000);
+    }
+    if (fieldLongitude) {
+      fieldLongitude.value = String(Math.round(lng * 100000) / 100000);
+    }
+    setCoordPickMode(false);
+  });
 
   // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   //   attribution: "&copy; OpenStreetMap contributors",
@@ -645,6 +671,10 @@ function bindUi() {
   addStatusButton?.addEventListener("click", () => {
     addEmptyStatusRow();
   });
+  coordPickButton?.addEventListener("click", () => {
+    setCoordPickMode(!state.coordPickMode);
+  });
+
   editorFormToggle?.addEventListener("click", () => {
     setEditorFormCollapsed(!editorCollapseState.form);
   });
@@ -1423,6 +1453,12 @@ function applyEditorPermissions() {
   });
 
   const isFormVisible = !editorForm.hidden;
+  if (coordPickButton) {
+    coordPickButton.disabled = !isEditable || !isFormVisible;
+    if (!isEditable || !isFormVisible) {
+      setCoordPickMode(false);
+    }
+  }
   deleteObjectButton.disabled = !isEditable || !isFormVisible;
   const saveButton = editorForm.querySelector('button[type="submit"]');
   if (saveButton) {

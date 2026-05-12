@@ -91,23 +91,37 @@
               <div class="coordinates-row">
                 <label>
                   Latitude
-                  <textarea
+                  <input
                     id="field-latitude"
                     name="latitude"
-                    rows="1"
-                    placeholder='0.0'
-                  ></textarea>
+                    type="text"
+                    readonly
+                    placeholder="0.0"
+                  />
                 </label>
 
                 <label>
                   Longitude
-                  <textarea
+                  <input
                     id="field-longitude"
                     name="longitude"
-                    rows="1"
-                    placeholder='-0.0'
-                  ></textarea>
+                    type="text"
+                    readonly
+                    placeholder="-0.0"
+                  />
                 </label>
+
+                <button
+                  id="coord-pick-button"
+                  class="coord-pick-button"
+                  type="button"
+                  aria-label="Pick coordinates from map"
+                  title="Tap map to set coordinates"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" width="18" height="18">
+                    <path d="M13.586 3.586a2 2 0 1 1 2.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
 
                 <label>
                   Radius
