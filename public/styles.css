@@ -247,8 +247,10 @@ body {
 }
 
 .editor-header {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 .section-actions {

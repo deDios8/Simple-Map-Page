@@ -130,6 +130,7 @@ const requestAButton = document.querySelector("#request-a-button");
 const requestBButton = document.querySelector("#request-b-button");
 const requestXButton = document.querySelector("#request-x-button");
 const requestYButton = document.querySelector("#request-y-button");
+const addObjectButton = document.querySelector("#add-object-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorEmptyState = document.querySelector("#editor-empty-state");
@@ -664,6 +665,9 @@ function bindUi() {
   });
   requestYButton.addEventListener("click", () => {
     void submitClientRequest("request Y");
+  });
+  addObjectButton?.addEventListener("click", () => {
+    void submitClientRequest("add object");
   });
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
