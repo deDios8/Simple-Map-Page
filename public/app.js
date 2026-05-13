@@ -127,6 +127,7 @@ const state = {
 
 const locationStatus = document.querySelector("#location-status");
 const drawer = document.querySelector("#drawer");
+const drawerTitle = document.querySelector("#drawer-session-title");
 const drawerToggle = document.querySelector("#drawer-toggle");
 const drawerClose = document.querySelector("#drawer-close");
 const listenerToggle = document.querySelector("#listener-toggle");
@@ -869,6 +870,7 @@ function promptUserId() {
   const passwordInput = document.querySelector("#user-pass-input");
   const statusNote = document.querySelector("#user-id-status");
 
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const input = document.querySelector("#user-id-input");
@@ -901,7 +903,6 @@ function promptUserId() {
       sessionInput.value = sessionName;
     }
 
-    const drawerTitle = document.querySelector("#drawer-session-title");
     if (drawerTitle) {
       drawerTitle.textContent = `${state.userId}'s ${sessionName}`;
     }
