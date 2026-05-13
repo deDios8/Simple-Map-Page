@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.025",
+  version: "0.1.026",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -618,19 +618,19 @@ function bindUi() {
   drawerClose.addEventListener("click", () => setDrawerOpen(false));
   listenerToggle.addEventListener("click", toggleListener);
   requestAButton.addEventListener("click", () => {
-    void submitClientRequest("request A");
+    void submitRequest({ requestId: "request A", requestType: "button_click", successMessage: "request A sent" });
   });
   requestBButton.addEventListener("click", () => {
-    void submitClientRequest("request B");
+    void submitRequest({ requestId: "request B", requestType: "button_click", successMessage: "request B sent" });
   });
   requestXButton.addEventListener("click", () => {
-    void submitClientRequest("request X");
+    void submitRequest({ requestId: "request X", requestType: "button_click", successMessage: "request X sent" });
   });
   requestYButton.addEventListener("click", () => {
-    void submitClientRequest("request Y");
+    void submitRequest({ requestId: "request Y", requestType: "button_click", successMessage: "request Y sent" });
   });
   addObjectButton?.addEventListener("click", () => {
-    void submitClientRequest("add object");
+    void submitRequest({ requestId: "add object", requestType: "button_click", successMessage: "add object sent" });
   });
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
@@ -921,7 +921,7 @@ function createUserObject() {
     return;
   }
   const [lat, lng] = state.userLocation;
-  void submitTypedClientRequest({
+  void submitRequest({
     requestId: state.userId,
     requestType: "new_location",
     coordinates: [lng, lat],
@@ -960,7 +960,7 @@ function startCoordinateTracking() {
       renderLayer();
     }
 
-    void submitTypedClientRequest({
+    void submitRequest({
       requestId: state.userId,
       requestType: "new_location",
       coordinates: [lng, lat],
@@ -992,25 +992,10 @@ function toggleListener() {
   listenerToggle.setAttribute("title", state.listenerActive ? "Pause Firebase listener" : "Resume Firebase listener");
 }
 
-async function submitClientRequest(requestId) {
-  if (!state.userLocation) {
-    locationStatus.textContent = "Request unavailable: waiting for location fix.";
-    return;
-  }
-
-  const [lat, lng] = state.userLocation;
-  await submitTypedClientRequest({
-    requestId,
-    requestType: "button_click",
-    coordinates: [lng, lat],
-    successMessage: `${requestId} sent`,
-  });
-}
-
-async function submitTypedClientRequest({
+async function submitRequest({
   requestId,
   requestType,
-  coordinates,
+  coordinates = null,
   clientRequestProperties = {},
   properties = {},
   successMessage = "Request sent",
@@ -1028,6 +1013,17 @@ async function submitTypedClientRequest({
       locationStatus.textContent = "Request unavailable: enter your ID first.";
     }
     return;
+  }
+
+  if (!coordinates) {
+    if (!state.userLocation) {
+      if (!quiet) {
+        locationStatus.textContent = "Request unavailable: waiting for location fix.";
+      }
+      return;
+    }
+    const [lat, lng] = state.userLocation;
+    coordinates = [lng, lat];
   }
 
   if (!Array.isArray(coordinates) || coordinates.length < 2) {
@@ -1093,7 +1089,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     extraData: nextEntry?.properties?.data || {},
   };
 
-  await submitTypedClientRequest({
+  await submitRequest({
     requestId: `edit-${targetId}`,
     requestType: "edited_object",
     coordinates,
@@ -1114,7 +1110,7 @@ async function submitDeletedObjectRequest(targetId) {
     ? selected.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
-  await submitTypedClientRequest({
+  await submitRequest({
     requestId: `delete-${targetId}`,
     requestType: "deleted_object",
     coordinates,
