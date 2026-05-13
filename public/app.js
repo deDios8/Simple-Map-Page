@@ -101,8 +101,12 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.024",
+  version: "0.1.025",
   updateFrequency: 2000,
+  // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  // mapLayerAttribution: "&copy; OpenStreetMap contributors",
+  mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  mapLayerAttribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -600,11 +604,9 @@ function initMap() {
     setCoordPickMode(false);
   });
 
-  // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  //   attribution: "&copy; OpenStreetMap contributors",
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-    attribution:
-      "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+
+  L.tileLayer(state.mapLayer, {
+    attribution: state.mapLayerAttribution,
     maxZoom: 19,
     minZoom: 12,
   }).addTo(state.map);
