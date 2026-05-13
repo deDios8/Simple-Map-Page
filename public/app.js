@@ -907,11 +907,11 @@ function promptUserId() {
       drawerTitle.textContent = `${state.userId}'s ${sessionName}`;
     }
 
-    reconnectObjectListener();
+    resetObjectListener();
     modal.hidden = true;
 
     // Defer createUserObject/startCoordinateTracking until the first Firebase
-    // snapshot arrives in applyObjects, so existing data is not overwritten.
+    // snapshot arrives in handleObjectSnapshot, so existing data is not overwritten.
     state.pendingUserSetup = true;
   });
 }
@@ -974,7 +974,7 @@ function initFirebaseListener() {
 
   if (!configReady) {
     locationStatus.textContent = `${locationStatus.textContent} Demo data loaded until Firebase is configured.`;
-    applyObjects(demoGeoObjects);
+    handleObjectSnapshot(demoGeoObjects);
     return;
   }
 
@@ -982,7 +982,7 @@ function initFirebaseListener() {
   state.database = getDatabase(app);
 
   state.firebaseReady = true;
-  reconnectObjectListener();
+  resetObjectListener();
 }
 
 function toggleListener() {
@@ -1122,7 +1122,7 @@ async function submitDeletedObjectRequest(targetId) {
   });
 }
 
-function applyObjects(nextObjects) {
+function handleObjectSnapshot(nextObjects) {
   state.objects = normalizeObjects(nextObjects);
   renderLayer();
   renderObjectList();
@@ -1462,20 +1462,20 @@ function getFirebaseClientRequestPath() {
   return `${state.sessionName}/${firebaseClientRequestNode}`;
 }
 
-function reconnectObjectListener() {
+function resetObjectListener() {
   if (!state.firebaseReady || !state.database) {
     return;
   }
 
   if (typeof state.listenerUnsubscribe === "function") {
     state.listenerUnsubscribe();
-    applyObjects({});
+    handleObjectSnapshot({});
   }
 
   const objectRef = ref(state.database, getFirebaseCollectionPath());
   state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
     if (state.listenerActive) {
-      applyObjects(snapshot.val() || {});
+      handleObjectSnapshot(snapshot.val() || {});
       // Reapply collapse state after objects are updated
       applyCollapseState();
     }
