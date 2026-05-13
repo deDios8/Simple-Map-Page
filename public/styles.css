@@ -209,13 +209,6 @@ body {
   font: inherit;
 }
 
-.text-button {
-  border: 0;
-  background: transparent;
-  color: var(--accent-dark);
-  font-weight: 700;
-}
-
 .object-list {
   list-style: none;
   padding: 0;
@@ -454,7 +447,7 @@ body {
   border: 0;
   border-radius: 999px;
   background: rgba(9, 83, 77, 0.1);
-  color: var(--accent-strong);
+  color: var(--accent);
   padding: 10px 14px;
   font-weight: 700;
 }
