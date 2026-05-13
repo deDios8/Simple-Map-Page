@@ -38,7 +38,7 @@ const demoGeoObjects = {
       appearance: {
         color: "#0b8f87",
         visible: true,
-        radius: 12,
+        radius: 5,
       },
       data: {
         category: "pin",
@@ -62,7 +62,7 @@ const demoGeoObjects = {
       appearance: {
         color: "#5e718c",
         visible: false,
-        radius: 8,
+        radius: 5,
       },
       data: {
         category: "standby",
@@ -101,7 +101,7 @@ const demoGeoObjects = {
 };
 
 const state = {
-  version: "0.1.023",
+  version: "0.1.024",
   updateFrequency: 2000,
   map: null,
   userMarker: null,
@@ -875,7 +875,7 @@ function locateUser() {
 
       if (!state.userMarker) {
         state.userMarker = L.circleMarker(latLng, {
-          radius: 9,
+          radius: 2,
           color: "#12413a",
           weight: 2,
           fillColor: "#f9fffd",
@@ -1292,7 +1292,7 @@ function renderLayer() {
   const visibleFeatures = Object.values(state.objects).filter((feature) => feature.properties?.appearance?.visible);
 
   state.geoJsonLayer = L.geoJSON(visibleFeatures, {
-    pointToLayer: (feature, latlng) => L.circleMarker(latlng, pointStyle(feature)),
+    pointToLayer: (feature, latlng) => L.circle(latlng, pointStyle(feature)),
     style: polygonStyle,
     onEachFeature: (feature, layer) => {
       layer.bindPopup(buildPopupMarkup(feature));
@@ -1308,7 +1308,7 @@ function renderLayer() {
 
 function pointStyle(feature) {
   const color = feature.properties?.appearance?.color || "#0b8f87";
-  const radius = Number.isFinite(feature.properties?.appearance?.radius) ? feature.properties.appearance.radius : 9;
+  const radius = Number.isFinite(feature.properties?.appearance?.radius) ? feature.properties.appearance.radius : 5;
   return {
     radius,
     color,

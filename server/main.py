@@ -383,7 +383,7 @@ class SessionState:
                     "appearance": {
                         "color": "#000000",
                         "visible": True,
-                        "radius": 9,
+                        "radius": 5,
                     },
                     "data": {},
                 },
@@ -453,7 +453,7 @@ class SessionState:
                 "appearance": {
                     "color": "#0b8f87",
                     "visible": True,
-                    "radius": 10,
+                    "radius": 5,
                 },
                 "data": {},
             },
