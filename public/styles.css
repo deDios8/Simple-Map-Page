@@ -545,15 +545,6 @@ body {
   height: calc(62px + var(--safe-bottom));
 }
 
-.popup-details {
-  margin: 8px 0 0;
-  padding-left: 18px;
-}
-
-.popup-details li {
-  margin-bottom: 4px;
-}
-
 @media (max-width: 760px) {
   .stats-header {
     align-items: stretch;

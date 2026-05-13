@@ -40,10 +40,6 @@ const demoGeoObjects = {
         visible: true,
         radius: 5,
       },
-      data: {
-        category: "pin",
-        priority: "high",
-      },
     },
   },
   hiddenMarker: {
@@ -63,9 +59,6 @@ const demoGeoObjects = {
         color: "#5e718c",
         visible: false,
         radius: 5,
-      },
-      data: {
-        category: "standby",
       },
     },
   },
@@ -91,10 +84,6 @@ const demoGeoObjects = {
       appearance: {
         color: "#d2603f",
         visible: true,
-      },
-      data: {
-        access: "restricted",
-        supervisor: "Ops A",
       },
     },
   },
@@ -159,7 +148,6 @@ const statsSectionToggle = document.querySelector("#stats-section-toggle");
 const statusesSectionToggle = document.querySelector("#statuses-section-toggle");
 const statsSection = document.querySelector(".stats-section");
 const statusesSection = document.querySelector(".statuses-section");
-const fieldExtra = document.querySelector("#field-extra");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
   fieldName,
@@ -170,7 +158,6 @@ const editableFields = [
   fieldLongitude,
   fieldRadius,
   fieldDescription,
-  fieldExtra,
 ];
 
 const editorCollapseState = {
@@ -700,15 +687,6 @@ function bindUi() {
       return;
     }
 
-    let parsedExtra = {};
-
-    try {
-      parsedExtra = fieldExtra.value.trim() ? JSON.parse(fieldExtra.value) : {};
-    } catch {
-      saveStatus.textContent = "Additional data must be valid JSON.";
-      return;
-    }
-
     const parsedLatitude = Number.parseFloat(fieldLatitude.value.trim());
     const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
@@ -763,7 +741,6 @@ function bindUi() {
           visible: fieldVisible.checked,
           radius: nextRadius,
         },
-        data: parsedExtra,
         stats: nextStats,
         statuses: nextStatuses,
       },
@@ -1086,7 +1063,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
     statuses: nextEntry?.properties?.statuses || {},
-    extraData: nextEntry?.properties?.data || {},
   };
 
   await submitRequest({
@@ -1290,16 +1266,11 @@ function polygonStyle(feature) {
 function buildPopupMarkup(feature) {
   const properties = feature.properties || {};
   const metaData = properties.metaData || {};
-  const extraData = properties.data || {};
-  const extraItems = Object.entries(extraData)
-    .map(([key, value]) => `<li><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</li>`)
-    .join("");
 
   return `
     <div>
       <strong>${escapeHtml(metaData.name || properties.id || "Untitled object")}</strong>
       <p>${escapeHtml(metaData.description || "No description available.")}</p>
-      ${extraItems ? `<ul class="popup-details">${extraItems}</ul>` : ""}
     </div>
   `;
 }
@@ -1391,8 +1362,6 @@ function populateEditor(id) {
   fieldDescription.value = metaData.description || "";
   renderStatsEditor(stats);
   renderStatusesEditor(statuses);
-
-  fieldExtra.value = JSON.stringify(feature.properties?.data || {}, null, 2);
   applyEditorPermissions();
 }
 
