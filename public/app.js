@@ -284,29 +284,6 @@ function normalizeStats(properties) {
   return {};
 }
 
-function getPrimaryStat(properties) {
-  const stats = normalizeStats(properties);
-  const [primaryKey] = Object.keys(stats);
-  if (!primaryKey) {
-    return {
-      key: "",
-      stat: {
-        name: "",
-        type: "",
-        value: 0,
-        max_value: 100,
-        min_value: 0,
-      },
-      stats,
-    };
-  }
-  return {
-    key: primaryKey,
-    stat: stats[primaryKey],
-    stats,
-  };
-}
-
 function normalizeStatuses(properties) {
   const rawStatuses = properties?.statuses;
   if (rawStatuses && typeof rawStatuses === "object" && !Array.isArray(rawStatuses)) {
@@ -332,23 +309,6 @@ function normalizeStatuses(properties) {
   }
 
   return {};
-}
-
-function getPrimaryStatus(properties) {
-  const statuses = normalizeStatuses(properties);
-  const [primaryKey] = Object.keys(statuses);
-  if (!primaryKey) {
-    return {
-      key: "primary",
-      status: createDefaultStatus(),
-      statuses,
-    };
-  }
-  return {
-    key: primaryKey,
-    status: statuses[primaryKey],
-    statuses,
-  };
 }
 
 function renderStatsEditor(stats) {
@@ -1477,32 +1437,6 @@ function applyEditorPermissions() {
   addStatusButton.disabled = !isEditable || !isFormVisible;
   statusesList.querySelectorAll("input, button").forEach((element) => {
     element.disabled = !isEditable || !isFormVisible;
-  });
-}
-
-async function persistObject(id, nextEntry) {
-  const normalizedEntry = {
-    ...nextEntry,
-    properties: {
-      ...(nextEntry?.properties || {}),
-      is_user: normalizeIsUserValue(nextEntry?.properties?.is_user),
-    },
-  };
-
-  if (
-    normalizedEntry.properties
-    && Object.prototype.hasOwnProperty.call(normalizedEntry.properties, "zoneBorders")
-  ) {
-    delete normalizedEntry.properties.zoneBorders;
-  }
-
-  if (state.firebaseReady && state.database) {
-    await update(ref(state.database, getFirebaseCollectionPath()), { [id]: normalizedEntry });
-  }
-
-  applyObjects({
-    ...state.objects,
-    [id]: normalizedEntry,
   });
 }
 
