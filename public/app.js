@@ -174,7 +174,7 @@ const editableFields = [
 ];
 
 const editorCollapseState = {
-  form: true,
+  editorForm: true,
   stats: true,
   statuses: true,
 };
@@ -201,17 +201,17 @@ function loadCollapseState() {
 
 // Apply collapse state on page load
 function applyCollapseState() {
-  setEditorFormCollapsed(editorCollapseState.form);
+  setEditorFormCollapsed(editorCollapseState.editorForm);
   setStatsSectionCollapsed(editorCollapseState.stats);
   setStatusesSectionCollapsed(editorCollapseState.statuses);
 }
 
 function setEditorFormCollapsed(isCollapsed) {
-  editorCollapseState.form = Boolean(isCollapsed);
-  editorForm.classList.toggle("is-collapsed", editorCollapseState.form);
+  editorCollapseState.editorForm = Boolean(isCollapsed);
+  editorForm.classList.toggle("is-collapsed", editorCollapseState.editorForm);
   if (editorFormToggle) {
-    editorFormToggle.textContent = editorCollapseState.form ? "Expand editor" : "Collapse editor";
-    editorFormToggle.setAttribute("aria-expanded", String(!editorCollapseState.form));
+    editorFormToggle.textContent = editorCollapseState.editorForm ? "Expand editor" : "Collapse editor";
+    editorFormToggle.setAttribute("aria-expanded", String(!editorCollapseState.editorForm));
   }
   saveCollapseState();
 }
@@ -643,7 +643,7 @@ function bindUi() {
   });
 
   editorFormToggle?.addEventListener("click", () => {
-    setEditorFormCollapsed(!editorCollapseState.form);
+    setEditorFormCollapsed(!editorCollapseState.editorForm);
   });
   statsSectionToggle?.addEventListener("click", () => {
     setStatsSectionCollapsed(!editorCollapseState.stats);
@@ -865,13 +865,13 @@ function locateUser() {
 
 function promptUserId() {
   const modal = document.querySelector("#user-id-modal");
-  const form = document.querySelector("#user-id-form");
+  const userIdForm = document.querySelector("#user-id-form");
   const sessionInput = document.querySelector("#session-name-input");
   const passwordInput = document.querySelector("#user-pass-input");
   const statusNote = document.querySelector("#user-id-status");
 
 
-  form.addEventListener("submit", (event) => {
+  userIdForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const input = document.querySelector("#user-id-input");
     const sessionName = normalizeSessionName(sessionInput?.value.trim() || "testBed");
