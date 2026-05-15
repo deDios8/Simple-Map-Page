@@ -106,3 +106,57 @@ THEN
 I'd like to add a new functionality to this app.
 I'd like to have the user enter an identifying string when they first access the site. Then add a geojson Point object  with the inputed id, at the users gps coordinates, and with a black color.
 Then, while visiting the page, every 2 seconds, I'd like to update that geojson object's coordinates with the user's coordinates, and leave the rest of the geojson objects data unchanged. 
+
+
+
+# Object Structure
+## Client Request
+* Geometry
+* ID
+* Timestamp
+* Requester
+* Type
+* Details
+
+## GEOOBJ
+* Geometry
+* ID
+* Name
+* Appearance
+  * Visible (tappable, etc)
+  * Radius
+  * Color-Border
+  * Color-Fill
+  * Transparency
+* Stats
+* Statuses
+
+
+# Event Structure
+## SUSPECT 
+### check all geoObjects for suspects
+* an ID
+* of any TYPE
+* having all or any STATUSES
+* all STAT_THRESHOLDS
+
+## TRIGGER
+### has is_trigger component 
+### check all suspects for triggers and mark as targets
+* any WITHIN/ENTERED/EXITED, 
+* any TYPES, 
+* any IDs,
+* all STATUSES,
+* any/all STAT_THRESHOLDS
+
+## TARGET
+### apply result
+* STAT name incrememt/decrement/setpoint
+* add/remove/toggle STATUSES
+* change radius, color, hidden
+
+
+
+find all SUSPECTS and tag them SUSPECT (and suspect_checker)
+check all SUSPECTS for TRIGGERS and tag them TARGETTED (and name of trigger)
+check all TARGETS and apply RESULTS

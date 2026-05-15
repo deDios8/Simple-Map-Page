@@ -617,7 +617,7 @@ function bindUi() {
     void submitRequest({ requestId: "request Y", requestType: "button_click", successMessage: "request Y sent" });
   });
   addObjectButton?.addEventListener("click", () => {
-    void submitRequest({ requestId: "add object", requestType: "button_click", successMessage: "add object sent" });
+    void submitRequest({ requestId: "add_object", requestType: "button_click", successMessage: "add object sent" });
   });
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
@@ -897,13 +897,6 @@ function createUserObject() {
   if (!state.userId || !state.userLocation) {
     return;
   }
-  const [lat, lng] = state.userLocation;
-  void submitRequest({
-    requestId: state.userId,
-    requestType: "new_location",
-    coordinates: [lng, lat],
-    quiet: true,
-  });
   startCoordinateTracking();
 }
 
@@ -938,7 +931,7 @@ function startCoordinateTracking() {
     }
 
     void submitRequest({
-      requestId: state.userId,
+      requestId: "new_location",
       requestType: "new_location",
       coordinates: [lng, lat],
       quiet: true,

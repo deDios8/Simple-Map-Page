@@ -2,6 +2,8 @@
 Main server application that listens to Firebase database changes and updates the ECS world accordingly.
 """
 
+import random
+import string
 import ecs_components
 import ecs_processors
 import esper
@@ -45,6 +47,8 @@ class SessionState:
         self.debug = SessionDebugConsole(self)
         self._initialize_from_snapshot()
 
+    def _random_string(self, length: int = 2) -> str:
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
     def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
         if not isinstance(zone_ids, list):
@@ -148,12 +152,6 @@ class SessionState:
             node=node,
         )
         self._zone_borders_cache[cache_key] = payload
-
-    def _sync_zone_borders_to_database(self) -> None:
-        for key, entity_id in self.GeoObjectEntityIds.items():
-            self._patch_zone_borders(GEO_OBJECTS_NODE, key, entity_id)
-        for key, entity_id in self.ClientRequestEntityIds.items():
-            self._patch_zone_borders(CLIENT_REQUESTS_NODE, key, entity_id)
 
     def _sync_dirty_zone_borders_to_database(self) -> None:
         geo_by_entity = {entity_id: key for key, entity_id in self.GeoObjectEntityIds.items()}
@@ -380,7 +378,9 @@ class SessionState:
             self._consume_client_request(request_entity_id)
             return
 
-        new_object_key = f"obj-{requester_id}-{int(time.time() * 1000)}"
+        new_object_key = f"Zone{self._random_string()}"
+        if new_object_key in self.GeoObjectEntityIds:
+            new_object_key = f"{new_object_key}_{self._random_string(3)}"
 
         new_object_entry = {
             "type": "Feature",
@@ -391,7 +391,7 @@ class SessionState:
             "properties": {
                 "id": new_object_key,
                 "metaData": {
-                    "name": f"New Object",
+                    "name": f"{new_object_key}",
                     "description": f"Added by {requester_id}.",
                     "type": "pin",
                 },
@@ -605,9 +605,9 @@ class SessionState:
         target_path: str,
         form_data: dict,
     ) -> None:
-        if request_type == "new_location":
+        if requested_action == "new_location":
             esper.add_component(entity_id, ecs_components.NewLocation(requester_id=requester_id))
-        elif requested_action == "add object":
+        elif requested_action == "add_object":
             esper.add_component(entity_id, ecs_components.AddObject(requester_id=requester_id))
         elif request_type == "edited_object":
             esper.add_component(entity_id, ecs_components.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
