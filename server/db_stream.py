@@ -122,6 +122,27 @@ def normalize_statuses(properties: Any) -> dict[str, dict[str, Any]]:
     return {}
 
 
+def to_bool(value: object, fallback: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off", ""}:
+            return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    return fallback
+
+
+def to_float(value: object, fallback: float) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return fallback
+
+
 class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)

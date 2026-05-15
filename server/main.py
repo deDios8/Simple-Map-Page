@@ -24,28 +24,9 @@ from db_stream import (
     delete_db_entry,
     normalize_stats,
     normalize_statuses,
+    to_bool,
+    to_float,
 )
-
-
-def _to_bool(value: object, fallback: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "y", "on"}:
-            return True
-        if normalized in {"false", "0", "no", "n", "off", ""}:
-            return False
-    if isinstance(value, (int, float)):
-        return value != 0
-    return fallback
-
-
-def _to_float(value: object, fallback: float) -> float:
-    try:
-        return float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return fallback
 
 
 class SessionState:
@@ -463,7 +444,7 @@ class SessionState:
         metadata.description = str(form_data.get("description", metadata.description) or metadata.description)
 
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
-        appearance.radius = _to_float(form_data.get("radius"), float(appearance.radius))
+        appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
         visible_fallback = True
         geo_snapshot = self.stream.geo_object_state.get(target_key)
@@ -471,10 +452,10 @@ class SessionState:
             props = geo_snapshot.get("properties") if isinstance(geo_snapshot.get("properties"), dict) else {}
             appearance_snapshot = props.get("appearance") if isinstance(props.get("appearance"), dict) else {}
             visible_fallback = bool(appearance_snapshot.get("visible", True))
-        appearance_visible = _to_bool(form_data.get("visible"), visible_fallback)
+        appearance_visible = to_bool(form_data.get("visible"), visible_fallback)
 
-        lat = _to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
-        lon = _to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
+        lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
+        lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
         geometry.coordinates = [lon, lat]
         esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
 
