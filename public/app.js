@@ -1011,7 +1011,7 @@ async function submitRequest({
   }
 
   const timestamp = new Date().toISOString();
-  const requestKey = `${Date.now()}-${state.userId}-${String(requestId).replace(/\s+/g, "-")}`;
+  const requestKey = `${Date.now()}-${state.userId}-${String(requestType)}`.replace(/\s+/g, "-");
   const requestFeature = {
     type: "Feature",
     geometry: {
