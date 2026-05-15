@@ -84,7 +84,6 @@ class Statuses:
         self.items = items if isinstance(items, dict) else {}
 
 
-
 @dataclass
 class WithinZones:
     zone_ids: list

@@ -876,9 +876,9 @@ def main() -> None:
     print("Firebase Feature Listener")
     session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
-    esper.add_processor(ecs_processors.ApplyClientRequests(session_state))
-    esper.add_processor(ecs_processors.CheckZoneEntryExit())
-    esper.add_processor(ecs_processors.RemoveZoneEntryExit())
+    esper.add_processor(ecs_processors.ApplyClientRequests(session_state), priority=100)
+    esper.add_processor(ecs_processors.CheckZoneEntryExit(), priority=99)
+    esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=1)
     session_state.run_db_and_ecs_processor()
 
 

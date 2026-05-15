@@ -23,17 +23,6 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _marker in list(esper.get_component(ecs_components.DeletedObject)):
             self.session_state.apply_deleted_object_request(entity_id)
 
-class AdjustRadius(esper.Processor):
-    def __init__(self, radius_increment: int) -> None:
-        super().__init__()
-        self.radius_increment = radius_increment
-        
-    def process(self) -> None:
-        for entity_id, (appearance,) in esper.get_components(ecs_components.Appearance):
-            old_radius = appearance.radius
-            appearance.radius += self.radius_increment
-            print(f"[AdjustRadius] Entity {entity_id}: radius {old_radius} -> {appearance.radius}")
-
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self) -> None:
         super().__init__()
