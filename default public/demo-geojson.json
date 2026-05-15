@@ -1,44 +1,60 @@
+
 {
-  "geoObjects": {
-    "downtown": {
+  "type": "FeatureCollection",
+  "features": [
+    {
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [-101.3133, 48.2128]
+        "coordinates": [0, 0]
       },
       "properties": {
-        "id": "downtown",
-        "appearance": {
-          "color": "#0b8f87",
-          "visible": true,
-          "radius": 12
-        },
-        "name": "Downtown Pin",
-        "description": "Current point of interest.",
-        "data": {
-          "key": "value"
+        "id": "same as key",
+        "clientRequestData": {
+          "timestamp": 0,
+          "requesterId": "",
+          "requestType": "",
+          "requestedAction": ""
         }
       }
     },
-    "hiddenMarker": {
+    {
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [-101.3133, 48.2128]
+        "coordinates": [0, 0]
       },
       "properties": {
-        "id": "hiddenMarker",
-        "appearance": {
-          "color": "#5e718c",
-          "visible": false,
-          "radius": 8
+        "id": "same as key",
+        "metaData": {
+          "displayName": "",
+          "displayDescription": ""
         },
-        "name": "Hidden Marker",
-        "description": "This stays hidden until visibility is enabled.",
-        "data": {
-          "key": "value"
+        "appearance": {
+          "visible": true,
+          "radius": 0,
+          "colorBorder": "#000000",
+          "colorFill": "#000000",
+          "transparency": 0.5
+        },
+        "stats": {},
+        "statuses": {}
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "id": "same as key",
+        "displayName": "",
+        "eventProperties": {
+          "suspects": {},
+          "triggers": {},
+          "targets": {},
+          "results": {}
         }
       }
     }
-  }
+  ]
 }
+
