@@ -21,74 +21,6 @@ const firebaseConfig = {
 const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
-const demoGeoObjects = {
-  downtown: {
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [-101.31304, 48.21224],
-    },
-    properties: {
-      id: "downtown",
-      metaData: {
-        name: "Downtown Pin",
-        description: "Current point of interest.",
-        type: "pin",
-      },
-      appearance: {
-        color: "#0b8f87",
-        visible: true,
-        radius: 5,
-      },
-    },
-  },
-  hiddenMarker: {
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [-101.31304, 48.21224],
-    },
-    properties: {
-      id: "hiddenMarker",
-      metaData: {
-        name: "Hidden Marker",
-        description: "This stays hidden until visibility is enabled.",
-        type: "",
-      },
-      appearance: {
-        color: "#5e718c",
-        visible: false,
-        radius: 5,
-      },
-    },
-  },
-  stagingZone: {
-    type: "Feature",
-    geometry: {
-      type: "Polygon",
-      coordinates: [[
-        [-101.319, 48.217],
-        [-101.307, 48.217],
-        [-101.307, 48.209],
-        [-101.319, 48.209],
-        [-101.319, 48.217],
-      ]],
-    },
-    properties: {
-      id: "stagingZone",
-      metaData: {
-        name: "Staging Zone",
-        description: "Rectangular work area.",
-        type: "zone",
-      },
-      appearance: {
-        color: "#d2603f",
-        visible: true,
-      },
-    },
-  },
-};
-
 const state = {
   version: "0.1.026",
   updateFrequency: 2000,
@@ -943,8 +875,7 @@ function initFirebaseListener() {
   const configReady = Object.values(firebaseConfig).every(Boolean);
 
   if (!configReady) {
-    locationStatus.textContent = `${locationStatus.textContent} Demo data loaded until Firebase is configured.`;
-    handleObjectSnapshot(demoGeoObjects);
+    locationStatus.textContent = `${locationStatus.textContent} No data loaded until Firebase is configured.`;
     return;
   }
 
