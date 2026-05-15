@@ -74,7 +74,9 @@ def _normalize_is_user(value: Any) -> bool:
     return False
 
 
-def _normalize_stats(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
+    if not isinstance(properties, dict):
+        return {}
     stats_value = properties.get("stats")
     if isinstance(stats_value, dict):
         normalized_stats: dict[str, dict[str, Any]] = {}
@@ -97,7 +99,9 @@ def _normalize_stats(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {}
 
 
-def _normalize_statuses(properties: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def normalize_statuses(properties: Any) -> dict[str, dict[str, Any]]:
+    if not isinstance(properties, dict):
+        return {}
     statuses_value = properties.get("statuses")
     if isinstance(statuses_value, dict):
         normalized_statuses: dict[str, dict[str, Any]] = {}
@@ -115,8 +119,6 @@ def _normalize_statuses(properties: dict[str, Any]) -> dict[str, dict[str, Any]]
             }
         if normalized_statuses:
             return normalized_statuses
-
-
     return {}
 
 
@@ -134,9 +136,8 @@ class GeoObjectEntry(DBEntry):
         self.name = meta_data.get("name", "")
         self.description = meta_data.get("description", "")
         
-        self.stats = _normalize_stats(self.properties)
-
-        self.statuses = _normalize_statuses(self.properties)
+        self.stats = normalize_stats(self.properties)
+        self.statuses = normalize_statuses(self.properties)
 
         self.data = self.properties.get("data", {})
 
@@ -334,6 +335,7 @@ def _sync_feature_index(
     before_state: dict[str, Any],
     after_state: dict[str, Any],
     factory: type[DBEntry] = DBEntry,
+    stream_name: str = "",
 ) -> list[SyncChange]:
     changes: list[SyncChange] = []
     before_keys = set(before_state)
@@ -341,14 +343,14 @@ def _sync_feature_index(
 
     for key in sorted(before_keys - after_keys):
         removed = feature_index.pop(key, None)
-        changes.append(SyncChange("", "delete", key, removed))
+        changes.append(SyncChange(stream_name, "delete", key, removed))
 
     for key in sorted(after_keys - before_keys):
         obj = after_state[key]
         if isinstance(obj, dict):
             created = factory(obj)
             feature_index[key] = created
-            changes.append(SyncChange("", "create", key, created))
+            changes.append(SyncChange(stream_name, "create", key, created))
 
     for key in sorted(before_keys & after_keys):
         if before_state[key] == after_state[key]:
@@ -356,16 +358,16 @@ def _sync_feature_index(
         after_obj = after_state[key]
         if not isinstance(after_obj, dict):
             removed = feature_index.pop(key, None)
-            changes.append(SyncChange("", "delete", key, removed))
+            changes.append(SyncChange(stream_name, "delete", key, removed))
             continue
         existing = feature_index.get(key)
         if existing is None:
             created = factory(after_obj)
             feature_index[key] = created
-            changes.append(SyncChange("", "create", key, created))
+            changes.append(SyncChange(stream_name, "create", key, created))
         else:
             existing.update_from_db_entry(after_obj)
-            changes.append(SyncChange("", "update", key, existing))
+            changes.append(SyncChange(stream_name, "update", key, existing))
 
     return changes
 
@@ -489,8 +491,7 @@ def _run_stream_worker(
 
                 before = json.loads(json.dumps(local_state))
                 apply_stream_event(local_state, event)
-                for change in _sync_feature_index(feature_index, before, local_state, factory=factory):
-                    change.stream_name = stream_name
+                for change in _sync_feature_index(feature_index, before, local_state, factory=factory, stream_name=stream_name):
                     output_queue.put(change)
 
         except (HTTPError, URLError, RuntimeError) as error:

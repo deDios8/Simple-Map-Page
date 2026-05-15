@@ -22,7 +22,30 @@ from db_stream import (
     put_db_entry,
     patch_db_entry,
     delete_db_entry,
+    normalize_stats,
+    normalize_statuses,
 )
+
+
+def _to_bool(value: object, fallback: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off", ""}:
+            return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    return fallback
+
+
+def _to_float(value: object, fallback: float) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return fallback
 
 
 class SessionState:
@@ -45,12 +68,7 @@ class SessionState:
     def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
         if not isinstance(zone_ids, list):
             return []
-        normalized: list[str] = []
-        for zone_id in zone_ids:
-            if zone_id is None:
-                continue
-            normalized.append(str(zone_id))
-        return normalized
+        return [str(z) for z in zone_ids if z is not None]
 
     def _sync_zone_component_from_payload(
         self,
@@ -91,59 +109,8 @@ class SessionState:
             ecs_components.ExitedZones,
         )
 
-    def _normalize_stats_payload(self, props: object) -> dict[str, dict]:
-        if not isinstance(props, dict):
-            return {}
-
-        raw_stats = props.get("stats")
-        if isinstance(raw_stats, dict):
-            normalized_stats: dict[str, dict] = {}
-            for key, raw_stat in raw_stats.items():
-                if not isinstance(raw_stat, dict):
-                    continue
-                stat_key = str(key).strip() or str(raw_stat.get("name", "")).strip()
-                if not stat_key:
-                    continue
-                normalized_stats[stat_key] = {
-                    "name": str(raw_stat.get("name", "") or ""),
-                    "type": str(raw_stat.get("type", "") or ""),
-                    "value": raw_stat.get("value", 0),
-                    "max_value": raw_stat.get("max_value", 100),
-                    "min_value": raw_stat.get("min_value", 0),
-                }
-            if normalized_stats:
-                return normalized_stats
-
-        return {}
-
-    def _normalize_statuses_payload(self, props: object) -> dict[str, dict]:
-        if not isinstance(props, dict):
-            return {}
-
-        raw_statuses = props.get("statuses")
-        if isinstance(raw_statuses, dict):
-            normalized_statuses: dict[str, dict] = {}
-            for key, raw_status in raw_statuses.items():
-                if not isinstance(raw_status, dict):
-                    continue
-                status_key = str(key).strip() or str(raw_status.get("name", "")).strip()
-                if not status_key:
-                    continue
-                normalized_statuses[status_key] = {
-                    "name": str(raw_status.get("name", "") or ""),
-                    "type": str(raw_status.get("type", "") or ""),
-                    "strength": raw_status.get("strength", 0),
-                    "time_until_expire": raw_status.get("time_until_expire", 5),
-                }
-            if normalized_statuses:
-                return normalized_statuses
-
-
-
-        return {}
-
     def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
-        normalized_stats = self._normalize_stats_payload(props)
+        normalized_stats = normalize_stats(props)
         stats_component = esper.try_component(entity_id, ecs_components.Stats)
         if normalized_stats:
             if stats_component is None:
@@ -156,7 +123,7 @@ class SessionState:
         return normalized_stats
 
     def _sync_statuses_component(self, entity_id: int, props: object) -> dict[str, dict]:
-        normalized_statuses = self._normalize_statuses_payload(props)
+        normalized_statuses = normalize_statuses(props)
         statuses_component = esper.try_component(entity_id, ecs_components.Statuses)
         if normalized_statuses:
             if statuses_component is None:
@@ -227,13 +194,11 @@ class SessionState:
 
     def _initialize_from_snapshot(self) -> None:
         geo_objects = fetch_geo_objects(self.database_url, self.session_name)
-        self.geo_object_state = geo_objects
         for key, raw in geo_objects.items():
             entry = GeoObjectEntry(raw)
             self._upsert_geo_object_entity(key, entry)
 
         client_requests = fetch_client_requests(self.database_url, self.session_name)
-        self.client_request_state = client_requests
         for key, raw in client_requests.items():
             entry = ClientRequestEntry(raw)
             self._upsert_client_request_entity(key, entry)
@@ -434,7 +399,6 @@ class SessionState:
             self._consume_client_request(request_entity_id)
             return
 
-        request_id_component = esper.try_component(request_entity_id, ecs_components.ID)
         new_object_key = f"obj-{requester_id}-{int(time.time() * 1000)}"
 
         new_object_entry = {
@@ -494,25 +458,6 @@ class SessionState:
         appearance = esper.component_for_entity(target_entity_id, ecs_components.Appearance)
         geometry = esper.component_for_entity(target_entity_id, ecs_components.Geometry)
 
-        def _to_bool(value: object, fallback: bool) -> bool:
-            if isinstance(value, bool):
-                return value
-            if isinstance(value, str):
-                normalized = value.strip().lower()
-                if normalized in {"true", "1", "yes", "y", "on"}:
-                    return True
-                if normalized in {"false", "0", "no", "n", "off", ""}:
-                    return False
-            if isinstance(value, (int, float)):
-                return value != 0
-            return fallback
-
-        def _to_float(value: object, fallback: float) -> float:
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                return fallback
-
         metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
         metadata.type = str(form_data.get("type", metadata.type) or metadata.type)
         metadata.description = str(form_data.get("description", metadata.description) or metadata.description)
@@ -534,12 +479,12 @@ class SessionState:
         esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
 
         stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
-        next_stats_payload = self._normalize_stats_payload({"stats": stats_payload})
+        next_stats_payload = normalize_stats({"stats": stats_payload})
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
         statuses_payload = form_data.get("statuses") if isinstance(form_data.get("statuses"), dict) else {}
-        next_statuses_payload = self._normalize_statuses_payload({"statuses": statuses_payload})
+        next_statuses_payload = normalize_statuses({"statuses": statuses_payload})
 
         self._sync_statuses_component(target_entity_id, {"statuses": next_statuses_payload})
 
@@ -669,6 +614,25 @@ class SessionState:
         
         return existing_entity_id
 
+    def _attach_request_marker_component(
+        self,
+        entity_id: int,
+        request_type: str,
+        requested_action: str,
+        requester_id: str,
+        target_id: str,
+        target_path: str,
+        form_data: dict,
+    ) -> None:
+        if request_type == "new_location":
+            esper.add_component(entity_id, ecs_components.NewLocation(requester_id=requester_id))
+        elif requested_action == "add object":
+            esper.add_component(entity_id, ecs_components.AddObject(requester_id=requester_id))
+        elif request_type == "edited_object":
+            esper.add_component(entity_id, ecs_components.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
+        elif request_type == "deleted_object":
+            esper.add_component(entity_id, ecs_components.DeletedObject(target_id=target_id, target_path=target_path))
+
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
@@ -680,36 +644,15 @@ class SessionState:
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
             request_params = esper.component_for_entity(entity.entity_id, ecs_components.ClientRequestProperties)
-            request_type = str(request_params.request_type or "").strip().lower()
-            requested_action = str(request_params.requested_action or "").strip().lower()
-            if request_type == "new_location":
-                esper.add_component(
-                    entity.entity_id,
-                    ecs_components.NewLocation(requester_id=request_params.requester_id),
-                )
-            elif requested_action == "add object":
-                esper.add_component(
-                    entity.entity_id,
-                    ecs_components.AddObject(requester_id=request_params.requester_id),
-                )
-            elif request_type == "edited_object":
-                form_data = request.form_data if isinstance(request.form_data, dict) else {}
-                esper.add_component(
-                    entity.entity_id,
-                    ecs_components.EditedObject(
-                        target_id=request.target_id,
-                        target_path=request.target_path,
-                        form_data=form_data,
-                    ),
-                )
-            elif request_type == "deleted_object":
-                esper.add_component(
-                    entity.entity_id,
-                    ecs_components.DeletedObject(
-                        target_id=request.target_id,
-                        target_path=request.target_path,
-                    ),
-                )
+            self._attach_request_marker_component(
+                entity.entity_id,
+                request_type=str(request_params.request_type or "").strip().lower(),
+                requested_action=str(request_params.requested_action or "").strip().lower(),
+                requester_id=request_params.requester_id,
+                target_id=request.target_id,
+                target_path=request.target_path,
+                form_data=request.form_data if isinstance(request.form_data, dict) else {},
+            )
             self._apply_zone_borders_from_properties(entity.entity_id, request.properties)
             return entity.entity_id
 
@@ -738,48 +681,18 @@ class SessionState:
             except KeyError:
                 pass
 
-        request_type = str(request_params.request_type or "").strip().lower()
-        requested_action = str(request_params.requested_action or "").strip().lower()
-        if request_type == "new_location":
-            esper.add_component(
-                existing_entity_id,
-                ecs_components.NewLocation(requester_id=request_params.requester_id),
-            )
-        elif requested_action == "add object":
-            esper.add_component(
-                existing_entity_id,
-                ecs_components.AddObject(requester_id=request_params.requester_id),
-            )
-        elif request_type == "edited_object":
-            form_data = props.get("formData", {}) if isinstance(props.get("formData"), dict) else {}
-            esper.add_component(
-                existing_entity_id,
-                ecs_components.EditedObject(
-                    target_id=crp.get("targetId", ""),
-                    target_path=crp.get("targetPath", ""),
-                    form_data=form_data,
-                ),
-            )
-        elif request_type == "deleted_object":
-            esper.add_component(
-                existing_entity_id,
-                ecs_components.DeletedObject(
-                    target_id=crp.get("targetId", ""),
-                    target_path=crp.get("targetPath", ""),
-                ),
-            )
+        self._attach_request_marker_component(
+            existing_entity_id,
+            request_type=str(request_params.request_type or "").strip().lower(),
+            requested_action=str(request_params.requested_action or "").strip().lower(),
+            requester_id=request_params.requester_id,
+            target_id=crp.get("targetId", ""),
+            target_path=crp.get("targetPath", ""),
+            form_data=props.get("formData", {}) if isinstance(props.get("formData"), dict) else {},
+        )
 
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         return existing_entity_id
-
-
-    def _on_geo_object_update_create(self, key: str, geo_object: GeoObjectEntry, action: str="UPDATE") -> None:
-        entity_id = self._upsert_geo_object_entity(key, geo_object)
-        # print(f"[GEO OBJECT {action.upper()}] {key}: entity={entity_id}")
-
-    def _on_client_request_update_create(self, key: str, request: ClientRequestEntry, action: str = "CREATE") -> None:
-        entity_id = self._upsert_client_request_entity(key, request)
-        # print(f"[REQUEST {action.upper()}] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def _delete_geo_object_entity(self, key: str) -> int | None:
@@ -795,21 +708,6 @@ class SessionState:
         if entity_id is not None:
             esper.delete_entity(entity_id)
         return entity_id
-
-
-    def _on_geo_object_delete(self, key: str, geo_object: GeoObjectEntry | None) -> None:
-        entity_id = self._delete_geo_object_entity(key)
-        # if geo_object is None:
-        #     print(f"[GEO OBJECT DELETE] {key}: geo_object is None, entity={entity_id}")
-        # else:
-        #     print(f"[GEO OBJECT DELETE] {key}: entity={entity_id}")
-
-    def _on_client_request_delete(self, key: str, request: ClientRequestEntry | None) -> None:
-        entity_id = self._delete_client_request_entity(key)
-        # if request is None:
-        #     print(f"[REQUEST DELETE] {key}: request is None, entity={entity_id}")
-        # else:
-        #     print(f"[REQUEST DELETE] {key}: from={request.requester_id}, entity={entity_id}")
 
 
     def run_db_and_ecs_processor(self) -> None:
@@ -847,23 +745,23 @@ class SessionState:
                 change: SyncChange = self.stream.event_queue.get(timeout=wait_timeout)
                 if change.action == "create":
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_client_request_update_create(change.key, change.feature, action="CREATE")
+                        self._upsert_client_request_entity(change.key, change.feature)
                     else:
-                        self._on_geo_object_update_create(change.key, change.feature, action="CREATE")
+                        self._upsert_geo_object_entity(change.key, change.feature)
                 elif change.action == "update" and change.feature is not None:
                     if isinstance(change.feature, ClientRequestEntry):
-                        self._on_client_request_update_create(change.key, change.feature, action="UPDATE")
+                        self._upsert_client_request_entity(change.key, change.feature)
                     else:
-                        self._on_geo_object_update_create(change.key, change.feature, action="UPDATE")
+                        self._upsert_geo_object_entity(change.key, change.feature)
                 elif change.action == "delete":
                     if change.stream_name == CLIENT_REQUESTS_NODE:
-                        self._on_client_request_delete(change.key, change.feature)
+                        self._delete_client_request_entity(change.key)
                     elif change.stream_name == GEO_OBJECTS_NODE:
-                        self._on_geo_object_delete(change.key, change.feature)
+                        self._delete_geo_object_entity(change.key)
                     elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
-                        self._on_client_request_delete(change.key, change.feature)
+                        self._delete_client_request_entity(change.key)
                     else:
-                        self._on_geo_object_delete(change.key, change.feature)
+                        self._delete_geo_object_entity(change.key)
             except KeyboardInterrupt:
                 self.stream.stop()
                 print("\nStopped listener.")
