@@ -8,7 +8,7 @@ import queue
 import threading
 from typing import Protocol
 
-import server.ecs_geo_components as ecs_geo_components
+import ecs_geo_components
 import esper
 
 

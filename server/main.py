@@ -4,7 +4,7 @@ Main server application that listens to Firebase database changes and updates th
 
 import random
 import string
-import server.ecs_geo_components as ecs_geo_components
+import ecs_geo_components
 import ecs_processors
 import esper
 import queue

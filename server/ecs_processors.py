@@ -1,5 +1,5 @@
 import esper
-import server.ecs_geo_components as ecs_geo_components
+import ecs_geo_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
