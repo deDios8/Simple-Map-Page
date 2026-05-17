@@ -8,13 +8,13 @@ import queue
 import threading
 from typing import Protocol
 
-import ecs_components
+import server.ecs_geo_components as ecs_geo_components
 import esper
 
 
 class DebugState(Protocol):
-    GeoObjects: dict[str, ecs_components.GeoObject]
-    ClientRequests: dict[str, ecs_components.ClientRequest]
+    GeoObjects: dict[str, ecs_geo_components.GeoObject]
+    ClientRequests: dict[str, ecs_geo_components.ClientRequest]
     GeoObjectEntityIds: dict[str, int]
     ClientRequestEntityIds: dict[str, int]
 
@@ -53,15 +53,15 @@ class SessionDebugConsole:
     def _zone_borders_payload(self, entity_id: int) -> dict[str, dict[str, list[str]]]:
         payload: dict[str, dict[str, list[str]]] = {}
 
-        within = esper.try_component(entity_id, ecs_components.WithinZones)
+        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
         if within is not None:
             payload["withinZones"] = {"zone_ids": [str(zone_id) for zone_id in within.zone_ids]}
 
-        entered = esper.try_component(entity_id, ecs_components.EnteredZones)
+        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
         if entered is not None:
             payload["enteredZones"] = {"zone_ids": [str(zone_id) for zone_id in entered.zone_ids]}
 
-        exited = esper.try_component(entity_id, ecs_components.ExitedZones)
+        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
         if exited is not None:
             payload["exitedZones"] = {"zone_ids": [str(zone_id) for zone_id in exited.zone_ids]}
 
@@ -103,15 +103,15 @@ class SessionDebugConsole:
         )
 
     def _print_world_stats(self) -> None:
-        id_count = len(list(esper.get_component(ecs_components.ID)))
-        metadata_count = len(list(esper.get_component(ecs_components.MetaData)))
-        appearance_count = len(list(esper.get_component(ecs_components.Appearance)))
-        geometry_count = len(list(esper.get_component(ecs_components.Geometry)))
-        request_count = len(list(esper.get_component(ecs_components.ClientRequestProperties)))
+        id_count = len(list(esper.get_component(ecs_geo_components.ID)))
+        metadata_count = len(list(esper.get_component(ecs_geo_components.MetaData)))
+        appearance_count = len(list(esper.get_component(ecs_geo_components.Appearance)))
+        geometry_count = len(list(esper.get_component(ecs_geo_components.Geometry)))
+        request_count = len(list(esper.get_component(ecs_geo_components.ClientRequestProperties)))
 
-        geo_entities = {entity_id for entity_id, _ in esper.get_component(ecs_components.ID)}
+        geo_entities = {entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ID)}
         request_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs_components.ClientRequestProperties)
+            entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ClientRequestProperties)
         }
         all_entities = geo_entities | request_entities
 
@@ -137,12 +137,12 @@ class SessionDebugConsole:
         entity_id = self._state.GeoObjectEntityIds.get(key)
         if entity_id is None:
             return False
-        id_component = esper.component_for_entity(entity_id, ecs_components.ID)
-        metadata = esper.component_for_entity(entity_id, ecs_components.MetaData)
-        appearance = esper.component_for_entity(entity_id, ecs_components.Appearance)
-        geometry = esper.component_for_entity(entity_id, ecs_components.Geometry)
-        stats = esper.try_component(entity_id, ecs_components.Stats)
-        statuses = esper.try_component(entity_id, ecs_components.Statuses)
+        id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
+        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        appearance = esper.component_for_entity(entity_id, ecs_geo_components.Appearance)
+        geometry = esper.component_for_entity(entity_id, ecs_geo_components.Geometry)
+        stats = esper.try_component(entity_id, ecs_geo_components.Stats)
+        statuses = esper.try_component(entity_id, ecs_geo_components.Statuses)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
@@ -159,7 +159,7 @@ class SessionDebugConsole:
         entity_id = self._state.ClientRequestEntityIds.get(key)
         if entity_id is None:
             return False
-        request = esper.component_for_entity(entity_id, ecs_components.ClientRequestProperties)
+        request = esper.component_for_entity(entity_id, ecs_geo_components.ClientRequestProperties)
         print(
             "[DEBUG][req] "
             f"key={key} entity={entity_id} requester_id={request.requester_id!r} "

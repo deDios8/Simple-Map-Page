@@ -75,31 +75,6 @@ properties = {
 }
 
 
-# Event Structure
-## SUSPECT 
-### check all geoObjects for suspects
-* an ID 
-* of any TYPE
-* having all or any STATUSES
-* all STAT_THRESHOLDS
-
-## TRIGGER
-### has is_trigger component 
-### check all suspects for triggers and mark as targets
-* any WITHIN/ENTERED/EXITED, 
-* any TYPES, 
-* any IDs,
-* all STATUSES,
-* any/all STAT_THRESHOLDS
-
-## TARGET
-### apply result
-* STAT name incrememt/decrement/setpoint
-* add/remove/toggle STATUSES
-* change radius, color, hidden
-
-
-
-find all SUSPECTS and tag them SUSPECT (and suspect_checker)
-check all SUSPECTS for TRIGGERS and tag them TARGETTED (and name of trigger)
-check all TARGETS and apply RESULTS
+# Default Statuses
+* seeing
+* user

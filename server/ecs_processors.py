@@ -1,5 +1,5 @@
 import esper
-import ecs_components
+import server.ecs_geo_components as ecs_geo_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
@@ -11,16 +11,16 @@ class ApplyClientRequests(esper.Processor):
         self.session_state = session_state
 
     def process(self) -> None:
-        for entity_id, _marker in list(esper.get_component(ecs_components.NewLocation)):
+        for entity_id, _marker in list(esper.get_component(ecs_geo_components.NewLocation)):
             self.session_state.apply_new_location_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_components.AddObject)):
+        for entity_id, _marker in list(esper.get_component(ecs_geo_components.AddObject)):
             self.session_state.apply_add_object_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_components.EditedObject)):
+        for entity_id, _marker in list(esper.get_component(ecs_geo_components.EditedObject)):
             self.session_state.apply_edited_object_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_components.DeletedObject)):
+        for entity_id, _marker in list(esper.get_component(ecs_geo_components.DeletedObject)):
             self.session_state.apply_deleted_object_request(entity_id)
 
 class CheckZoneEntryExit(esper.Processor):
@@ -28,12 +28,12 @@ class CheckZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        for entity_id, (geometry, id_component, _) in esper.get_components(ecs_components.Geometry, ecs_components.ID, ecs_components.Appearance):
+        for entity_id, (geometry, id_component, _) in esper.get_components(ecs_geo_components.Geometry, ecs_geo_components.ID, ecs_geo_components.Appearance):
             current_zones = set()
             for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in esper.get_components(
-                    ecs_components.Geometry,
-                    ecs_components.Appearance,
-                    ecs_components.ID,
+                    ecs_geo_components.Geometry,
+                    ecs_geo_components.Appearance,
+                    ecs_geo_components.ID,
                 ):
                 # print(f"[CheckZoneEntryExit] Checking entity {id_component.id} against zone {zone_id_component.id}")
                 if zone_entity_id == entity_id:
@@ -53,17 +53,17 @@ class CheckZoneEntryExit(esper.Processor):
                 if self.is_within_zone_intersect(geometry.coordinates, zone_payload):
                     current_zones.add(str(zone_id_component.id))
             
-            previous_within = esper.try_component(entity_id, ecs_components.WithinZones)
+            previous_within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             previous_zones = set(previous_within.zone_ids) if previous_within else set()
             
             entered_zones = current_zones - previous_zones
             exited_zones = previous_zones - current_zones
             
             if entered_zones:
-                esper.add_component(entity_id, ecs_components.EnteredZones(zone_ids=list(entered_zones)))
+                esper.add_component(entity_id, ecs_geo_components.EnteredZones(zone_ids=list(entered_zones)))
                 print(f"[CheckZoneEntryExit] Entity {id_component.id} entered zones: {entered_zones}")
             if exited_zones:
-                esper.add_component(entity_id, ecs_components.ExitedZones(zone_ids=list(exited_zones)))
+                esper.add_component(entity_id, ecs_geo_components.ExitedZones(zone_ids=list(exited_zones)))
                 print(f"[CheckZoneEntryExit] Entity {id_component.id} exited zones: {exited_zones}")
                 
 
@@ -168,66 +168,66 @@ class RemoveZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        for entity_id, entered in list(esper.get_component(ecs_components.EnteredZones)):
+        for entity_id, entered in list(esper.get_component(ecs_geo_components.EnteredZones)):
             # WithinZones: add entered zones
-            within = esper.try_component(entity_id, ecs_components.WithinZones)
+            within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             before_zones = set(within.zone_ids) if within else set()
             within_zones = set(before_zones)
             within_zones.update(entered.zone_ids)
 
-            esper.add_component(entity_id, ecs_components.WithinZones(zone_ids=list(within_zones)))
+            esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
             if within_zones != before_zones:
-                esper.add_component(entity_id, ecs_components.ZoneBordersDirty())
+                esper.add_component(entity_id, ecs_geo_components.ZoneBordersDirty())
 
             # NotWithinZones: remove entered zones
-            not_within = esper.try_component(entity_id, ecs_components.NotWithinZones)
+            not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
             if not_within is not None:
                 before_not = set(not_within.zone_ids)
                 not_within_zones = set(before_not)
                 not_within_zones.difference_update(entered.zone_ids)
 
                 if not_within_zones:
-                    esper.add_component(entity_id, ecs_components.NotWithinZones(zone_ids=list(not_within_zones)))
+                    esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
                 else:
                     try:
-                        esper.remove_component(entity_id, ecs_components.NotWithinZones)
+                        esper.remove_component(entity_id, ecs_geo_components.NotWithinZones)
                     except KeyError:
                         pass
 
             try:
-                esper.remove_component(entity_id, ecs_components.EnteredZones)
+                esper.remove_component(entity_id, ecs_geo_components.EnteredZones)
             except KeyError:
                 pass
 
-        for entity_id, exited in list(esper.get_component(ecs_components.ExitedZones)):
+        for entity_id, exited in list(esper.get_component(ecs_geo_components.ExitedZones)):
             # WithinZones: remove exited zones
-            within = esper.try_component(entity_id, ecs_components.WithinZones)
+            within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             if within is not None:
                 before_zones = set(within.zone_ids)
                 within_zones = set(before_zones)
                 within_zones.difference_update(exited.zone_ids)
 
                 if within_zones:
-                    esper.add_component(entity_id, ecs_components.WithinZones(zone_ids=list(within_zones)))
+                    esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
                 else:
                     try:
-                        esper.remove_component(entity_id, ecs_components.WithinZones)
+                        esper.remove_component(entity_id, ecs_geo_components.WithinZones)
                     except KeyError:
                         pass
 
                 if within_zones != before_zones:
-                    esper.add_component(entity_id, ecs_components.ZoneBordersDirty())
+                    esper.add_component(entity_id, ecs_geo_components.ZoneBordersDirty())
 
             # NotWithinZones: add exited zones
-            not_within = esper.try_component(entity_id, ecs_components.NotWithinZones)
+            not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
             before_not = set(not_within.zone_ids) if not_within else set()
             not_within_zones = set(before_not)
             not_within_zones.update(exited.zone_ids)
 
-            esper.add_component(entity_id, ecs_components.NotWithinZones(zone_ids=list(not_within_zones)))
+            esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
 
             try:
-                esper.remove_component(entity_id, ecs_components.ExitedZones)
+                esper.remove_component(entity_id, ecs_geo_components.ExitedZones)
             except KeyError:
                 pass
 

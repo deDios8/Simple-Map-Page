@@ -4,7 +4,7 @@ Main server application that listens to Firebase database changes and updates th
 
 import random
 import string
-import ecs_components
+import server.ecs_geo_components as ecs_geo_components
 import ecs_processors
 import esper
 import queue
@@ -37,8 +37,8 @@ class SessionState:
         self.session_name = session_name.strip().strip("/") or "testBed"
 
         # Keep dict-backed state so Firebase keys can map directly to ECS entities.
-        self.GeoObjects: dict[str, ecs_components.GeoObject] = {}
-        self.ClientRequests: dict[str, ecs_components.ClientRequest] = {}
+        self.GeoObjects: dict[str, ecs_geo_components.GeoObject] = {}
+        self.ClientRequests: dict[str, ecs_geo_components.ClientRequest] = {}
         self.GeoObjectEntityIds: dict[str, int] = {}
         self.ClientRequestEntityIds: dict[str, int] = {}
         self._zone_borders_cache: dict[tuple[str, str], dict | None] = {}
@@ -79,44 +79,44 @@ class SessionState:
             entity_id,
             payload,
             "withinZones",
-            ecs_components.WithinZones,
+            ecs_geo_components.WithinZones,
         )
         self._sync_zone_component_from_payload(
             entity_id,
             payload,
             "enteredZones",
-            ecs_components.EnteredZones,
+            ecs_geo_components.EnteredZones,
         )
         self._sync_zone_component_from_payload(
             entity_id,
             payload,
             "exitedZones",
-            ecs_components.ExitedZones,
+            ecs_geo_components.ExitedZones,
         )
 
     def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
         normalized_stats = normalize_stats(props)
-        stats_component = esper.try_component(entity_id, ecs_components.Stats)
+        stats_component = esper.try_component(entity_id, ecs_geo_components.Stats)
         if normalized_stats:
             if stats_component is None:
-                esper.add_component(entity_id, ecs_components.Stats(items=normalized_stats))
+                esper.add_component(entity_id, ecs_geo_components.Stats(items=normalized_stats))
             else:
                 stats_component.items = normalized_stats
         elif stats_component is not None:
-            esper.remove_component(entity_id, ecs_components.Stats)
+            esper.remove_component(entity_id, ecs_geo_components.Stats)
 
         return normalized_stats
 
     def _sync_statuses_component(self, entity_id: int, props: object) -> dict[str, dict]:
         normalized_statuses = normalize_statuses(props)
-        statuses_component = esper.try_component(entity_id, ecs_components.Statuses)
+        statuses_component = esper.try_component(entity_id, ecs_geo_components.Statuses)
         if normalized_statuses:
             if statuses_component is None:
-                esper.add_component(entity_id, ecs_components.Statuses(items=normalized_statuses))
+                esper.add_component(entity_id, ecs_geo_components.Statuses(items=normalized_statuses))
             else:
                 statuses_component.items = normalized_statuses
         elif statuses_component is not None:
-            esper.remove_component(entity_id, ecs_components.Statuses)
+            esper.remove_component(entity_id, ecs_geo_components.Statuses)
 
 
 
@@ -125,15 +125,15 @@ class SessionState:
     def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
         zone_borders: dict[str, dict[str, list[str]]] = {}
 
-        within = esper.try_component(entity_id, ecs_components.WithinZones)
+        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
         if within is not None:
             zone_borders["withinZones"] = {"zone_ids": self._normalize_zone_ids(within.zone_ids)}
 
-        entered = esper.try_component(entity_id, ecs_components.EnteredZones)
+        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
         if entered is not None:
             zone_borders["enteredZones"] = {"zone_ids": self._normalize_zone_ids(entered.zone_ids)}
 
-        exited = esper.try_component(entity_id, ecs_components.ExitedZones)
+        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
         if exited is not None:
             zone_borders["exitedZones"] = {"zone_ids": self._normalize_zone_ids(exited.zone_ids)}
 
@@ -157,7 +157,7 @@ class SessionState:
         geo_by_entity = {entity_id: key for key, entity_id in self.GeoObjectEntityIds.items()}
         req_by_entity = {entity_id: key for key, entity_id in self.ClientRequestEntityIds.items()}
 
-        for entity_id, _ in list(esper.get_component(ecs_components.ZoneBordersDirty)):
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.ZoneBordersDirty)):
             geo_key = geo_by_entity.get(entity_id)
             req_key = req_by_entity.get(entity_id)
 
@@ -167,7 +167,7 @@ class SessionState:
                 self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
 
             try:
-                esper.remove_component(entity_id, ecs_components.ZoneBordersDirty)
+                esper.remove_component(entity_id, ecs_geo_components.ZoneBordersDirty)
             except KeyError:
                 pass
 
@@ -186,23 +186,23 @@ class SessionState:
     def _sync_geo_type_marker_components(self, entity_id: int, is_user: bool) -> None:
         if is_user:
             try:
-                esper.remove_component(entity_id, ecs_components.IsZone)
+                esper.remove_component(entity_id, ecs_geo_components.IsZone)
             except KeyError:
                 pass
             try:
-                esper.component_for_entity(entity_id, ecs_components.IsUser)
+                esper.component_for_entity(entity_id, ecs_geo_components.IsUser)
             except KeyError:
-                esper.add_component(entity_id, ecs_components.IsUser())
+                esper.add_component(entity_id, ecs_geo_components.IsUser())
             return
 
         try:
-            esper.remove_component(entity_id, ecs_components.IsUser)
+            esper.remove_component(entity_id, ecs_geo_components.IsUser)
         except KeyError:
             pass
         try:
-            esper.component_for_entity(entity_id, ecs_components.IsZone)
+            esper.component_for_entity(entity_id, ecs_geo_components.IsZone)
         except KeyError:
-            esper.add_component(entity_id, ecs_components.IsZone())
+            esper.add_component(entity_id, ecs_geo_components.IsZone())
 
     def _find_geo_object_key_by_identifier(self, identifier: str) -> str | None:
         if not identifier:
@@ -211,7 +211,7 @@ class SessionState:
             return identifier
 
         for key, entity_id in self.GeoObjectEntityIds.items():
-            id_component = esper.try_component(entity_id, ecs_components.ID)
+            id_component = esper.try_component(entity_id, ecs_geo_components.ID)
             if id_component is not None and str(id_component.id) == identifier:
                 return key
         return None
@@ -233,9 +233,9 @@ class SessionState:
 
     def _consume_client_request(self, request_entity_id: int) -> None:
         for component_type in (
-            ecs_components.NewLocation,
-            ecs_components.EditedObject,
-            ecs_components.DeletedObject,
+            ecs_geo_components.NewLocation,
+            ecs_geo_components.EditedObject,
+            ecs_geo_components.DeletedObject,
         ):
             try:
                 esper.remove_component(request_entity_id, component_type)
@@ -281,8 +281,8 @@ class SessionState:
                 print(f"[REQUEST CONSUME ERROR] {request_key}: {error}")
 
     def apply_new_location_request(self, request_entity_id: int) -> None:
-        request_geometry = esper.try_component(request_entity_id, ecs_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_components.ClientRequestProperties)
+        request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
+        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestProperties)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -341,9 +341,9 @@ class SessionState:
             )
             target_entity_id = self._upsert_geo_object_entity(target_key, GeoObjectEntry(new_user_entry))
 
-        geometry = esper.component_for_entity(target_entity_id, ecs_components.Geometry)
+        geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
+        esper.add_component(target_entity_id, ecs_geo_components.ZoneBordersDirty())
 
         patch_db_entry(
             self.database_url,
@@ -355,8 +355,8 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_add_object_request(self, request_entity_id: int) -> None:
-        request_geometry = esper.try_component(request_entity_id, ecs_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_components.ClientRequestProperties)
+        request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
+        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestProperties)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -415,7 +415,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_edited_object_request(self, request_entity_id: int) -> None:
-        edited = esper.try_component(request_entity_id, ecs_components.EditedObject)
+        edited = esper.try_component(request_entity_id, ecs_geo_components.EditedObject)
         if edited is None:
             self._consume_client_request(request_entity_id)
             return
@@ -435,9 +435,9 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        metadata = esper.component_for_entity(target_entity_id, ecs_components.MetaData)
-        appearance = esper.component_for_entity(target_entity_id, ecs_components.Appearance)
-        geometry = esper.component_for_entity(target_entity_id, ecs_components.Geometry)
+        metadata = esper.component_for_entity(target_entity_id, ecs_geo_components.MetaData)
+        appearance = esper.component_for_entity(target_entity_id, ecs_geo_components.Appearance)
+        geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
 
         metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
         metadata.type = str(form_data.get("type", metadata.type) or metadata.type)
@@ -457,7 +457,7 @@ class SessionState:
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_components.ZoneBordersDirty())
+        esper.add_component(target_entity_id, ecs_geo_components.ZoneBordersDirty())
 
         stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
         next_stats_payload = normalize_stats({"stats": stats_payload})
@@ -527,7 +527,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_object_request(self, request_entity_id: int) -> None:
-        deleted = esper.try_component(request_entity_id, ecs_components.DeletedObject)
+        deleted = esper.try_component(request_entity_id, ecs_geo_components.DeletedObject)
         if deleted is None:
             self._consume_client_request(request_entity_id)
             return
@@ -553,7 +553,7 @@ class SessionState:
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
-            geo = ecs_components.GeoObject(
+            geo = ecs_geo_components.GeoObject(
                 id=geo_object.id or key,
                 geometry=geo_object.geometry,
                 properties=geo_object.properties,
@@ -570,22 +570,22 @@ class SessionState:
 
         props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs_components.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
         id_component.id = props.get("id", geo_object.id or key)
 
-        metadata = esper.component_for_entity(existing_entity_id, ecs_components.MetaData)
+        metadata = esper.component_for_entity(existing_entity_id, ecs_geo_components.MetaData)
         meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
         metadata.name = meta_data.get("name", "")
         metadata.description = meta_data.get("description", "")
         metadata.type = meta_data.get("type", "")
 
-        appearance = esper.component_for_entity(existing_entity_id, ecs_components.Appearance)
+        appearance = esper.component_for_entity(existing_entity_id, ecs_geo_components.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
@@ -606,25 +606,25 @@ class SessionState:
         form_data: dict,
     ) -> None:
         if requested_action == "new_location":
-            esper.add_component(entity_id, ecs_components.NewLocation(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_geo_components.NewLocation(requester_id=requester_id))
         elif requested_action == "add_object":
-            esper.add_component(entity_id, ecs_components.AddObject(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_geo_components.AddObject(requester_id=requester_id))
         elif request_type == "edited_object":
-            esper.add_component(entity_id, ecs_components.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
+            esper.add_component(entity_id, ecs_geo_components.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
         elif request_type == "deleted_object":
-            esper.add_component(entity_id, ecs_components.DeletedObject(target_id=target_id, target_path=target_path))
+            esper.add_component(entity_id, ecs_geo_components.DeletedObject(target_id=target_id, target_path=target_path))
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
-            entity = ecs_components.ClientRequest(
+            entity = ecs_geo_components.ClientRequest(
                 id=request.id or key,
                 geometry=request.geometry,
                 properties=request.properties,
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
-            request_params = esper.component_for_entity(entity.entity_id, ecs_components.ClientRequestProperties)
+            request_params = esper.component_for_entity(entity.entity_id, ecs_geo_components.ClientRequestProperties)
             self._attach_request_marker_component(
                 entity.entity_id,
                 request_type=str(request_params.request_type or "").strip().lower(),
@@ -639,23 +639,23 @@ class SessionState:
 
         props = request.properties if isinstance(request.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs_components.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
         id_component.id = props.get("id", request.id or key)
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs_components.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
 
-        request_params = esper.component_for_entity(existing_entity_id, ecs_components.ClientRequestProperties)
+        request_params = esper.component_for_entity(existing_entity_id, ecs_geo_components.ClientRequestProperties)
         crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
         request_params.request_type = crp.get("type", "")
 
         for marker_component in (
-            ecs_components.NewLocation,
-            ecs_components.AddObject,
-            ecs_components.EditedObject,
-            ecs_components.DeletedObject,
+            ecs_geo_components.NewLocation,
+            ecs_geo_components.AddObject,
+            ecs_geo_components.EditedObject,
+            ecs_geo_components.DeletedObject,
         ):
             try:
                 esper.remove_component(existing_entity_id, marker_component)

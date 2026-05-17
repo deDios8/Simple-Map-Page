@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 import esper
+import random
+import string
 
 
 # ---------------------------------------------------------------------------
@@ -82,93 +84,6 @@ class Status:
 class Statuses:
     def __init__(self, items: dict | None = None) -> None:
         self.items = items if isinstance(items, dict) else {}
-
-
-# ---------------------------------------------------------------------------
-# Components for constructive events
-# ---------------------------------------------------------------------------
-'''
-Seeker looks for matching entities and attached a trigger component to them.
-Trigger components check for matching properties and if they match, they fire a Targetted search.
-Valid targets have a result component attached to them.
-Result components are then processed to apply their effects and then removed.
-'''
-@dataclass
-class Seeker:
-    '''
-    if ALL of these are true for an entity then attach a trigger to it, AND condition
-    multiple seekers can be built to create an OR condition instead of an AND condition
-    '''
-    seeker_id: str
-
-    seeking_ids: list = []
-    seeking_types: list = []
-    seeking_statuses: list = [] 
-
-    trigger_ids_to_assign: list = []  # IDs of the triggers to assign to suspect entity when a match is found
-
-@dataclass
-class Trigger:
-    '''
-    ALL trigger conditions must be met for this to launch a targetted search, AND condition
-    multiple triggers can be assigned to make an OR condition instead of an AND condition
-    '''
-    trigger_id: str
-
-    is_within_ids: list = None
-    is_not_within_ids: list = None
-    is_within_types: list = None
-    is_not_within_types: list = None
-    just_entered_zone_ids: list = None
-    just_exited_zone_ids: list = None
-    just_entered_zone_types: list = None
-    just_exited_zone_types: list = None
-    has_statuses: list = None
-    does_not_have_statuses: list = None
-    stat_id_is_above: dict | None = None
-    stat_id_is_below: dict | None = None
-    stat_type_is_above: dict | None = None
-    stat_type_is_below: dict | None = None
-
-    target_ids_to_fire: list = []  # IDs of the targets to launch looking for matching entities to when the trigger conditions are met
-
-@dataclass
-class Target:
-    '''
-    if ALL are true, attach a Result component to the entity
-    attaching multiple Target components that attach the same result_id to an entity can create an OR condition instead of an AND condition
-    '''
-    target_id: str
-
-    target_ids: list = []
-    target_types: list = []
-    target_statuses: list = []
-    target_stat_id_is_above: dict | None = None
-    target_stat_id_is_below: dict | None = None
-    target_stat_type_is_above: dict | None = None
-    target_stat_type_is_below: dict | None = None
-
-    result_id_to_assign: str | None = None  # ID of the result to assign to the entity when a match is found
-
-@dataclass
-class Result:
-    '''
-    do all of the following to the entity with this ID when the trigger conditions are met
-    '''
-    result_id: str
-
-    set_visibility: bool | None = None
-    toggle_visibility: bool = False
-    change_color_to: str | None = None
-    change_radius_to: int | None = None
-    
-    add_statuses: list | None = None
-    remove_statuses: list | None = None
-    toggle_statuses: list | None = None
-
-    set_stats_to_values: dict | None = None
-    increase_stats_by_values: dict | None = None
-    decrease_stats_by_values: dict | None = None
 
 
 # ---------------------------------------------------------------------------
