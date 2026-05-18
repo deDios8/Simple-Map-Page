@@ -45,21 +45,21 @@ class Triggers:
         self.items = items if isinstance(items, dict) else {}
 """
 
-class CriteriaHasStatuses:
-    def __init__(self, statuses: list) -> None:
-        self.statuses = statuses
+class CriteriaHasStats:
+    def __init__(self, stats: list) -> None:
+        self.stats = stats
 
 class CriteriaIsWithin:
-    def __init__(self, statuses: list) -> None:
-        self.statuses = statuses
+    def __init__(self, stats: list) -> None:
+        self.stats = stats
 
 class CriteriaJustEntered:
-    def __init__(self, statuses: list) -> None:
-        self.statuses = statuses
+    def __init__(self, stats: list) -> None:
+        self.stats = stats
 
 class CriteriaJustExited:
-    def __init__(self, statuses: list) -> None:
-        self.statuses = statuses
+    def __init__(self, stats: list) -> None:
+        self.stats = stats
 
 
 class Target:

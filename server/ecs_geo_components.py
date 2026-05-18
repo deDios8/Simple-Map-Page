@@ -65,23 +65,11 @@ class DeletedObject:
 @dataclass
 class Stat:
     name: str
-    type: str
     value: int
     min_value: int = 0
     max_value: int = 100
 
 class Stats:
-    def __init__(self, items: dict | None = None) -> None:
-        self.items = items if isinstance(items, dict) else {}
-
-@dataclass
-class Status:
-    name: str
-    type: str
-    strength: int
-    time_until_expire: int = 5
-
-class Statuses:
     def __init__(self, items: dict | None = None) -> None:
         self.items = items if isinstance(items, dict) else {}
 

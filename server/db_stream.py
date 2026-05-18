@@ -88,7 +88,6 @@ def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
                 continue
             normalized_stats[stat_key] = {
                 "name": str(raw_stat.get("name", "") or ""),
-                "type": str(raw_stat.get("type", "") or ""),
                 "value": raw_stat.get("value", 0),
                 "max_value": raw_stat.get("max_value", 100),
                 "min_value": raw_stat.get("min_value", 0),
@@ -98,28 +97,6 @@ def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
 
     return {}
 
-
-def normalize_statuses(properties: Any) -> dict[str, dict[str, Any]]:
-    if not isinstance(properties, dict):
-        return {}
-    statuses_value = properties.get("statuses")
-    if isinstance(statuses_value, dict):
-        normalized_statuses: dict[str, dict[str, Any]] = {}
-        for key, raw_status in statuses_value.items():
-            if not isinstance(raw_status, dict):
-                continue
-            status_key = str(key).strip() or str(raw_status.get("name", "")).strip()
-            if not status_key:
-                continue
-            normalized_statuses[status_key] = {
-                "name": str(raw_status.get("name", "") or ""),
-                "type": str(raw_status.get("type", "") or ""),
-                "strength": raw_status.get("strength", 0),
-                "time_until_expire": raw_status.get("time_until_expire", 5),
-            }
-        if normalized_statuses:
-            return normalized_statuses
-    return {}
 
 
 def to_bool(value: object, fallback: bool) -> bool:
@@ -158,7 +135,6 @@ class GeoObjectEntry(DBEntry):
         self.description = meta_data.get("description", "")
         
         self.stats = normalize_stats(self.properties)
-        self.statuses = normalize_statuses(self.properties)
 
         self.data = self.properties.get("data", {})
 

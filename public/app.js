@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.026",
+  version: "0.1.027",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -73,13 +73,9 @@ const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
 const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
-const statusesList = document.querySelector("#statuses-list");
-const addStatusButton = document.querySelector("#add-status-button");
 const editorFormToggle = document.querySelector("#editor-form-toggle");
 const statsSectionToggle = document.querySelector("#stats-section-toggle");
-const statusesSectionToggle = document.querySelector("#statuses-section-toggle");
 const statsSection = document.querySelector(".stats-section");
-const statusesSection = document.querySelector(".statuses-section");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
   fieldName,
@@ -95,7 +91,6 @@ const editableFields = [
 const editorCollapseState = {
   editorForm: true,
   stats: true,
-  statuses: true,
 };
 
 // Persist collapse state to localStorage
@@ -122,7 +117,6 @@ function loadCollapseState() {
 function applyCollapseState() {
   setEditorFormCollapsed(editorCollapseState.editorForm);
   setStatsSectionCollapsed(editorCollapseState.stats);
-  setStatusesSectionCollapsed(editorCollapseState.statuses);
 }
 
 function setEditorFormCollapsed(isCollapsed) {
@@ -145,16 +139,6 @@ function setStatsSectionCollapsed(isCollapsed) {
   saveCollapseState();
 }
 
-function setStatusesSectionCollapsed(isCollapsed) {
-  editorCollapseState.statuses = Boolean(isCollapsed);
-  statusesSection?.classList.toggle("is-collapsed", editorCollapseState.statuses);
-  if (statusesSectionToggle) {
-    statusesSectionToggle.textContent = editorCollapseState.statuses ? "Expand" : "Collapse";
-    statusesSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.statuses));
-  }
-  saveCollapseState();
-}
-
 function nameToKey(name) {
   return String(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
 }
@@ -163,20 +147,9 @@ function createDefaultStat() {
   return {
     key: "",
     name: "",
-    type: "",
     value: 0,
     max_value: 100,
     min_value: 0,
-  };
-}
-
-function createDefaultStatus() {
-  return {
-    key: "",
-    name: "",
-    type: "",
-    strength: 0,
-    time_until_expire: 5,
   };
 }
 
@@ -194,7 +167,6 @@ function normalizeStats(properties) {
       }
       nextStats[statKey] = {
         name: String(rawStat.name || ""),
-        type: String(rawStat.type || ""),
         value: Number.isFinite(rawStat.value) ? rawStat.value : 0,
         max_value: Number.isFinite(rawStat.max_value) ? rawStat.max_value : 100,
         min_value: Number.isFinite(rawStat.min_value) ? rawStat.min_value : 0,
@@ -202,33 +174,6 @@ function normalizeStats(properties) {
     }
     if (Object.keys(nextStats).length > 0) {
       return nextStats;
-    }
-  }
-
-  return {};
-}
-
-function normalizeStatuses(properties) {
-  const rawStatuses = properties?.statuses;
-  if (rawStatuses && typeof rawStatuses === "object" && !Array.isArray(rawStatuses)) {
-    const nextStatuses = {};
-    for (const [key, rawStatus] of Object.entries(rawStatuses)) {
-      if (!rawStatus || typeof rawStatus !== "object" || Array.isArray(rawStatus)) {
-        continue;
-      }
-      const statusKey = String(key || rawStatus.name || "").trim();
-      if (!statusKey) {
-        continue;
-      }
-      nextStatuses[statusKey] = {
-        name: String(rawStatus.name || ""),
-        type: String(rawStatus.type || ""),
-        strength: Number.isFinite(rawStatus.strength) ? rawStatus.strength : 0,
-        time_until_expire: Number.isFinite(rawStatus.time_until_expire) ? rawStatus.time_until_expire : 5,
-      };
-    }
-    if (Object.keys(nextStatuses).length > 0) {
-      return nextStatuses;
     }
   }
 
@@ -262,10 +207,6 @@ function renderStatsEditor(stats) {
               <input type="text" data-field="name" value="${escapeHtml(String(safeStat.name || ""))}" placeholder="Health" />
             </label>
             <label>
-              Type
-              <input type="text" data-field="type" value="${escapeHtml(String(safeStat.type || ""))}" placeholder="resource" />
-            </label>
-            <label>
               Value
               <input type="number" step="any" data-field="value" value="${escapeHtml(String(statValue))}" title="Valid range: ${statMin} to ${statMax}" />
             </label>
@@ -291,117 +232,6 @@ function addEmptyStatRow() {
   applyEditorPermissions();
 }
 
-function renderStatusesEditor(statuses) {
-  if (!statusesList) {
-    return;
-  }
-
-  const entries = Object.entries(statuses || {});
-  if (!entries.length) {
-    statusesList.innerHTML = '<div class="statuses-empty">No statuses yet. Add one to track temporary effects.</div>';
-    return;
-  }
-
-  statusesList.innerHTML = entries
-    .map(([key, status], index) => {
-      const safeStatus = status && typeof status === "object" ? status : createDefaultStatus();
-      const strength = Number.isFinite(safeStatus.strength) ? safeStatus.strength : 0;
-      const timeUntilExpire = Number.isFinite(safeStatus.time_until_expire) ? safeStatus.time_until_expire : 5;
-      const rowLabel = index === 0 ? "Primary status" : `Status ${index + 1}`;
-
-      return `
-        <article class="status-row" data-status-index="${index}" data-key="${escapeHtml(String(key || ""))}" data-time-until-expire="${timeUntilExpire}">
-          <div class="status-row-grid">
-            <label>
-              Name
-              <input type="text" data-field="name" value="${escapeHtml(String(safeStatus.name || ""))}" placeholder="Burning" />
-            </label>
-            <label>
-              Type
-              <input type="text" data-field="type" value="${escapeHtml(String(safeStatus.type || ""))}" placeholder="debuff" />
-            </label>
-            <label>
-              Strength
-              <input type="number" step="any" data-field="strength" value="${escapeHtml(String(strength))}" />
-            </label>
-            <button class="status-remove-button" type="button" data-action="remove-status" aria-label="Remove status">✕</button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function addEmptyStatusRow() {
-  const currentStatuses = collectStatusesFromEditor({ allowEmpty: true }).statuses;
-  const nextStatuses = { ...currentStatuses };
-  let index = Object.keys(nextStatuses).length + 1;
-  let nextKey = `status-${index}`;
-  while (Object.prototype.hasOwnProperty.call(nextStatuses, nextKey)) {
-    index += 1;
-    nextKey = `status-${index}`;
-  }
-  nextStatuses[nextKey] = createDefaultStatus();
-  renderStatusesEditor(nextStatuses);
-  applyEditorPermissions();
-}
-
-function collectStatusesFromEditor(options = {}) {
-  const allowEmpty = Boolean(options.allowEmpty);
-  const rows = Array.from(statusesList?.querySelectorAll(".status-row") || []);
-  const statuses = {};
-  let primaryStatus = null;
-
-  for (const [index, row] of rows.entries()) {
-    const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
-    const originalKey = row.getAttribute("data-key") || "";
-    const name = getValue("name").trim();
-    const type = getValue("type").trim();
-    const rawStrength = Number.parseFloat(getValue("strength").trim());
-    const rawTimeUntilExpire = Number.parseFloat(row.getAttribute("data-time-until-expire") ?? "");
-
-    if (!name && !type && !getValue("strength").trim()) {
-      continue;
-    }
-
-    const nextKey = nameToKey(name) || originalKey || `status-${index + 1}`;
-    if (Object.prototype.hasOwnProperty.call(statuses, nextKey)) {
-      return {
-        statuses: {},
-        primaryStatus: null,
-        error: `Duplicate status key: ${nextKey}`,
-      };
-    }
-
-    const nextStatus = {
-      name,
-      type,
-      strength: Number.isFinite(rawStrength) ? rawStrength : 0,
-      time_until_expire: Number.isFinite(rawTimeUntilExpire) ? rawTimeUntilExpire : 5,
-    };
-    statuses[nextKey] = nextStatus;
-    if (primaryStatus === null) {
-      primaryStatus = { key: nextKey, status: nextStatus };
-    }
-  }
-
-
-
-  if (!allowEmpty && rows.length > 0 && !Object.keys(statuses).length) {
-    return {
-      statuses: {},
-      primaryStatus,
-      error: null,
-    };
-  }
-
-  return {
-    statuses,
-    primaryStatus,
-    error: null,
-  };
-}
-
 function collectStatsFromEditor(options = {}) {
   const allowEmpty = Boolean(options.allowEmpty);
   const rows = Array.from(statsList?.querySelectorAll(".stat-row") || []);
@@ -412,12 +242,11 @@ function collectStatsFromEditor(options = {}) {
     const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value ?? "";
     const originalKey = row.getAttribute("data-key") || "";
     const name = getValue("name").trim();
-    const type = getValue("type").trim();
     const rawValue = Number.parseFloat(getValue("value").trim());
     const rawMin = Number.parseFloat(row.getAttribute("data-min") ?? "");
     const rawMax = Number.parseFloat(row.getAttribute("data-max") ?? "");
 
-    if (!name && !type && !getValue("value").trim()) {
+    if (!name && !getValue("value").trim()) {
       continue;
     }
 
@@ -443,7 +272,6 @@ function collectStatsFromEditor(options = {}) {
 
     const nextStat = {
       name,
-      type,
       value: Math.min(maxValue, Math.max(minValue, value)),
       max_value: maxValue,
       min_value: minValue,
@@ -554,9 +382,6 @@ function bindUi() {
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
   });
-  addStatusButton?.addEventListener("click", () => {
-    addEmptyStatusRow();
-  });
   coordPickButton?.addEventListener("click", () => {
     setCoordPickMode(!state.coordPickMode);
   });
@@ -567,9 +392,6 @@ function bindUi() {
   statsSectionToggle?.addEventListener("click", () => {
     setStatsSectionCollapsed(!editorCollapseState.stats);
   });
-  statusesSectionToggle?.addEventListener("click", () => {
-    setStatusesSectionCollapsed(!editorCollapseState.statuses);
-  });
   statsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-stat"]');
     if (!button) {
@@ -578,17 +400,6 @@ function bindUi() {
     button.closest(".stat-row")?.remove();
     if (!statsList.querySelector(".stat-row")) {
       renderStatsEditor({});
-    }
-    applyEditorPermissions();
-  });
-  statusesList?.addEventListener("click", (event) => {
-    const button = event.target.closest('button[data-action="remove-status"]');
-    if (!button) {
-      return;
-    }
-    button.closest(".status-row")?.remove();
-    if (!statusesList.querySelector(".status-row")) {
-      renderStatusesEditor({});
     }
     applyEditorPermissions();
   });
@@ -623,13 +434,8 @@ function bindUi() {
     const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
     const collectedStats = collectStatsFromEditor();
-    const collectedStatuses = collectStatusesFromEditor();
     if (collectedStats.error) {
       saveStatus.textContent = collectedStats.error;
-      return;
-    }
-    if (collectedStatuses.error) {
-      saveStatus.textContent = collectedStatuses.error;
       return;
     }
     
@@ -655,7 +461,6 @@ function bindUi() {
 
 
     const nextStats = collectedStats.stats;
-    const nextStatuses = collectedStatuses.statuses;
     const nextEntry = {
       ...objectEntry,
       geometry: nextGeometry,
@@ -674,7 +479,6 @@ function bindUi() {
           radius: nextRadius,
         },
         stats: nextStats,
-        statuses: nextStatuses,
       },
     };
 
@@ -986,7 +790,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     radius: fieldRadius.value.trim(),
     description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
-    statuses: nextEntry?.properties?.statuses || {},
   };
 
   await submitRequest({
@@ -1273,7 +1076,6 @@ function populateEditor(id) {
 
   const metaData = feature.properties?.metaData || {};
   const stats = normalizeStats(feature.properties);
-  const statuses = normalizeStatuses(feature.properties);
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
@@ -1285,7 +1087,6 @@ function populateEditor(id) {
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = metaData.description || "";
   renderStatsEditor(stats);
-  renderStatusesEditor(statuses);
   applyEditorPermissions();
 }
 
@@ -1294,7 +1095,6 @@ function showEmptyEditor() {
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
   renderStatsEditor({});
-  renderStatusesEditor({});
   applyEditorPermissions();
 }
 
@@ -1324,10 +1124,6 @@ function applyEditorPermissions() {
 
   addStatButton.disabled = !isEditable || !isFormVisible;
   statsList.querySelectorAll("input, button").forEach((element) => {
-    element.disabled = !isEditable || !isFormVisible;
-  });
-  addStatusButton.disabled = !isEditable || !isFormVisible;
-  statusesList.querySelectorAll("input, button").forEach((element) => {
     element.disabled = !isEditable || !isFormVisible;
   });
 }

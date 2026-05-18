@@ -25,7 +25,6 @@ from db_stream import (
     patch_db_entry,
     delete_db_entry,
     normalize_stats,
-    normalize_statuses,
     to_bool,
     to_float,
 )
@@ -106,21 +105,6 @@ class SessionState:
             esper.remove_component(entity_id, ecs_geo_components.Stats)
 
         return normalized_stats
-
-    def _sync_statuses_component(self, entity_id: int, props: object) -> dict[str, dict]:
-        normalized_statuses = normalize_statuses(props)
-        statuses_component = esper.try_component(entity_id, ecs_geo_components.Statuses)
-        if normalized_statuses:
-            if statuses_component is None:
-                esper.add_component(entity_id, ecs_geo_components.Statuses(items=normalized_statuses))
-            else:
-                statuses_component.items = normalized_statuses
-        elif statuses_component is not None:
-            esper.remove_component(entity_id, ecs_geo_components.Statuses)
-
-
-
-        return normalized_statuses
 
     def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
         zone_borders: dict[str, dict[str, list[str]]] = {}
@@ -464,11 +448,6 @@ class SessionState:
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
 
-        statuses_payload = form_data.get("statuses") if isinstance(form_data.get("statuses"), dict) else {}
-        next_statuses_payload = normalize_statuses({"statuses": statuses_payload})
-
-        self._sync_statuses_component(target_entity_id, {"statuses": next_statuses_payload})
-
         extra_data = form_data.get("extraData")
         if not isinstance(extra_data, dict):
             extra_data = {}
@@ -487,7 +466,6 @@ class SessionState:
                 "properties/appearance/visible": appearance_visible,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
-                "properties/statuses": next_statuses_payload,
             },
             node=GEO_OBJECTS_NODE,
         )
@@ -519,10 +497,6 @@ class SessionState:
                     props["stats"] = next_stats_payload
                 else:
                     props.pop("stats", None)
-                if next_statuses_payload:
-                    props["statuses"] = next_statuses_payload
-                else:
-                    props.pop("statuses", None)
 
         self._consume_client_request(request_entity_id)
 
@@ -564,7 +538,6 @@ class SessionState:
             self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
             
             self._sync_stats_component(geo.entity_id, geo_object.properties)
-            self._sync_statuses_component(geo.entity_id, geo_object.properties)
             
             return geo.entity_id
 
@@ -591,7 +564,6 @@ class SessionState:
         self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
 
         self._sync_stats_component(existing_entity_id, props)
-        self._sync_statuses_component(existing_entity_id, props)
         
         return existing_entity_id
 
