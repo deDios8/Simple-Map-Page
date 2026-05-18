@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.027c",
+  version: "0.1.028",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -472,7 +472,7 @@ function bindUi() {
         appearance: {
           ...objectEntry.properties?.appearance,
           color: fieldColor.value,
-          visible: fieldVisible.checked,
+          visible: parseVisibleList(fieldVisible.value),
           radius: nextRadius,
         },
         stats: nextStats,
@@ -780,7 +780,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
   const formData = {
     name: fieldName.value.trim(),
     color: fieldColor.value,
-    visible: fieldVisible.checked,
+    visible: parseVisibleList(fieldVisible.value),
     latitude: fieldLatitude.value.trim(),
     longitude: fieldLongitude.value.trim(),
     radius: fieldRadius.value.trim(),
@@ -919,12 +919,29 @@ function normalizeObjects(rawObjects) {
   }, {});
 }
 
+function parseVisibleList(value) {
+  if (!value || typeof value !== "string") return [];
+  return value.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function isVisibleToCurrentUser(feature) {
+  const visibleTo = feature.properties?.appearance?.visible;
+  if (!Array.isArray(visibleTo) || visibleTo.length === 0) return false;
+  const userStats = state.objects[state.userId]?.properties?.stats || {};
+  const userStatNames = new Set(
+    Object.values(userStats)
+      .map((s) => (typeof s?.name === "string" ? s.name.toUpperCase() : null))
+      .filter(Boolean),
+  );
+  return visibleTo.some((key) => userStatNames.has(String(key).toUpperCase()));
+}
+
 function renderLayer() {
   if (state.geoJsonLayer) {
     state.geoJsonLayer.remove();
   }
 
-  const visibleFeatures = Object.values(state.objects).filter((feature) => feature.properties?.appearance?.visible);
+  const visibleFeatures = Object.values(state.objects).filter((feature) => isVisibleToCurrentUser(feature));
 
   state.geoJsonLayer = L.geoJSON(visibleFeatures, {
     pointToLayer: (feature, latlng) => L.circle(latlng, pointStyle(feature)),
@@ -983,7 +1000,8 @@ function renderObjectList() {
         .map((feature) => {
           const id = feature.properties?.id;
           const color = feature.properties?.appearance?.color || "#0b8f87";
-          const visible = feature.properties?.appearance?.visible ? "Visible" : "Hidden";
+          const visibleList = feature.properties?.appearance?.visible;
+          const visible = Array.isArray(visibleList) && visibleList.length > 0 ? visibleList.join(", ") : "Hidden";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
           const name = escapeHtml(feature.properties?.metaData?.name || id || "Unnamed object");
           const type = escapeHtml(feature.geometry?.type || "Unknown");
@@ -1053,7 +1071,8 @@ function populateEditor(id) {
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
-  fieldVisible.checked = Boolean(feature.properties?.appearance?.visible);
+  const rawVisible = feature.properties?.appearance?.visible;
+  fieldVisible.value = Array.isArray(rawVisible) ? rawVisible.join(", ") : "";
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
   fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";

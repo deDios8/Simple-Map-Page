@@ -99,6 +99,20 @@ def to_bool(value: object, fallback: bool) -> bool:
     return fallback
 
 
+def normalize_visible(value: object) -> list[str]:
+    """Normalize a ``visible`` field to a list of permission-key strings.
+
+    Each string in the list is a stat *name* value; a geo object is rendered
+    for the current user only when the user's own geo object has at least one
+    stat whose ``name`` field matches (case-insensitively) one of the entries.
+    """
+    if isinstance(value, list):
+        return [str(s) for s in value if isinstance(s, str) and s.strip()]
+    if isinstance(value, str) and value.strip():
+        return [s.strip() for s in value.split(",") if s.strip()]
+    return []
+
+
 def to_float(value: object, fallback: float) -> float:
     try:
         return float(value)  # type: ignore[arg-type]
@@ -113,7 +127,7 @@ class GeoObjectEntry(DBEntry):
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
-        self.visible = self.appearance.get("visible", True) if isinstance(self.appearance, dict) else True
+        self.visible = normalize_visible(self.appearance.get("visible", [])) if isinstance(self.appearance, dict) else []
 
         meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
         self.name = meta_data.get("name", "")

@@ -25,7 +25,7 @@ from db_stream import (
     patch_db_entry,
     delete_db_entry,
     normalize_stats,
-    to_bool,
+    normalize_visible,
     to_float,
 )
 
@@ -303,7 +303,7 @@ class SessionState:
                     },
                     "appearance": {
                         "color": "#000000",
-                        "visible": True,
+                        "visible": ["USER"],
                         "radius": 5,
                     },
                     "stats": {
@@ -381,7 +381,7 @@ class SessionState:
                 },
                 "appearance": {
                     "color": "#0b8f87",
-                    "visible": True,
+                    "visible": [],
                     "radius": 5,
                 },
                 "data": {},
@@ -429,13 +429,13 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        visible_fallback = True
+        visible_fallback: list[str] = []
         geo_snapshot = self.stream.geo_object_state.get(target_key)
         if isinstance(geo_snapshot, dict):
             props = geo_snapshot.get("properties") if isinstance(geo_snapshot.get("properties"), dict) else {}
             appearance_snapshot = props.get("appearance") if isinstance(props.get("appearance"), dict) else {}
-            visible_fallback = bool(appearance_snapshot.get("visible", True))
-        appearance_visible = to_bool(form_data.get("visible"), visible_fallback)
+            visible_fallback = normalize_visible(appearance_snapshot.get("visible", []))
+        appearance_visible = normalize_visible(form_data.get("visible")) if "visible" in form_data else visible_fallback
 
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
