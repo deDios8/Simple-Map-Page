@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 import esper
-import random
-import string
 
 
 # ---------------------------------------------------------------------------
@@ -14,7 +12,6 @@ class ID:
 @dataclass
 class MetaData:
     name: str
-    type: str
     description: str
 
 @dataclass
@@ -117,7 +114,6 @@ class GeoObject:
             new_entity_id,
             MetaData(
                 name=meta_data.get("name", ""),
-                type=meta_data.get("type", nested_data.get("type", "")),
                 description=meta_data.get("description", ""),
             ),
         )

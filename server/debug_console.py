@@ -145,7 +145,7 @@ class SessionDebugConsole:
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
-            f"id={id_component.id} name={metadata.name!r} type={metadata.type!r} "
+            f"id={id_component.id} name={metadata.name!r} "
             f"description={metadata.description!r} color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates} "

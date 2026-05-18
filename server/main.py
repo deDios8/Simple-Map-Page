@@ -306,7 +306,6 @@ class SessionState:
                     "metaData": {
                         "name": requester_id,
                         "description": "Live user location.",
-                        "type": "user",
                     },
                     "appearance": {
                         "color": "#000000",
@@ -377,7 +376,6 @@ class SessionState:
                 "metaData": {
                     "name": f"{new_object_key}",
                     "description": f"Added by {requester_id}.",
-                    "type": "pin",
                 },
                 "appearance": {
                     "color": "#0b8f87",
@@ -424,7 +422,6 @@ class SessionState:
         geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
 
         metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
-        metadata.type = str(form_data.get("type", metadata.type) or metadata.type)
         metadata.description = str(form_data.get("description", metadata.description) or metadata.description)
 
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
@@ -459,7 +456,6 @@ class SessionState:
             {
                 "geometry/coordinates": [lon, lat],
                 "properties/metaData/name": metadata.name,
-                "properties/metaData/type": metadata.type,
                 "properties/metaData/description": metadata.description,
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
@@ -485,7 +481,6 @@ class SessionState:
                 meta = props.setdefault("metaData", {})
                 if isinstance(meta, dict):
                     meta["name"] = metadata.name
-                    meta["type"] = metadata.type
                     meta["description"] = metadata.description
                 appr = props.setdefault("appearance", {})
                 if isinstance(appr, dict):
@@ -550,7 +545,6 @@ class SessionState:
         meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
         metadata.name = meta_data.get("name", "")
         metadata.description = meta_data.get("description", "")
-        metadata.type = meta_data.get("type", "")
 
         appearance = esper.component_for_entity(existing_entity_id, ecs_geo_components.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}

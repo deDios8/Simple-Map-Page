@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.027",
+  version: "0.1.027a",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -63,7 +63,6 @@ const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
 const deleteObjectButton = document.querySelector("#delete-object-button");
 const fieldName = document.querySelector("#field-name");
-const fieldType = document.querySelector("#field-type");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
 const fieldLatitude = document.querySelector("#field-latitude");
@@ -79,7 +78,6 @@ const statsSection = document.querySelector(".stats-section");
 const versionInfo = document.querySelector("#version-info");
 const editableFields = [
   fieldName,
-  fieldType,
   fieldColor,
   fieldVisible,
   fieldLatitude,
@@ -470,7 +468,6 @@ function bindUi() {
           ...currentMetaData,
           name: fieldName.value.trim() || currentMetaData.name || state.selectedId,
           description: fieldDescription.value.trim(),
-          type: fieldType.value.trim(),
         },
         appearance: {
           ...objectEntry.properties?.appearance,
@@ -782,7 +779,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
 
   const formData = {
     name: fieldName.value.trim(),
-    type: fieldType.value.trim(),
     color: fieldColor.value,
     visible: fieldVisible.checked,
     latitude: fieldLatitude.value.trim(),
@@ -1079,7 +1075,6 @@ function populateEditor(id) {
   editorForm.hidden = false;
   editorEmptyState.textContent = `Editing ${metaData.name || id}`;
   fieldName.value = metaData.name || "";
-  fieldType.value = metaData.type || "";
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
   fieldVisible.checked = Boolean(feature.properties?.appearance?.visible);
   fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
