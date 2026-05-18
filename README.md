@@ -38,7 +38,7 @@ geometry = {
 },
 properties = {
   id = "same as key",
-  clientRequestProperties = {
+  clientRequestPayload = {
     timestamp = 0,
     requesterId = "",
     requestType = "",

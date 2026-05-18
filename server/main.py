@@ -261,7 +261,7 @@ class SessionState:
 
     def apply_new_location_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestProperties)
+        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -341,7 +341,7 @@ class SessionState:
 
     def apply_add_object_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestProperties)
+        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -591,7 +591,7 @@ class SessionState:
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
-            request_params = esper.component_for_entity(entity.entity_id, ecs_geo_components.ClientRequestProperties)
+            request_params = esper.component_for_entity(entity.entity_id, ecs_geo_components.ClientRequestPayload)
             self._attach_request_marker_component(
                 entity.entity_id,
                 request_type=str(request_params.request_type or "").strip().lower(),
@@ -612,8 +612,8 @@ class SessionState:
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
 
-        request_params = esper.component_for_entity(existing_entity_id, ecs_geo_components.ClientRequestProperties)
-        crp = props.get("clientRequestProperties", {}) if isinstance(props.get("clientRequestProperties"), dict) else {}
+        request_params = esper.component_for_entity(existing_entity_id, ecs_geo_components.ClientRequestPayload)
+        crp = props.get("clientRequestPayload", {}) if isinstance(props.get("clientRequestPayload"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
         request_params.request_type = crp.get("type", "")

@@ -50,7 +50,7 @@ class DBEntry:
 class ClientRequestEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
-        crp = self.properties.get("clientRequestProperties", {}) if isinstance(self.properties.get("clientRequestProperties"), dict) else {}
+        crp = self.properties.get("clientRequestPayload", {}) if isinstance(self.properties.get("clientRequestPayload"), dict) else {}
         self.requester_id = crp.get("requesterId", "")
         self.timestamp = crp.get("timestamp", "")
         self.request_type = crp.get("type", "")

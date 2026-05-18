@@ -107,11 +107,11 @@ class SessionDebugConsole:
         metadata_count = len(list(esper.get_component(ecs_geo_components.MetaData)))
         appearance_count = len(list(esper.get_component(ecs_geo_components.Appearance)))
         geometry_count = len(list(esper.get_component(ecs_geo_components.Geometry)))
-        request_count = len(list(esper.get_component(ecs_geo_components.ClientRequestProperties)))
+        request_count = len(list(esper.get_component(ecs_geo_components.ClientRequestPayload)))
 
         geo_entities = {entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ID)}
         request_entities = {
-            entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ClientRequestProperties)
+            entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ClientRequestPayload)
         }
         all_entities = geo_entities | request_entities
 
@@ -157,7 +157,7 @@ class SessionDebugConsole:
         entity_id = self._state.ClientRequestEntityIds.get(key)
         if entity_id is None:
             return False
-        request = esper.component_for_entity(entity_id, ecs_geo_components.ClientRequestProperties)
+        request = esper.component_for_entity(entity_id, ecs_geo_components.ClientRequestPayload)
         print(
             "[DEBUG][req] "
             f"key={key} entity={entity_id} requester_id={request.requester_id!r} "

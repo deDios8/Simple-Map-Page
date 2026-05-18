@@ -698,7 +698,7 @@ async function submitRequest({
   requestId,
   requestType,
   coordinates = null,
-  clientRequestProperties = {},
+  clientRequestPayload = {},
   properties = {},
   successMessage = "Request sent",
   quiet = false,
@@ -746,12 +746,12 @@ async function submitRequest({
     properties: {
       id: requestKey,
       ...properties,
-      clientRequestProperties: {
+      clientRequestPayload: {
         requesterId: state.userId,
         timestamp,
         type: requestType,
         requestedAction: requestId,
-        ...clientRequestProperties,
+        ...clientRequestPayload,
       },
     },
   };
@@ -792,7 +792,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     requestId: `edit-${targetId}`,
     requestType: "edited_object",
     coordinates,
-    clientRequestProperties: {
+    clientRequestPayload: {
       targetId,
       targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
     },
@@ -813,7 +813,7 @@ async function submitDeletedObjectRequest(targetId) {
     requestId: `delete-${targetId}`,
     requestType: "deleted_object",
     coordinates,
-    clientRequestProperties: {
+    clientRequestPayload: {
       targetId,
       targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
     },

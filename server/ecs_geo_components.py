@@ -30,7 +30,7 @@ class Geometry:
     type: str = "Point"  # Assuming all geo objects are points for simplicity; can be extended to support other types
 
 @dataclass
-class ClientRequestProperties:
+class ClientRequestPayload:
     requester_id: str
     timestamp: str
     request_type: str = ""
@@ -126,12 +126,12 @@ class ClientRequest:
     def __init__(self, id: str, geometry: dict, properties: dict) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
-        crp = properties.get("clientRequestProperties", {}) if isinstance(properties, dict) else {}
+        crp = properties.get("clientRequestPayload", {}) if isinstance(properties, dict) else {}
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, Geometry(coordinates=geometry.get("coordinates", [0,0])))
         esper.add_component(
             new_entity_id,
-            ClientRequestProperties(
+            ClientRequestPayload(
                 requester_id=crp.get("requesterId", ""),
                 timestamp=crp.get("timestamp", ""),
                 request_type=crp.get("type", ""),
