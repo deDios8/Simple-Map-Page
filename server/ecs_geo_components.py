@@ -19,10 +19,6 @@ class IsUser:
     is_user: bool = True
 
 @dataclass
-class IsZone:
-    is_zone: bool = True
-
-@dataclass
 class Appearance:
     color: str
     shape: str

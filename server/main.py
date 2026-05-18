@@ -167,26 +167,21 @@ class SessionState:
             self._upsert_client_request_entity(key, entry)
 
 
-    def _sync_geo_type_marker_components(self, entity_id: int, is_user: bool) -> None:
-        if is_user:
+    def _sync_is_user_component(self, entity_id: int) -> None:
+        stats = esper.try_component(entity_id, ecs_geo_components.Stats)
+        is_user = (
+            stats is not None
+            and isinstance(stats.items.get("user"), dict)
+            and str(stats.items["user"].get("name", "")).upper() == "USER"
+        )
+        current = esper.try_component(entity_id, ecs_geo_components.IsUser)
+        if is_user and current is None:
+            esper.add_component(entity_id, ecs_geo_components.IsUser())
+        elif not is_user and current is not None:
             try:
-                esper.remove_component(entity_id, ecs_geo_components.IsZone)
+                esper.remove_component(entity_id, ecs_geo_components.IsUser)
             except KeyError:
                 pass
-            try:
-                esper.component_for_entity(entity_id, ecs_geo_components.IsUser)
-            except KeyError:
-                esper.add_component(entity_id, ecs_geo_components.IsUser())
-            return
-
-        try:
-            esper.remove_component(entity_id, ecs_geo_components.IsUser)
-        except KeyError:
-            pass
-        try:
-            esper.component_for_entity(entity_id, ecs_geo_components.IsZone)
-        except KeyError:
-            esper.add_component(entity_id, ecs_geo_components.IsZone())
 
     def _find_geo_object_key_by_identifier(self, identifier: str) -> str | None:
         if not identifier:
@@ -302,7 +297,6 @@ class SessionState:
                 },
                 "properties": {
                     "id": requester_id,
-                    "is_user": True,
                     "metaData": {
                         "name": requester_id,
                         "description": "Live user location.",
@@ -444,6 +438,7 @@ class SessionState:
         next_stats_payload = normalize_stats({"stats": stats_payload})
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
+        self._sync_is_user_component(target_entity_id)
 
         extra_data = form_data.get("extraData")
         if not isinstance(extra_data, dict):
@@ -530,9 +525,8 @@ class SessionState:
             self.GeoObjects[key] = geo
             self.GeoObjectEntityIds[key] = geo.entity_id
             self._apply_zone_borders_from_properties(geo.entity_id, geo_object.properties)
-            self._sync_geo_type_marker_components(geo.entity_id, geo_object.is_user)
-            
             self._sync_stats_component(geo.entity_id, geo_object.properties)
+            self._sync_is_user_component(geo.entity_id)
             
             return geo.entity_id
 
@@ -555,9 +549,8 @@ class SessionState:
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._apply_zone_borders_from_properties(existing_entity_id, props)
-        self._sync_geo_type_marker_components(existing_entity_id, geo_object.is_user)
-
         self._sync_stats_component(existing_entity_id, props)
+        self._sync_is_user_component(existing_entity_id)
         
         return existing_entity_id
 

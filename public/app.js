@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.027a",
+  version: "0.1.027b",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -849,28 +849,6 @@ function handleObjectSnapshot(nextObjects) {
   applyCollapseState();
 }
 
-function normalizeIsUserValue(value) {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (typeof value === "number") {
-    return value !== 0;
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["true", "1", "yes", "y", "on"].includes(normalized)) {
-      return true;
-    }
-    if (["false", "0", "no", "n", "off", ""].includes(normalized)) {
-      return false;
-    }
-  }
-
-  return false;
-}
-
 function inferGeometryType(coordinates) {
   if (!Array.isArray(coordinates) || coordinates.length < 2) {
     return "";
@@ -913,7 +891,6 @@ function normalizeFeatureEntry(key, entry, fallbackId) {
     properties: {
       ...properties,
       id: properties.id || key || fallbackId,
-      is_user: normalizeIsUserValue(properties.is_user),
     },
   };
 }

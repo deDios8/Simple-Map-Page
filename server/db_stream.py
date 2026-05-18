@@ -60,20 +60,6 @@ class ClientRequestEntry(DBEntry):
         self.form_data = self.properties.get("formData", {}) if isinstance(self.properties.get("formData"), dict) else {}
 
 
-def _normalize_is_user(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "y", "on"}:
-            return True
-        if normalized in {"false", "0", "no", "n", "off", ""}:
-            return False
-    return False
-
-
 def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
     if not isinstance(properties, dict):
         return {}
@@ -124,7 +110,6 @@ class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
 
-        self.is_user = _normalize_is_user(self.properties.get("is_user", False))
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
