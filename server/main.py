@@ -306,6 +306,14 @@ class SessionState:
                         "visible": True,
                         "radius": 5,
                     },
+                    "stats": {
+                        "user": {
+                            "name": "USER",
+                            "value": 1,
+                            "min_value": 0,
+                            "max_value": 1,
+                        }
+                    },
                     "data": {},
                 },
             }
