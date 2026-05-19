@@ -308,7 +308,7 @@ body {
   cursor: crosshair;
 }
 
-.coordinates-row {
+.name-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
