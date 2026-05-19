@@ -1041,7 +1041,7 @@ function focusFeature(feature) {
 
   if (geometry.type === "Point") {
     const [lng, lat] = geometry.coordinates;
-    state.map.flyTo([lat, lng], 17, { duration: 0.6 });
+    state.map.flyTo([lat, lng], state.map.getZoom(), { duration: 0.6 });
     return;
   }
 
