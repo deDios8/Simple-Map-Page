@@ -69,44 +69,10 @@
             </div>
 
             <form id="editor-form" class="editor-form" hidden>
-              <div class="appearance-row">
-                <label>
-                  Title
-                  <input id="field-name" name="name" type="text" placeholder="Object label" />
-                </label>
-
-                <label>
-                  Color
-                  <input id="field-color" name="color" type="color" value="#0b8f87" />
-                </label>
-
-                <label class="checkbox-row">
-                  Visible To
-                  <input id="field-visible" name="visible" type="text" placeholder="e.g. USER, ADMIN" />
-                </label>
-              </div>
-
               <div class="coordinates-row">
                 <label>
-                  Latitude
-                  <input
-                    id="field-latitude"
-                    name="latitude"
-                    type="text"
-                    readonly
-                    placeholder="0.0"
-                  />
-                </label>
-
-                <label>
-                  Longitude
-                  <input
-                    id="field-longitude"
-                    name="longitude"
-                    type="text"
-                    readonly
-                    placeholder="-0.0"
-                  />
+                  Name
+                  <input id="field-name" name="name" type="text" placeholder="Object label" />
                 </label>
 
                 <button
@@ -116,10 +82,16 @@
                   aria-label="Pick coordinates from map"
                   title="Tap map to set coordinates"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" width="18" height="18">
-                    <path d="M13.586 3.586a2 2 0 1 1 2.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                  </svg>
+                  <span id="coord-display-lat">Lat: --</span>
+                  <span id="coord-display-lng">Lng: --</span>
                 </button>
+              </div>
+
+              <div class="appearance-row">
+                <label>
+                  Color
+                  <input id="field-color" name="color" type="color" value="#0b8f87" />
+                </label>
 
                 <label>
                   Radius
@@ -129,6 +101,11 @@
                     rows="1"
                     placeholder='5'
                   ></textarea>
+                </label>
+
+                <label>
+                  Visible To
+                  <input id="field-visible" name="visible" type="text" placeholder="vision, USER, etc." />
                 </label>
               </div>
 

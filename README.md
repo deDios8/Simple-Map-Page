@@ -1,3 +1,8 @@
+Move lat/long button down
+Stop rezooming when an menu item is selected
+Rename appearance row and coordinates row
+
+
 # Instructions for deployment
 ## Project Console: 
 https://console.firebase.google.com/project/geogm-simple-map/overview

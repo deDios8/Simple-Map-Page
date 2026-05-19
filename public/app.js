@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.028",
+  version: "0.1.028a",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -65,8 +65,8 @@ const deleteObjectButton = document.querySelector("#delete-object-button");
 const fieldName = document.querySelector("#field-name");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
-const fieldLatitude = document.querySelector("#field-latitude");
-const fieldLongitude = document.querySelector("#field-longitude");
+const coordDisplayLat = document.querySelector("#coord-display-lat");
+const coordDisplayLng = document.querySelector("#coord-display-lng");
 const coordPickButton = document.querySelector("#coord-pick-button");
 const fieldRadius = document.querySelector("#field-radius");
 const fieldDescription = document.querySelector("#field-description");
@@ -80,8 +80,6 @@ const editableFields = [
   fieldName,
   fieldColor,
   fieldVisible,
-  fieldLatitude,
-  fieldLongitude,
   fieldRadius,
   fieldDescription,
 ];
@@ -341,11 +339,11 @@ function initMap() {
       return;
     }
     const { lat, lng } = event.latlng;
-    if (fieldLatitude) {
-      fieldLatitude.value = String(Math.round(lat * 100000) / 100000);
+    if (coordDisplayLat) {
+      coordDisplayLat.textContent = `Lat: ${Math.round(lat * 100000) / 100000}`;
     }
-    if (fieldLongitude) {
-      fieldLongitude.value = String(Math.round(lng * 100000) / 100000);
+    if (coordDisplayLng) {
+      coordDisplayLng.textContent = `Lng: ${Math.round(lng * 100000) / 100000}`;
     }
     setCoordPickMode(false);
   });
@@ -428,8 +426,8 @@ function bindUi() {
       return;
     }
 
-    const parsedLatitude = Number.parseFloat(fieldLatitude.value.trim());
-    const parsedLongitude = Number.parseFloat(fieldLongitude.value.trim());
+    const parsedLatitude = Number.parseFloat(coordDisplayLat.textContent.replace(/^Lat:\s*/i, "").trim());
+    const parsedLongitude = Number.parseFloat(coordDisplayLng.textContent.replace(/^Lng:\s*/i, "").trim());
     const parsedRadius = Number.parseFloat(fieldRadius.value.trim());
     const collectedStats = collectStatsFromEditor();
     if (collectedStats.error) {
@@ -781,8 +779,8 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     name: fieldName.value.trim(),
     color: fieldColor.value,
     visible: parseVisibleList(fieldVisible.value),
-    latitude: fieldLatitude.value.trim(),
-    longitude: fieldLongitude.value.trim(),
+    latitude: coordDisplayLat.textContent.replace(/^Lat:\s*/i, "").trim(),
+    longitude: coordDisplayLng.textContent.replace(/^Lng:\s*/i, "").trim(),
     radius: fieldRadius.value.trim(),
     description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
@@ -1073,8 +1071,8 @@ function populateEditor(id) {
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
   const rawVisible = feature.properties?.appearance?.visible;
   fieldVisible.value = Array.isArray(rawVisible) ? rawVisible.join(", ") : "";
-  fieldLatitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[1]) : "";
-  fieldLongitude.value = feature.geometry?.coordinates ? String(feature.geometry.coordinates[0]) : "";
+  coordDisplayLat.textContent = feature.geometry?.coordinates ? `Lat: ${feature.geometry.coordinates[1]}` : "Lat: --";
+  coordDisplayLng.textContent = feature.geometry?.coordinates ? `Lng: ${feature.geometry.coordinates[0]}` : "Lng: --";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
   fieldDescription.value = metaData.description || "";
   renderStatsEditor(stats);

@@ -26,8 +26,7 @@ from db_stream import (
     delete_db_entry,
     normalize_stats,
     normalize_visible,
-    to_float,
-)
+    to_float, )
 
 
 class SessionState:
@@ -726,7 +725,6 @@ def main() -> None:
     esper.add_processor(ecs_processors.CheckZoneEntryExit(), priority=99)
     esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=1)
     session_state.run_db_and_ecs_processor()
-
 
 
 if __name__ == "__main__":
