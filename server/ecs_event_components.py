@@ -1,113 +1,95 @@
 from dataclasses import dataclass
-import esper
  
 
 # ---------------------------------------------------------------------------
-# Components for constructive events
+# Components for constructing events
 # ---------------------------------------------------------------------------
 '''
-Seeker looks for matching entities and attached a trigger component to them.
-Trigger components check for matching properties and if they match, they fire a Targetted search.
-Valid targets have a result component attached to them.
-Result components are then processed to apply their effects and then removed.
+One entity is the trigger. It has name, criteria, which items meet criteria, and matching objects.
+One entity is the target. It has name, criteria, which items meet criteria, and matching objects.
+One entity is the event result. It specifies, by name, which trigger and target entities it is associated with, and what to do to the target when the trigger conditions are met.
 '''
-"""class Trigger:
-    def __init__(self, items: dict | None = None) -> None:
-        '''
-        ALL trigger conditions must be met for this to trigger, (AND condition)
-        multiple triggers can be assigned to make an OR condition instead of an AND condition
-        '''
 
-        self.trigger_id: str = 'trigger' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
+# ---------------------------------------------------------------------------
+# Components for trigger/target criteria
+# ---------------------------------------------------------------------------
+@dataclass
+class CriteriaName:
+    id: str
+    name: str
 
-        self.has_name: list | None = []
-        self.hatype: list | None = []
-        self.has_statuses: list | None = []
-        self.does_not_have_statuses: list | None = []
-
-        self.is_within_names: list | None = []
-        self.is_not_within_names: list | None = []
-        self.is_within_statuses: list | None = []
-        self.is_not_within_statuses: list | None = []
-        self.just_entered_names: list | None = []
-        self.just_exited_names: list | None = []
-        self.just_entered_statuses: list | None = []
-        self.just_exited_statuses: list | None = []
-
-        self.stat_name_equals: dict | None = {}
-        self.stat_name_is_above: dict | None = {}
-        self.stat_name_is_below: dict | None = {}
-
-        self.entities_meeting_trigger_criteria: list | None = []
-
-class Triggers:
-    def __init__(self, items: dict | None = None) -> None:
-        self.items = items if isinstance(items, dict) else {}
-"""
-
+@dataclass
 class CriteriaHasStats:
-    def __init__(self, stats: list) -> None:
-        self.stats = stats
+    stats: list
 
+@dataclass
 class CriteriaIsWithin:
-    def __init__(self, stats: list) -> None:
-        self.stats = stats
+    stats: list
 
+@dataclass
 class CriteriaJustEntered:
-    def __init__(self, stats: list) -> None:
-        self.stats = stats
+    stats: list
 
+@dataclass
 class CriteriaJustExited:
-    def __init__(self, stats: list) -> None:
-        self.stats = stats
+    stats: list
 
+@dataclass
+class ObjectsThatMetAllCriteria:
+    object_ids: list
 
-class Target:
-    '''
-    if ALL are true, attach a Result component to the entity
-    attaching multiple Target components that attach the same result_id to an entity can create an OR condition instead of an AND condition
-    '''
-    def __init__(self, items: dict | None = None) -> None:
-        target_id: str
+@dataclass
+class ObjectsThatMetAnyCriteria:
+    object_ids: list
 
-        target_triggering_entities: bool = False  # if true, the target conditions apply to the triggering entity/entities
+# ---------------------------------------------------------------------------
+# Components for results
+# ---------------------------------------------------------------------------
+@dataclass
+class ResultTriggerNames: # should maybe use ID's
+    names: list
 
-        target_names: list | None = []
-        target_types: list | None = []
-        target_statuses: list | None = []
-        target_stat_id_is_above: dict | None = {}
-        target_stat_id_is_below: dict | None = {}
-        target_stat_type_is_above: dict | None = {}
-        target_stat_type_is_below: dict | None = {}
+@dataclass
+class ResultTargetNames: # should maybe use ID's
+    names: list
 
-        entities_meeting_target_criteria: list | None = []  # ID of the entities that match target conditions, apply result to these
+@dataclass
+class ResultSetVisibility:
+    visible: bool
 
-class Targets:
-    def __init__(self, items: dict | None = None) -> None:
-        self.items = items if isinstance(items, dict) else {}
+@dataclass
+class ResultToggleVisibility:
+    toggle: bool
 
+@dataclass
+class ResultChangeColor:
+    color: str
 
-class Result:
-    '''
-    do all of the following to the entity with this ID when the trigger conditions are met
-    '''
-    def __init__(self, items: dict | None = None) -> None:
-        result_id: str
+@dataclass
+class ResultChangeRadius:
+    radius: int
 
-        set_visibility: bool | None = None
-        toggle_visibility: bool = False
-        change_color_to: str | None = None
-        change_radius_to: int | None = None
-        
-        add_statuses: list | None = None
-        remove_statuses: list | None = None
-        toggle_statuses: list | None = None
+@dataclass
+class ResultAddStats:
+    stats: list
 
-        set_stats_to_values: dict | None = None
-        increase_stats_by_values: dict | None = None
-        decrease_stats_by_values: dict | None = None
+@dataclass
+class ResultRemoveStats:
+    stats: list
 
-class Results:
-    def __init__(self, items: dict | None = None) -> None:
-        self.items = items if isinstance(items, dict) else {}
+@dataclass
+class ResultToggleStats:
+    stats: list
+
+@dataclass
+class ResultSetStatsToValues:
+    stats_to_values: dict
+
+@dataclass
+class ResultIncreaseStatsByValues:
+    stats_to_values: dict
+
+@dataclass
+class ResultDecreaseStatsByValues:
+    stats_to_values: dict
 
