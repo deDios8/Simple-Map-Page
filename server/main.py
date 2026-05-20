@@ -428,13 +428,8 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        visible_fallback: list[str] = []
-        geo_snapshot = self.stream.geo_object_state.get(target_key)
-        if isinstance(geo_snapshot, dict):
-            props = geo_snapshot.get("properties") if isinstance(geo_snapshot.get("properties"), dict) else {}
-            appearance_snapshot = props.get("appearance") if isinstance(props.get("appearance"), dict) else {}
-            visible_fallback = normalize_visible(appearance_snapshot.get("visible", []))
-        appearance_visible = normalize_visible(form_data.get("visible")) if "visible" in form_data else visible_fallback
+        appearance_visible = normalize_visible(form_data.get("visible")) if "visible" in form_data else appearance.visible
+        appearance.visible = appearance_visible
 
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
@@ -552,6 +547,7 @@ class SessionState:
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
+        appearance.visible = normalize_visible(appearance_data.get("visible", []))
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])

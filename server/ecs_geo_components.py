@@ -18,11 +18,12 @@ class MetaData:
 class IsUser:
     is_user: bool = True
 
-@dataclass
 class Appearance:
-    color: str
-    shape: str
-    radius: int
+    def __init__(self, color: str, shape: str, radius: int, visible: list | None = None) -> None:
+        self.color = color
+        self.shape = shape
+        self.radius = radius
+        self.visible = visible if visible is not None else []
 
 @dataclass
 class Geometry:
@@ -118,6 +119,7 @@ class GeoObject:
                 color=appearance.get("color", ""),
                 shape=appearance.get("shape", ""),
                 radius=appearance.get("radius", 0),
+                visible=appearance.get("visible", []),
             ),
         )
 
