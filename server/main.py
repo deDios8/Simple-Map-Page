@@ -684,7 +684,8 @@ class SessionState:
         self.debug.start()
         self.debug.print_help()
 
-        ticks_per_second = 2.0
+        # 3x the app.js updateFrequency rate (2000 ms → 0.5 Hz → 1.5 Hz).
+        ticks_per_second = 1.5
         tick_dt = 1.0 / ticks_per_second
         next_tick = time.perf_counter()
 
@@ -706,37 +707,46 @@ class SessionState:
                 if now - next_tick > 1.0:
                     next_tick = now + tick_dt
 
-                # Wait for DB events, but never longer than time until next tick.
+                # Block briefly for the first available DB event, then drain all
+                # remaining events immediately so bursts are never processed one
+                # per tick cycle.
                 time_until_tick = max(0.0, next_tick - time.perf_counter())
                 wait_timeout = min(time_until_tick, 0.1)
 
-                # Handle DB events as they come in, but don't let them block the loop indefinitely.
-                change: SyncChange = self.stream.event_queue.get(timeout=wait_timeout)
-                if change.action == "create":
-                    if isinstance(change.feature, ClientRequestEntry):
-                        self._upsert_client_request_entity(change.key, change.feature)
-                    else:
-                        self._upsert_geo_object_entity(change.key, change.feature)
-                elif change.action == "update" and change.feature is not None:
-                    if isinstance(change.feature, ClientRequestEntry):
-                        self._upsert_client_request_entity(change.key, change.feature)
-                    else:
-                        self._upsert_geo_object_entity(change.key, change.feature)
-                elif change.action == "delete":
-                    if change.stream_name == CLIENT_REQUESTS_NODE:
-                        self._delete_client_request_entity(change.key)
-                    elif change.stream_name == GEO_OBJECTS_NODE:
-                        self._delete_geo_object_entity(change.key)
-                    elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
-                        self._delete_client_request_entity(change.key)
-                    else:
-                        self._delete_geo_object_entity(change.key)
+                try:
+                    change: SyncChange = self.stream.event_queue.get(timeout=wait_timeout)
+                except queue.Empty:
+                    continue
+
+                while True:
+                    if change.action == "create":
+                        if isinstance(change.feature, ClientRequestEntry):
+                            self._upsert_client_request_entity(change.key, change.feature)
+                        else:
+                            self._upsert_geo_object_entity(change.key, change.feature)
+                    elif change.action == "update" and change.feature is not None:
+                        if isinstance(change.feature, ClientRequestEntry):
+                            self._upsert_client_request_entity(change.key, change.feature)
+                        else:
+                            self._upsert_geo_object_entity(change.key, change.feature)
+                    elif change.action == "delete":
+                        if change.stream_name == CLIENT_REQUESTS_NODE:
+                            self._delete_client_request_entity(change.key)
+                        elif change.stream_name == GEO_OBJECTS_NODE:
+                            self._delete_geo_object_entity(change.key)
+                        elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
+                            self._delete_client_request_entity(change.key)
+                        else:
+                            self._delete_geo_object_entity(change.key)
+                    try:
+                        change = self.stream.event_queue.get_nowait()
+                    except queue.Empty:
+                        break
+
             except KeyboardInterrupt:
                 self.stream.stop()
                 print("\nStopped listener.")
                 return
-            except queue.Empty:
-                continue
 
 
 def main() -> None:

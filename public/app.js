@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.029",
+  version: "0.1.030",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
