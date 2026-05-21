@@ -1,5 +1,6 @@
 Stop rezooming when an menu item is selected
 
+I'd like to add a new field called traits. On the front end, I'd like it to be just above stats, and be a single input box like the "visible to" field. Also similar to the "visible to" field, I'd like it to parse into a list on the back end. It would need to be added as an esper component called "Traits" that contains a list attribute called traits. A new user sign-in would add USER to the traits rather than the stats. The 
 
 # Instructions for deployment
 ## Project Console: 

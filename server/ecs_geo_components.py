@@ -68,6 +68,11 @@ class Stats:
         self.items = items if isinstance(items, dict) else {}
 
 
+class Traits:
+    def __init__(self, traits: list | None = None) -> None:
+        self.traits = traits if traits is not None else []
+
+
 # ---------------------------------------------------------------------------
 # Components for tracking zone interactions
 # ---------------------------------------------------------------------------

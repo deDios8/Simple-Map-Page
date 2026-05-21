@@ -22,7 +22,7 @@ const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 
 const state = {
-  version: "0.1.028b",
+  version: "0.1.029",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -65,6 +65,7 @@ const deleteObjectButton = document.querySelector("#delete-object-button");
 const fieldName = document.querySelector("#field-name");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
+const fieldTraits = document.querySelector("#field-traits");
 const coordDisplayLat = document.querySelector("#coord-display-lat");
 const coordDisplayLng = document.querySelector("#coord-display-lng");
 const coordPickButton = document.querySelector("#coord-pick-button");
@@ -80,6 +81,7 @@ const editableFields = [
   fieldName,
   fieldColor,
   fieldVisible,
+  fieldTraits,
   fieldRadius,
   fieldDescription,
 ];
@@ -473,6 +475,7 @@ function bindUi() {
           visible: parseVisibleList(fieldVisible.value),
           radius: nextRadius,
         },
+        traits: parseVisibleList(fieldTraits.value),
         stats: nextStats,
       },
     };
@@ -779,6 +782,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     name: fieldName.value.trim(),
     color: fieldColor.value,
     visible: parseVisibleList(fieldVisible.value),
+    traits: parseVisibleList(fieldTraits.value),
     latitude: coordDisplayLat.textContent.replace(/^Lat:\s*/i, "").trim(),
     longitude: coordDisplayLng.textContent.replace(/^Lng:\s*/i, "").trim(),
     radius: fieldRadius.value.trim(),
@@ -1071,6 +1075,8 @@ function populateEditor(id) {
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
   const rawVisible = feature.properties?.appearance?.visible;
   fieldVisible.value = Array.isArray(rawVisible) ? rawVisible.join(", ") : "";
+  const rawTraits = feature.properties?.traits;
+  fieldTraits.value = Array.isArray(rawTraits) ? rawTraits.join(", ") : "";
   coordDisplayLat.textContent = feature.geometry?.coordinates ? `Lat: ${feature.geometry.coordinates[1]}` : "Lat: --";
   coordDisplayLng.textContent = feature.geometry?.coordinates ? `Lng: ${feature.geometry.coordinates[0]}` : "Lng: --";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";

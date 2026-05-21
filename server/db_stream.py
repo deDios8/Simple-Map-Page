@@ -113,6 +113,15 @@ def normalize_visible(value: object) -> list[str]:
     return []
 
 
+def normalize_traits(value: object) -> list[str]:
+    """Normalize a ``traits`` field to a list of trait strings."""
+    if isinstance(value, list):
+        return [str(s) for s in value if isinstance(s, str) and s.strip()]
+    if isinstance(value, str) and value.strip():
+        return [s.strip() for s in value.split(",") if s.strip()]
+    return []
+
+
 def to_float(value: object, fallback: float) -> float:
     try:
         return float(value)  # type: ignore[arg-type]
@@ -134,6 +143,8 @@ class GeoObjectEntry(DBEntry):
         self.description = meta_data.get("description", "")
         
         self.stats = normalize_stats(self.properties)
+
+        self.traits = normalize_traits(self.properties.get("traits", []))
 
         self.data = self.properties.get("data", {})
 

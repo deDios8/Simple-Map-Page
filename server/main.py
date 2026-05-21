@@ -26,6 +26,7 @@ from db_stream import (
     delete_db_entry,
     normalize_stats,
     normalize_visible,
+    normalize_traits,
     to_float, )
 
 
@@ -104,6 +105,20 @@ class SessionState:
             esper.remove_component(entity_id, ecs_geo_components.Stats)
 
         return normalized_stats
+
+    def _sync_traits_component(self, entity_id: int, props: object) -> list[str]:
+        traits_value = props.get("traits", []) if isinstance(props, dict) else []
+        normalized_traits = normalize_traits(traits_value)
+        traits_component = esper.try_component(entity_id, ecs_geo_components.Traits)
+        if normalized_traits:
+            if traits_component is None:
+                esper.add_component(entity_id, ecs_geo_components.Traits(traits=normalized_traits))
+            else:
+                traits_component.traits = normalized_traits
+        elif traits_component is not None:
+            esper.remove_component(entity_id, ecs_geo_components.Traits)
+
+        return normalized_traits
 
     def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
         zone_borders: dict[str, dict[str, list[str]]] = {}
@@ -305,6 +320,7 @@ class SessionState:
                         "visible": ["USER"],
                         "radius": 5,
                     },
+                    "traits": ["USER"],
                     "stats": {
                         "user": {
                             "name": "USER",
@@ -380,9 +396,10 @@ class SessionState:
                 },
                 "appearance": {
                     "color": "#0b8f87",
-                    "visible": [],
+                    "visible": ["USER"],
                     "radius": 5,
                 },
+                "traits": ["ZONE"],
                 "data": {},
             },
         }
@@ -431,6 +448,11 @@ class SessionState:
         appearance_visible = normalize_visible(form_data.get("visible")) if "visible" in form_data else appearance.visible
         appearance.visible = appearance_visible
 
+        traits_component = esper.try_component(target_entity_id, ecs_geo_components.Traits)
+        current_traits = traits_component.traits if traits_component is not None else []
+        next_traits = normalize_traits(form_data.get("traits")) if "traits" in form_data else current_traits
+        self._sync_traits_component(target_entity_id, {"traits": next_traits})
+
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
         geometry.coordinates = [lon, lat]
@@ -457,6 +479,7 @@ class SessionState:
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
                 "properties/appearance/visible": appearance_visible,
+                "properties/traits": next_traits,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
             },
@@ -484,6 +507,7 @@ class SessionState:
                     appr["color"] = appearance.color
                     appr["radius"] = appearance.radius
                     appr["visible"] = appearance_visible
+                props["traits"] = next_traits
                 props["data"] = extra_data
                 if next_stats_payload:
                     props["stats"] = next_stats_payload
@@ -528,6 +552,7 @@ class SessionState:
             self.GeoObjectEntityIds[key] = geo.entity_id
             self._apply_zone_borders_from_properties(geo.entity_id, geo_object.properties)
             self._sync_stats_component(geo.entity_id, geo_object.properties)
+            self._sync_traits_component(geo.entity_id, geo_object.properties)
             self._sync_is_user_component(geo.entity_id)
             
             return geo.entity_id
@@ -553,6 +578,7 @@ class SessionState:
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         self._sync_stats_component(existing_entity_id, props)
+        self._sync_traits_component(existing_entity_id, props)
         self._sync_is_user_component(existing_entity_id)
         
         return existing_entity_id
