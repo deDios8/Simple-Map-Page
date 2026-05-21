@@ -1002,18 +1002,17 @@ function renderObjectList() {
         .map((feature) => {
           const id = feature.properties?.id;
           const color = feature.properties?.appearance?.color || "#0b8f87";
-          const visibleList = feature.properties?.appearance?.visible;
-          const visible = Array.isArray(visibleList) && visibleList.length > 0 ? visibleList.join(", ") : "Hidden";
+          const traitsList = feature.properties?.traits;
+          const traits = Array.isArray(traitsList) && traitsList.length > 0 ? traitsList.join(", ") : "--";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
           const name = escapeHtml(feature.properties?.metaData?.name || id || "Unnamed object");
-          const type = escapeHtml(feature.geometry?.type || "Unknown");
 
           return `
             <li>
               <button class="${selectedClass}" type="button" data-id="${escapeHtml(id)}">
                 <span>
                   <strong style="color: ${escapeHtml(color)};">${name}</strong>
-                  <span class="list-meta">${type} • ${visible}</span>
+                  <span class="list-meta">${escapeHtml(traits)}</span>
                 </span>
                   <span aria-hidden="true">Edit</span>
               </button>
