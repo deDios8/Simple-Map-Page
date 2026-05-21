@@ -18,12 +18,12 @@ class MetaData:
 class IsUser:
     is_user: bool = True
 
+@dataclass
 class Appearance:
-    def __init__(self, color: str, shape: str, radius: int, visible: list | None = None) -> None:
-        self.color = color
-        self.shape = shape
-        self.radius = radius
-        self.visible = visible if visible is not None else []
+    color: str
+    shape: str
+    radius: int
+    visible: list
 
 @dataclass
 class Geometry:
@@ -45,11 +45,11 @@ class AddObject:
 class NewLocation:
     requester_id: str
 
+@dataclass
 class EditedObject:
-    def __init__(self, target_id: str, target_path: str, form_data: dict) -> None:
-        self.target_id = target_id
-        self.target_path = target_path
-        self.form_data = form_data if isinstance(form_data, dict) else {}
+    target_id: str
+    target_path: str
+    form_data: dict
 
 @dataclass
 class DeletedObject:
@@ -68,9 +68,9 @@ class Stats:
         self.items = items if isinstance(items, dict) else {}
 
 
+@dataclass
 class Traits:
-    def __init__(self, traits: list | None = None) -> None:
-        self.traits = traits if traits is not None else []
+    traits: list
 
 
 # ---------------------------------------------------------------------------

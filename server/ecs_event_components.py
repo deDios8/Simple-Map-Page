@@ -1,12 +1,12 @@
 from dataclasses import dataclass
- 
+import esper
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
 # ---------------------------------------------------------------------------
 '''
-One entity is the trigger. It has name, criteria, which items meet criteria, and matching objects.
-One entity is the target. It has name, criteria, which items meet criteria, and matching objects.
+One entity is the trigger. It has name, criteria, which geo objects meet criteria, and matching objects.
+One entity is the target. It has name, criteria, which geo objects meet criteria, and matching objects.
 One entity is the event result. It specifies, by name, which trigger and target entities it is associated with, and what to do to the target when the trigger conditions are met.
 '''
 
@@ -41,6 +41,18 @@ class ObjectsThatMetAllCriteria:
 @dataclass
 class ObjectsThatMetAnyCriteria:
     object_ids: list
+
+
+class Criteria:
+    def __init__(self, id: str, geometry: dict, properties: dict) -> None:
+        new_entity_id = esper.create_entity()
+        self.entity_id = new_entity_id
+        esper.add_component(new_entity_id, CriteriaName(id=id, name=meta_data.get("name", "")))
+        esper.add_component(new_entity_id, ObjectsThatMetAllCriteria(object_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
+
+
+
 
 # ---------------------------------------------------------------------------
 # Components for results
