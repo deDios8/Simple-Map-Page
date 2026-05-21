@@ -929,13 +929,13 @@ function parseVisibleList(value) {
 function isVisibleToCurrentUser(feature) {
   const visibleTo = feature.properties?.appearance?.visible;
   if (!Array.isArray(visibleTo) || visibleTo.length === 0) return false;
-  const userStats = state.objects[state.userId]?.properties?.stats || {};
-  const userStatNames = new Set(
-    Object.values(userStats)
-      .map((s) => (typeof s?.name === "string" ? s.name.toUpperCase() : null))
+  const userTraits = state.objects[state.userId]?.properties?.traits || [];
+  const userTraitSet = new Set(
+    (Array.isArray(userTraits) ? userTraits : [])
+      .map((t) => (typeof t === "string" ? t.toUpperCase() : null))
       .filter(Boolean),
   );
-  return visibleTo.some((key) => userStatNames.has(String(key).toUpperCase()));
+  return visibleTo.some((key) => userTraitSet.has(String(key).toUpperCase()));
 }
 
 function renderLayer() {
