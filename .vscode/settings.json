@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.venv": true,
+        "**/skills-lock.json": true,
+        "**/.agents": true,
+        "**/.firebaserc": true,
+        "**/firebase.json": true,
+        "**/.gitignore": true,
+    }
+}
