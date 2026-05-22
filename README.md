@@ -56,22 +56,26 @@ geometry = {
   },
 properties = {
   id = "same as key",
-  isUser or isZone = True,
   metaData = {
-    zoneType = "",
     displayName = "",
     displayDescription = "",
   },
   appearance = {
-    visible = true,
+    visible = [],
     radius = 0,
     colorBorder = #000000,
     colorFill = #000000,
     transparency = .5
   },
   stats = {},
-  statuses = {}
+  traits = []
 }
 }
 
 
+AI prompt:
+It's time for a major addition to both the front-end and back-end. 
+The backend already contains #file:ecs_event_components.py that gives some structure and context for two new types of entities that will be added. The criteria entities will have components added to them, based on user design, that will be processed to identify geo object entities (identifiable by having an appearance component added to them) that match the criteria. Those processors will be built later. For now, I need the user to be able to create criteria entities and attach and unattach criteria components them. Every criteria will have components #sym:ObjectsThatMetAllCriteria and  #sym:ObjectsThatMetAnyCriteria , that the processors will add entities id's to that properly meet the criteria components attached to that criteria entity. Just like the entities in #file:ecs_geo_components.py , these constructed entities need to be mirrored onto the database, this time in a node called "eventCriteria".
+The front end needs an additional menu drawer that functions similar to the existing object editor. The entry button should be in the top right and have a "E" showing on the button. Upon opening the menu, it should have a similar layout to the existing geo object editor, listing the criteria entities in the "eventCriteria" node, and when clicked, an editor form opens below. Similar buttons for adding an criteria entity at the top of the editor form, and buttons for saving and deleting the criteria entity at the bottom of the editor form. The same collapsability and persistance of collapsed states is also requested. Adding a criterion within a criteria should be displayed and function just like adding stats to a geo object. The row for a criterion should have a name, and a field to list (comma separated) the tags.
+For now, the names of each criterion can just be user entered and stored in the database as entered. The backend will add components that match the entered criterion names and ignore others. We'll add entry validation later.
+The #file:demo_event.json file gives my approximation of an example Criteria json structure would be.
