@@ -1,3 +1,9 @@
+# Dependencies
+python -m pip install esper
+python -m pip install pyproj
+python -m pip install shapely
+
+
 # Instructions for deployment
 ## Project Console: 
 https://console.firebase.google.com/project/geogm-simple-map/overview
@@ -8,24 +14,6 @@ https://geogm-simple-map.web.app
 cd "c:\Users\dedio\OneDrive\Documents\Programming\python\Simple Map Page\public"
 python -m http.server 8080
 http://localhost:8080/index.html
-
-
-
-
-
-# Prompt used to generate:
-Make a simple webpage that displays a leaflet map centered on the user's location. The map should display geojson objects as points and rectangular zones. A geojson object should only be made visible if a boolean visibility flag within the geojson entry is true. The color of a zone should be displayed based on an entry within the geojson object. Tapping a visible geojson object should bring up additional data stored in that geojson entry.
-The page should have a hamburger style collapsible button in the bottom right corner that allows the user to see a list of all geojson objects and tap on them there to edit their properties. Their font color in the menu should be based on same color entry that determines their display color on the map.
-The page should have listener for a firebase realtime database that will update the map when a change occurs.
-The page should be well suited on mobile devices using their gps location.
-
-THEN
-
-I'd like to add a new functionality to this app.
-I'd like to have the user enter an identifying string when they first access the site. Then add a geojson Point object  with the inputed id, at the users gps coordinates, and with a black color.
-Then, while visiting the page, every 2 seconds, I'd like to update that geojson object's coordinates with the user's coordinates, and leave the rest of the geojson objects data unchanged. 
-
-
 
 # GeoJSON shape
 ## Client Request
