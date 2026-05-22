@@ -1,5 +1,6 @@
 import esper
 import ecs_geo_components
+import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
@@ -22,6 +23,15 @@ class ApplyClientRequests(esper.Processor):
 
         for entity_id, _marker in list(esper.get_component(ecs_geo_components.DeletedObject)):
             self.session_state.apply_deleted_object_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.AddCriteria)):
+            self.session_state.apply_add_criteria_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.EditedCriteria)):
+            self.session_state.apply_edited_criteria_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedCriteria)):
+            self.session_state.apply_deleted_criteria_request(entity_id)
 
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self) -> None:

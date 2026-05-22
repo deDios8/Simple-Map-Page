@@ -41,6 +41,15 @@
         <span></span>
       </button>
 
+      <button
+        id="events-drawer-toggle"
+        class="events-drawer-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="events-drawer"
+        aria-label="Open event criteria editor"
+      >C</button>
+
       <aside id="drawer" class="drawer" aria-label="GeoJSON objects">
         <div class="drawer-header">
           <div>
@@ -141,6 +150,72 @@
                   <button id="delete-object-button" class="danger-button" type="button">Delete</button>
                 </div>
                 <p id="save-status" class="save-status" aria-live="polite"></p>
+              </div>
+
+              <div class="editor-bottom-spacer" aria-hidden="true"></div>
+            </form>
+          </section>
+        </div>
+      </aside>
+
+      <aside id="events-drawer" class="drawer events-drawer" aria-label="Event criteria">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Event System</p>
+            <h1>Event Criteria</h1>
+          </div>
+          <div class="drawer-header-actions">
+            <button id="events-drawer-close" class="text-button" type="button">Close</button>
+          </div>
+        </div>
+
+        <div class="drawer-body">
+          <section class="panel-section">
+            <ul id="criteria-list" class="object-list"></ul>
+          </section>
+
+          <section class="panel-section">
+            <div class="editor-header">
+              <h2 id="criteria-editor-empty-state">Select a criteria to edit.</h2>
+              <div class="section-actions">
+                <button id="criteria-editor-form-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="criteria-editor-form">Expand editor</button>
+                <button id="add-criteria-button" class="text-button" type="button" aria-label="Add new event criteria">Add criteria</button>
+              </div>
+            </div>
+
+            <form id="criteria-editor-form" class="editor-form" hidden>
+              <label>
+                Name
+                <input id="criteria-field-name" name="name" type="text" placeholder="Criteria label" />
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  id="criteria-field-description"
+                  name="description"
+                  rows="1"
+                  placeholder="Extra details"
+                ></textarea>
+              </label>
+
+              <section class="criteria-components-section" aria-labelledby="criteria-components-heading">
+                <div class="stats-header">
+                  <h3 id="criteria-components-heading">Criteria</h3>
+                  <div class="section-actions">
+                    <button id="criteria-components-section-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="criteria-components-list">Expand</button>
+                    <button id="add-criterion-button" class="text-button" type="button">Add criterion</button>
+                  </div>
+                </div>
+                <div id="criteria-components-list" class="stats-list"></div>
+              </section>
+
+              <div class="editor-actions">
+                <div class="editor-action-buttons">
+                  <button class="primary-button" type="submit">Save changes</button>
+                  <button id="delete-criteria-button" class="danger-button" type="button">Delete</button>
+                </div>
+                <p id="criteria-save-status" class="save-status" aria-live="polite"></p>
               </div>
 
               <div class="editor-bottom-spacer" aria-hidden="true"></div>

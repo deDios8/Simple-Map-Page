@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import esper
-from ecs_geo_components import MetaData
+from ecs_geo_components import ID, MetaData
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
@@ -52,10 +52,11 @@ class ObjectsThatMetAnyCriteria:
 
 
 class Criteria:
-    def __init__(self, id: str, name: str) -> None:
+    def __init__(self, id: str, name: str, description: str = "") -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
-        esper.add_component(new_entity_id, MetaData(id=id, name=name))
+        esper.add_component(new_entity_id, ID(id=id))
+        esper.add_component(new_entity_id, MetaData(name=name, description=description))
         esper.add_component(new_entity_id, ObjectsThatMetAllCriteria(object_ids=[]))
         esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
 
@@ -112,4 +113,21 @@ class ResultIncreaseStatsByValues:
 @dataclass
 class ResultDecreaseStatsByValues:
     stats_to_values: dict
+
+
+# ---------------------------------------------------------------------------
+# Components for criteria client requests
+# ---------------------------------------------------------------------------
+@dataclass
+class AddCriteria:
+    requester_id: str
+
+@dataclass
+class EditedCriteria:
+    target_id: str
+    form_data: dict
+
+@dataclass
+class DeletedCriteria:
+    target_id: str
 

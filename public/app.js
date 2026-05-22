@@ -20,9 +20,10 @@ const firebaseConfig = {
 
 const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
+const firebaseEventCriteriaNode = "eventCriteria";
 
 const state = {
-  version: "0.1.030",
+  version: "0.1.031",
   updateFrequency: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -44,6 +45,9 @@ const state = {
   listenerUnsubscribe: null,
   pendingUserSetup: false,
   coordPickMode: false,
+  criteria: {},
+  selectedCriteriaId: null,
+  criteriaListenerUnsubscribe: null,
 };
 
 const locationStatus = document.querySelector("#location-status");
@@ -77,6 +81,29 @@ const editorFormToggle = document.querySelector("#editor-form-toggle");
 const statsSectionToggle = document.querySelector("#stats-section-toggle");
 const statsSection = document.querySelector(".stats-section");
 const versionInfo = document.querySelector("#version-info");
+
+// Events drawer DOM references
+const eventsDrawer = document.querySelector("#events-drawer");
+const eventsDrawerToggle = document.querySelector("#events-drawer-toggle");
+const eventsDrawerClose = document.querySelector("#events-drawer-close");
+const criteriaList = document.querySelector("#criteria-list");
+const criteriaEditorForm = document.querySelector("#criteria-editor-form");
+const criteriaEditorEmptyState = document.querySelector("#criteria-editor-empty-state");
+const criteriaSaveStatus = document.querySelector("#criteria-save-status");
+const deleteCriteriaButton = document.querySelector("#delete-criteria-button");
+const criteriaFieldName = document.querySelector("#criteria-field-name");
+const criteriaFieldDescription = document.querySelector("#criteria-field-description");
+const criteriaComponentsList = document.querySelector("#criteria-components-list");
+const addCriterionButton = document.querySelector("#add-criterion-button");
+const addCriteriaButton = document.querySelector("#add-criteria-button");
+const criteriaEditorFormToggle = document.querySelector("#criteria-editor-form-toggle");
+const criteriaComponentsSectionToggle = document.querySelector("#criteria-components-section-toggle");
+const criteriaComponentsSection = document.querySelector(".criteria-components-section");
+
+const criteriaEditableFields = [
+  criteriaFieldName,
+  criteriaFieldDescription,
+];
 const editableFields = [
   fieldName,
   fieldColor,
@@ -89,6 +116,11 @@ const editableFields = [
 const editorCollapseState = {
   editorForm: true,
   stats: true,
+};
+
+const criteriaCollapseState = {
+  form: true,
+  components: true,
 };
 
 // Persist collapse state to localStorage
@@ -135,6 +167,53 @@ function setStatsSectionCollapsed(isCollapsed) {
     statsSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.stats));
   }
   saveCollapseState();
+}
+
+// ---------------------------------------------------------------------------
+// Criteria collapse state helpers
+// ---------------------------------------------------------------------------
+
+function saveCriteriaCollapseState() {
+  localStorage.setItem("criteriaCollapseState", JSON.stringify(criteriaCollapseState));
+}
+
+function loadCriteriaCollapseState() {
+  const saved = localStorage.getItem("criteriaCollapseState");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed === "object") {
+        Object.assign(criteriaCollapseState, parsed);
+      }
+    } catch (e) {
+      console.error("Failed to parse criteria collapse state from localStorage", e);
+    }
+  }
+}
+
+function applyCriteriaCollapseState() {
+  setCriteriaFormCollapsed(criteriaCollapseState.form);
+  setCriteriaComponentsSectionCollapsed(criteriaCollapseState.components);
+}
+
+function setCriteriaFormCollapsed(isCollapsed) {
+  criteriaCollapseState.form = Boolean(isCollapsed);
+  criteriaEditorForm?.classList.toggle("is-collapsed", criteriaCollapseState.form);
+  if (criteriaEditorFormToggle) {
+    criteriaEditorFormToggle.textContent = criteriaCollapseState.form ? "Expand editor" : "Collapse editor";
+    criteriaEditorFormToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.form));
+  }
+  saveCriteriaCollapseState();
+}
+
+function setCriteriaComponentsSectionCollapsed(isCollapsed) {
+  criteriaCollapseState.components = Boolean(isCollapsed);
+  criteriaComponentsSection?.classList.toggle("is-collapsed", criteriaCollapseState.components);
+  if (criteriaComponentsSectionToggle) {
+    criteriaComponentsSectionToggle.textContent = criteriaCollapseState.components ? "Expand" : "Collapse";
+    criteriaComponentsSectionToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.components));
+  }
+  saveCriteriaCollapseState();
 }
 
 function nameToKey(name) {
@@ -301,10 +380,272 @@ function collectStatsFromEditor(options = {}) {
 
 init();
 
+// ---------------------------------------------------------------------------
+// Criteria editor functions
+// ---------------------------------------------------------------------------
+
+function normalizeCriteriaEntry(key, entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const properties = entry.properties && typeof entry.properties === "object" ? entry.properties : {};
+  return {
+    ...entry,
+    type: entry.type || "Feature",
+    geometry: null,
+    properties: {
+      ...properties,
+      id: properties.id || key,
+    },
+  };
+}
+
+function normalizeCriteria(rawCriteria) {
+  if (!rawCriteria || typeof rawCriteria !== "object") return {};
+  return Object.entries(rawCriteria).reduce((acc, [key, entry]) => {
+    const normalized = normalizeCriteriaEntry(key, entry);
+    if (!normalized) return acc;
+    acc[key] = normalized;
+    return acc;
+  }, {});
+}
+
+function renderCriteriaList() {
+  if (!criteriaList) return;
+  const entries = Object.values(state.criteria);
+  criteriaList.innerHTML = entries.length
+    ? entries
+        .map((entry) => {
+          const id = entry.properties?.id;
+          const name = escapeHtml(entry.properties?.metaData?.name || id || "Unnamed criteria");
+          const selectedClass = state.selectedCriteriaId === id ? "is-selected" : "";
+          return `
+            <li>
+              <button class="${selectedClass}" type="button" data-criteria-id="${escapeHtml(id)}">
+                <span>
+                  <strong>${name}</strong>
+                </span>
+                <span aria-hidden="true">Edit</span>
+              </button>
+            </li>
+          `;
+        })
+        .join("")
+    : "<li>No event criteria found.</li>";
+}
+
+function selectCriteria(id, options = {}) {
+  const entry = state.criteria[id];
+  if (!entry) return;
+  state.selectedCriteriaId = id;
+  populateCriteriaEditor(id);
+  renderCriteriaList();
+  setCriteriaDrawerOpen(true);
+}
+
+function setCriteriaDrawerOpen(isOpen) {
+  eventsDrawer?.classList.toggle("is-open", isOpen);
+  eventsDrawerToggle?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function renderCriteriaComponentsEditor(components) {
+  if (!criteriaComponentsList) return;
+  const entries = Object.entries(components || {});
+  if (!entries.length) {
+    criteriaComponentsList.innerHTML = '<div class="stats-empty">No criteria yet. Add one to define matching rules.</div>';
+    return;
+  }
+
+  criteriaComponentsList.innerHTML = entries
+    .map(([name, data], index) => {
+      const tags = Array.isArray(data?.tags) ? data.tags.join(", ") : "";
+      return `
+        <article class="stat-row" data-criterion-index="${index}" data-criterion-name="${escapeHtml(name)}">
+          <div class="criterion-row-grid">
+            <label>
+              Name
+              <input type="text" data-field="name" value="${escapeHtml(name)}" placeholder="CriteriaHasTags" />
+            </label>
+            <label>
+              Tags
+              <input type="text" data-field="tags" value="${escapeHtml(tags)}" placeholder="tag1, tag2" />
+            </label>
+            <button class="stat-remove-button" type="button" data-action="remove-criterion" aria-label="Remove criterion">✕</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function addEmptyCriterionRow() {
+  const currentComponents = collectCriteriaComponentsFromEditor();
+  const nextComponents = { ...currentComponents };
+  let index = Object.keys(nextComponents).length + 1;
+  let nextKey = `criterion_${index}`;
+  while (Object.prototype.hasOwnProperty.call(nextComponents, nextKey)) {
+    index += 1;
+    nextKey = `criterion_${index}`;
+  }
+  nextComponents[nextKey] = { tags: [] };
+  renderCriteriaComponentsEditor(nextComponents);
+  applyCriteriaEditorPermissions();
+}
+
+function collectCriteriaComponentsFromEditor() {
+  const rows = Array.from(criteriaComponentsList?.querySelectorAll(".stat-row") || []);
+  const components = {};
+  for (const row of rows) {
+    const name = row.querySelector('[data-field="name"]')?.value?.trim() || "";
+    const tagsRaw = row.querySelector('[data-field="tags"]')?.value?.trim() || "";
+    if (!name) continue;
+    const tags = tagsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    components[name] = { tags };
+  }
+  return components;
+}
+
+function populateCriteriaEditor(id) {
+  const entry = state.criteria[id];
+  if (!entry) {
+    showEmptyCriteriaEditor();
+    return;
+  }
+  const metaData = entry.properties?.metaData || {};
+  const components = extractCriteriaComponents(entry.properties);
+  criteriaEditorForm.hidden = false;
+  criteriaEditorEmptyState.textContent = `Editing ${metaData.name || id}`;
+  criteriaFieldName.value = metaData.name || "";
+  criteriaFieldDescription.value = metaData.description || "";
+  renderCriteriaComponentsEditor(components);
+  applyCriteriaEditorPermissions();
+}
+
+function extractCriteriaComponents(properties) {
+  if (!properties || typeof properties !== "object") return {};
+  const knownNames = new Set([
+    "CriteriaHasTags", "CriteriaIsWithin", "CriteriaJustEntered",
+    "CriteriaJustExited", "CriteriaIsVisible", "CriteriaIsNotVisible", "CriteriaFirstEntered",
+  ]);
+  const components = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (knownNames.has(key) && value && typeof value === "object") {
+      components[key] = value;
+    }
+  }
+  return components;
+}
+
+function showEmptyCriteriaEditor() {
+  criteriaEditorForm.hidden = true;
+  criteriaEditorEmptyState.textContent = "Select a criteria to edit.";
+  criteriaSaveStatus.textContent = "";
+  renderCriteriaComponentsEditor({});
+  applyCriteriaEditorPermissions();
+}
+
+function applyCriteriaEditorPermissions() {
+  const isEditable = canEditObjects();
+  criteriaEditableFields.forEach((field) => {
+    if (field) field.disabled = !isEditable;
+  });
+  const isFormVisible = criteriaEditorForm && !criteriaEditorForm.hidden;
+  if (deleteCriteriaButton) {
+    deleteCriteriaButton.disabled = !isEditable || !isFormVisible;
+  }
+  const saveButton = criteriaEditorForm?.querySelector('button[type="submit"]');
+  if (saveButton) {
+    saveButton.disabled = !isEditable || !isFormVisible;
+  }
+  if (addCriterionButton) {
+    addCriterionButton.disabled = !isEditable || !isFormVisible;
+  }
+  criteriaComponentsList?.querySelectorAll("input, button").forEach((el) => {
+    el.disabled = !isEditable || !isFormVisible;
+  });
+}
+
+function handleCriteriaSnapshot(nextCriteria) {
+  state.criteria = normalizeCriteria(nextCriteria);
+  renderCriteriaList();
+
+  if (state.selectedCriteriaId && !state.criteria[state.selectedCriteriaId]) {
+    state.selectedCriteriaId = null;
+  }
+
+  if (state.selectedCriteriaId) {
+    populateCriteriaEditor(state.selectedCriteriaId);
+  } else {
+    showEmptyCriteriaEditor();
+  }
+
+  applyCriteriaCollapseState();
+}
+
+function getFirebaseEventCriteriaPath() {
+  return `${state.sessionName}/${firebaseEventCriteriaNode}`;
+}
+
+function resetCriteriaListener() {
+  if (!state.firebaseReady || !state.database) return;
+
+  if (typeof state.criteriaListenerUnsubscribe === "function") {
+    state.criteriaListenerUnsubscribe();
+    handleCriteriaSnapshot({});
+  }
+
+  const criteriaRef = ref(state.database, getFirebaseEventCriteriaPath());
+  state.criteriaListenerUnsubscribe = onValue(criteriaRef, (snapshot) => {
+    if (state.listenerActive) {
+      handleCriteriaSnapshot(snapshot.val() || {});
+      applyCriteriaCollapseState();
+    }
+  });
+}
+
+async function submitAddCriteriaRequest() {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: "add_criteria",
+    requestType: "add_criteria",
+    coordinates,
+    successMessage: "Add criteria request sent",
+  });
+}
+
+async function submitEditedCriteriaRequest(targetId, formData) {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: `edit-criteria-${targetId}`,
+    requestType: "edited_criteria",
+    coordinates,
+    clientRequestPayload: { targetId },
+    properties: { formData },
+    successMessage: `Edit criteria request for ${targetId} sent`,
+  });
+}
+
+async function submitDeletedCriteriaRequest(targetId) {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: `delete-criteria-${targetId}`,
+    requestType: "deleted_criteria",
+    coordinates,
+    clientRequestPayload: { targetId },
+    successMessage: `Delete criteria request for ${targetId} sent`,
+  });
+}
+
 function init() {
   renderVersionInfo();
   loadCollapseState();
   applyCollapseState();
+  loadCriteriaCollapseState();
+  applyCriteriaCollapseState();
   initMap();
   bindUi();
   locateUser();
@@ -400,6 +741,86 @@ function bindUi() {
       renderStatsEditor({});
     }
     applyEditorPermissions();
+  });
+
+  // Events drawer bindings
+  eventsDrawerToggle?.addEventListener("click", () => {
+    setCriteriaDrawerOpen(!eventsDrawer?.classList.contains("is-open"));
+  });
+  eventsDrawerClose?.addEventListener("click", () => setCriteriaDrawerOpen(false));
+  addCriteriaButton?.addEventListener("click", () => {
+    void submitAddCriteriaRequest();
+  });
+  criteriaEditorFormToggle?.addEventListener("click", () => {
+    setCriteriaFormCollapsed(!criteriaCollapseState.form);
+  });
+  criteriaComponentsSectionToggle?.addEventListener("click", () => {
+    setCriteriaComponentsSectionCollapsed(!criteriaCollapseState.components);
+  });
+  addCriterionButton?.addEventListener("click", () => {
+    addEmptyCriterionRow();
+  });
+  criteriaComponentsList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-criterion"]');
+    if (!button) return;
+    button.closest(".stat-row")?.remove();
+    if (!criteriaComponentsList.querySelector(".stat-row")) {
+      renderCriteriaComponentsEditor({});
+    }
+    applyCriteriaEditorPermissions();
+  });
+  criteriaList?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-criteria-id]");
+    if (!button) return;
+    selectCriteria(button.dataset.criteriaId);
+  });
+  criteriaEditorForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!canEditObjects()) {
+      criteriaSaveStatus.textContent = "Read-only mode: editing requires gm password.";
+      return;
+    }
+    if (!state.selectedCriteriaId) return;
+    const criteriaEntry = state.criteria[state.selectedCriteriaId];
+    if (!criteriaEntry) return;
+
+    const formData = {
+      name: criteriaFieldName.value.trim(),
+      description: criteriaFieldDescription.value.trim(),
+      criteriaComponents: collectCriteriaComponentsFromEditor(),
+    };
+
+    criteriaSaveStatus.textContent = state.firebaseReady ? "Sending edit request..." : "Saving...";
+    try {
+      await submitEditedCriteriaRequest(state.selectedCriteriaId, formData);
+      criteriaSaveStatus.textContent = state.firebaseReady
+        ? "Edit request sent. Server will apply updates shortly."
+        : "Saved locally.";
+    } catch (error) {
+      console.error(error);
+      criteriaSaveStatus.textContent = "Edit request failed. Check Firebase configuration and permissions.";
+    }
+  });
+  deleteCriteriaButton?.addEventListener("click", async () => {
+    if (!canEditObjects()) {
+      criteriaSaveStatus.textContent = "Read-only mode: deleting requires gm password.";
+      return;
+    }
+    if (!state.selectedCriteriaId || !state.criteria[state.selectedCriteriaId]) {
+      criteriaSaveStatus.textContent = "Delete failed: no criteria selected.";
+      return;
+    }
+    const deletingId = state.selectedCriteriaId;
+    criteriaSaveStatus.textContent = state.firebaseReady ? "Sending delete request..." : "Deleting...";
+    try {
+      await submitDeletedCriteriaRequest(deletingId);
+      criteriaSaveStatus.textContent = state.firebaseReady
+        ? "Delete request sent. Server will remove the criteria shortly."
+        : "Deleted locally.";
+    } catch (error) {
+      console.error(error);
+      criteriaSaveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
+    }
   });
 
   objectList.addEventListener("click", (event) => {
@@ -619,6 +1040,7 @@ function promptUserId() {
     }
 
     resetObjectListener();
+    resetCriteriaListener();
     modal.hidden = true;
 
     // Defer createUserObject/startCoordinateTracking until the first Firebase
@@ -686,6 +1108,7 @@ function initFirebaseListener() {
 
   state.firebaseReady = true;
   resetObjectListener();
+  resetCriteriaListener();
 }
 
 function toggleListener() {

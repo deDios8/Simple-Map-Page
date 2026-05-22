@@ -25,6 +25,17 @@ DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
 GEO_OBJECTS_NODE = "geoObjects"
 CLIENT_REQUESTS_NODE = "clientRequests"
 CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
+EVENT_CRITERIA_NODE = "eventCriteria"
+
+CRITERIA_COMPONENT_NAMES = frozenset({
+    "CriteriaHasTags",
+    "CriteriaIsWithin",
+    "CriteriaJustEntered",
+    "CriteriaJustExited",
+    "CriteriaIsVisible",
+    "CriteriaIsNotVisible",
+    "CriteriaFirstEntered",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +55,8 @@ class DBEntry:
         meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
         self.name = meta_data.get("name", "")
         self.description = meta_data.get("description", "")
-        self.coordinates = self.geometry.get("coordinates", [])
+        if isinstance(self.geometry, dict):
+            self.coordinates = self.geometry.get("coordinates", [])
 
 
 class ClientRequestEntry(DBEntry):
@@ -149,6 +161,19 @@ class GeoObjectEntry(DBEntry):
         self.data = self.properties.get("data", {})
 
 
+class CriteriaEntry(DBEntry):
+    def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
+        super().update_from_db_entry(db_entry)
+        self.criteria_components: dict[str, dict] = {}
+        for key, value in self.properties.items():
+            if key in CRITERIA_COMPONENT_NAMES and isinstance(value, dict):
+                self.criteria_components[key] = value
+        all_met = self.properties.get("ObjectsThatMetAllCriteria", {})
+        self.objects_that_met_all: list = all_met.get("object_ids", []) if isinstance(all_met, dict) else []
+        any_met = self.properties.get("ObjectsThatMetAnyCriteria", {})
+        self.objects_that_met_any: list = any_met.get("object_ids", []) if isinstance(any_met, dict) else []
+
+
 @dataclass
 class StreamEvent:
     """Single parsed Firebase SSE payload."""
@@ -184,6 +209,10 @@ def build_client_requests_url(database_url: str, session_name: str) -> str:
 
 def build_geo_objects_url(database_url: str, session_name: str) -> str:
     return build_node_url(database_url, session_name, GEO_OBJECTS_NODE)
+
+
+def build_event_criteria_url(database_url: str, session_name: str) -> str:
+    return build_node_url(database_url, session_name, EVENT_CRITERIA_NODE)
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +261,10 @@ def fetch_client_requests(database_url: str, session_name: str) -> dict[str, dic
 
 def fetch_geo_objects(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
     return _fetch_snapshot(build_geo_objects_url(database_url, session_name))
+
+
+def fetch_event_criteria(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
+    return _fetch_snapshot(build_event_criteria_url(database_url, session_name))
 
 
 # ---------------------------------------------------------------------------
@@ -520,12 +553,15 @@ class DatabaseStream:
         self.session_name = session_name
         self.request_state: dict[str, Any] = {}
         self.geo_object_state: dict[str, Any] = {}
+        self.criteria_state: dict[str, Any] = {}
         self.request_index: dict[str, ClientRequestEntry] = {}
         self.geo_object_index: dict[str, GeoObjectEntry] = {}
+        self.criteria_index: dict[str, CriteriaEntry] = {}
         self.event_queue: queue.Queue[SyncChange] = queue.Queue()
         self._stop_event = threading.Event()
         self._client_request_thread: threading.Thread | None = None
         self._geo_object_thread: threading.Thread | None = None
+        self._criteria_thread: threading.Thread | None = None
 
     def start(self) -> None:
         def _iter_client_requests(db: str, session: str):
@@ -533,6 +569,9 @@ class DatabaseStream:
 
         def _iter_geo_objects(db: str, session: str):
             yield from _iter_stream_from_url(build_geo_objects_url(db, session))
+
+        def _iter_event_criteria(db: str, session: str):
+            yield from _iter_stream_from_url(build_event_criteria_url(db, session))
 
         self._client_request_thread = threading.Thread(
             target=_run_stream_worker,
@@ -568,8 +607,26 @@ class DatabaseStream:
             daemon=True,
         )
 
+        self._criteria_thread = threading.Thread(
+            target=_run_stream_worker,
+            args=(
+                self.database_url,
+                self.session_name,
+                EVENT_CRITERIA_NODE,
+                self.criteria_state,
+                self.criteria_index,
+                fetch_event_criteria,
+                _iter_event_criteria,
+                CriteriaEntry,
+                self.event_queue,
+                self._stop_event,
+            ),
+            daemon=True,
+        )
+
         self._client_request_thread.start()
         self._geo_object_thread.start()
+        self._criteria_thread.start()
 
     def stop(self) -> None:
         self._stop_event.set()
