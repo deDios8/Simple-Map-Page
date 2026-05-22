@@ -1,5 +1,5 @@
 _pycache__/
-# *.py[cod]
+*.py[cod]
 # *$py.class
 
 # Logs

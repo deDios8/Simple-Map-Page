@@ -63,9 +63,9 @@ class Stat:
     min_value: int = 0
     max_value: int = 100
 
+@dataclass
 class Stats:
-    def __init__(self, items: dict | None = None) -> None:
-        self.items = items if isinstance(items, dict) else {}
+    items: dict = None
 
 
 @dataclass

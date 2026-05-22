@@ -2,6 +2,10 @@
 python -m pip install esper
 python -m pip install pyproj
 python -m pip install shapely
+or
+.venv/bin/pip install esper
+.venv/bin/pip install pyproj
+.venv/bin/pip install shapely
 
 
 # Instructions for deployment
@@ -14,6 +18,8 @@ https://geogm-simple-map.web.app
 cd "c:\Users\dedio\OneDrive\Documents\Programming\python\Simple Map Page\public"
 python -m http.server 8080
 http://localhost:8080/index.html
+## Server Virtual Environment:
+python server/main.py
 
 # GeoJSON shape
 ## Client Request
