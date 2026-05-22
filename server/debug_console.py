@@ -8,6 +8,7 @@ import queue
 import threading
 from typing import Protocol
 
+import ecs_event_components
 import ecs_geo_components
 import esper
 
@@ -17,6 +18,8 @@ class DebugState(Protocol):
     ClientRequests: dict[str, ecs_geo_components.ClientRequest]
     GeoObjectEntityIds: dict[str, int]
     ClientRequestEntityIds: dict[str, int]
+    EventCriteria: dict[str, ecs_event_components.Criteria]
+    EventCriteriaEntityIds: dict[str, int]
 
 
 class SessionDebugConsole:
@@ -45,8 +48,8 @@ class SessionDebugConsole:
     def print_help(self) -> None:
         print(
             "[DEBUG] Commands: "
-            "help | stats | world | list [geo|req] [count] | "
-            "dump <key> | dumpgeo <key> | dumpreq <key> | "
+            "help | stats | world | list [geo|req|criteria] [count] | "
+            "dump <key> | dumpgeo <key> | dumpreq <key> | dumpcriteria <key> | "
             "zoneborders [key]"
         )
 
@@ -99,7 +102,9 @@ class SessionDebugConsole:
             f"geoObjects={len(self._state.GeoObjects)} "
             f"geoEntityIds={len(self._state.GeoObjectEntityIds)} "
             f"clientRequests={len(self._state.ClientRequests)} "
-            f"requestEntityIds={len(self._state.ClientRequestEntityIds)}"
+            f"requestEntityIds={len(self._state.ClientRequestEntityIds)} "
+            f"eventCriteria={len(self._state.EventCriteria)} "
+            f"criteriaEntityIds={len(self._state.EventCriteriaEntityIds)}"
         )
 
     def _print_world_stats(self) -> None:
@@ -131,7 +136,11 @@ class SessionDebugConsole:
             keys = sorted(self._state.ClientRequestEntityIds.keys())
             print(f"[DEBUG] req keys ({len(keys)} total): {keys[:count]}")
             return
-        print("[DEBUG] list usage: list [geo|req] [count]")
+        if subject == "criteria":
+            keys = sorted(self._state.EventCriteriaEntityIds.keys())
+            print(f"[DEBUG] criteria keys ({len(keys)} total): {keys[:count]}")
+            return
+        print("[DEBUG] list usage: list [geo|req|criteria] [count]")
 
     def _print_geo_dump(self, key: str) -> bool:
         entity_id = self._state.GeoObjectEntityIds.get(key)
@@ -162,6 +171,34 @@ class SessionDebugConsole:
             "[DEBUG][req] "
             f"key={key} entity={entity_id} requester_id={request.requester_id!r} "
             f"timestamp={request.timestamp!r}"
+        )
+        return True
+
+    def _print_criteria_dump(self, key: str) -> bool:
+        entity_id = self._state.EventCriteriaEntityIds.get(key)
+        if entity_id is None:
+            return False
+        id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
+        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        active_components: dict[str, object] = {}
+        for comp_name, comp_type in {
+            "CriteriaHasTags": ecs_event_components.CriteriaHasTags,
+            "CriteriaIsWithin": ecs_event_components.CriteriaIsWithin,
+            "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
+            "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
+            "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
+            "CriteriaIsVisible": ecs_event_components.CriteriaIsVisible,
+            "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
+        }.items():
+            comp = esper.try_component(entity_id, comp_type)
+            if comp is not None:
+                active_components[comp_name] = comp
+        print(
+            "[DEBUG][criteria] "
+            f"key={key} entity={entity_id} "
+            f"id={id_component.id} name={metadata.name!r} "
+            f"description={metadata.description!r} "
+            f"components={active_components}"
         )
         return True
 
@@ -208,6 +245,13 @@ class SessionDebugConsole:
             if not self._print_request_dump(parts[1]):
                 print(f"[DEBUG] req key not found: {parts[1]}")
             return
+        if command == "dumpcriteria":
+            if len(parts) < 2:
+                print("[DEBUG] dumpcriteria usage: dumpcriteria <key>")
+                return
+            if not self._print_criteria_dump(parts[1]):
+                print(f"[DEBUG] criteria key not found: {parts[1]}")
+            return
         if command == "dump":
             if len(parts) < 2:
                 print("[DEBUG] dump usage: dump <key>")
@@ -217,7 +261,9 @@ class SessionDebugConsole:
                 return
             if self._print_request_dump(key):
                 return
-            print(f"[DEBUG] key not found in geo or req maps: {key}")
+            if self._print_criteria_dump(key):
+                return
+            print(f"[DEBUG] key not found in geo, req, or criteria maps: {key}")
             return
         if command == "zoneborders":
             if len(parts) >= 2:
