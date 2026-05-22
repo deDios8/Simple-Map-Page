@@ -1,4 +1,10 @@
 # Dependencies
+## macos
+brew install python@3.13
+brew install node
+npm install -g firebase-tools
+firebase login
+
 python -m pip install esper
 python -m pip install pyproj
 python -m pip install shapely
@@ -6,6 +12,7 @@ or
 .venv/bin/pip install esper
 .venv/bin/pip install pyproj
 .venv/bin/pip install shapely
+.venv/bin/pip install firebase
 
 
 # Instructions for deployment
