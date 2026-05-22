@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import esper
+from ecs_geo_components import MetaData
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
@@ -14,25 +15,32 @@ One entity is the event result. It specifies, by name, which trigger and target 
 # Components for trigger/target criteria
 # ---------------------------------------------------------------------------
 @dataclass
-class CriteriaName:
-    id: str
-    name: str
-
-@dataclass
-class CriteriaHasStats:
-    stats: list
+class CriteriaHasTags:
+    tags: list
 
 @dataclass
 class CriteriaIsWithin:
-    stats: list
+    tags: list
 
 @dataclass
 class CriteriaJustEntered:
-    stats: list
+    tags: list
 
 @dataclass
 class CriteriaJustExited:
-    stats: list
+    tags: list
+
+@dataclass
+class CriteriaIsVisible:
+    is_visible: bool
+
+@dataclass
+class CriteriaIsNotVisible:
+    is_visible: bool
+
+@dataclass
+class CriteriaFirstEntered:
+    tags: list
 
 @dataclass
 class ObjectsThatMetAllCriteria:
@@ -44,10 +52,10 @@ class ObjectsThatMetAnyCriteria:
 
 
 class Criteria:
-    def __init__(self, id: str, geometry: dict, properties: dict) -> None:
+    def __init__(self, id: str, name: str) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
-        esper.add_component(new_entity_id, CriteriaName(id=id, name=meta_data.get("name", "")))
+        esper.add_component(new_entity_id, MetaData(id=id, name=name))
         esper.add_component(new_entity_id, ObjectsThatMetAllCriteria(object_ids=[]))
         esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
 

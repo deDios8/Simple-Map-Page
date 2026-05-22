@@ -1,0 +1,23 @@
+{
+    "type": "Feature",
+    "geometry": null,
+    "properties": {
+        "id": "criteria_1",
+        "metaData": {
+            "name": "Criteria 1",
+            "description": "A description of Criteria 1."
+        },
+        "ObjectsThatMetAllCriteria": {
+            "object_ids": ["object1", "object2"]
+        },
+        "ObjectsThatMetAnyCriteria": {
+            "object_ids": ["object3", "object4"]
+        },
+        "CriteriaHasTags": {
+            "tags": ["tag1"]
+        },
+        "CriteriaFirstEntered": {
+            "tags": ["tag5", "tag6"]
+        }
+    }
+}
