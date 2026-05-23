@@ -408,6 +408,16 @@ function normalizeCriteria(rawCriteria) {
   }, {});
 }
 
+const CRITERIA_COMPONENT_OPTIONS = [
+  "CriteriaHasTags",
+  "CriteriaIsWithin",
+  "CriteriaJustEntered",
+  "CriteriaJustExited",
+  "CriteriaIsVisible",
+  "CriteriaIsNotVisible",
+  "CriteriaFirstEntered",
+];
+
 function renderCriteriaList() {
   if (!criteriaList) return;
   const entries = Object.values(state.criteria);
@@ -461,8 +471,10 @@ function renderCriteriaComponentsEditor(components) {
         <article class="stat-row" data-criterion-index="${index}" data-criterion-name="${escapeHtml(name)}">
           <div class="criterion-row-grid">
             <label>
-              Name
-              <input type="text" data-field="name" value="${escapeHtml(name)}" placeholder="CriteriaHasTags" />
+              Component
+              <select data-field="name">
+                ${CRITERIA_COMPONENT_OPTIONS.map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
+              </select>
             </label>
             <label>
               Tags
@@ -479,12 +491,9 @@ function renderCriteriaComponentsEditor(components) {
 function addEmptyCriterionRow() {
   const currentComponents = collectCriteriaComponentsFromEditor();
   const nextComponents = { ...currentComponents };
-  let index = Object.keys(nextComponents).length + 1;
-  let nextKey = `criterion_${index}`;
-  while (Object.prototype.hasOwnProperty.call(nextComponents, nextKey)) {
-    index += 1;
-    nextKey = `criterion_${index}`;
-  }
+  const nextKey =
+    CRITERIA_COMPONENT_OPTIONS.find((opt) => !Object.prototype.hasOwnProperty.call(nextComponents, opt)) ??
+    CRITERIA_COMPONENT_OPTIONS[0];
   nextComponents[nextKey] = { tags: [] };
   renderCriteriaComponentsEditor(nextComponents);
   applyCriteriaEditorPermissions();
