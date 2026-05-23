@@ -739,7 +739,8 @@ body {
    --------------------------------------------------------------------------- */
 
 .events-drawer {
-  right: 12px;
+  right: auto;
+  left: 12px;
   bottom: calc(var(--safe-bottom) + 78px);
 }
 
