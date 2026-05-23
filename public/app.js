@@ -513,7 +513,7 @@ function renderCriteriaList() {
             <li>
               <button class="${selectedClass}" type="button" data-criteria-id="${escapeHtml(id)}">
                 <span>
-                  <strong>${name}</strong>
+                  <strong>${name}</strong><span class="list-meta"> &middot; ${escapeHtml(id)}</span>
                 </span>
                 <span aria-hidden="true">Edit</span>
               </button>
@@ -943,7 +943,7 @@ function renderEventList() {
             <li>
               <button class="${selectedClass}" type="button" data-event-id="${escapeHtml(id)}">
                 <span>
-                  <strong>${name}</strong>
+                  <strong>${name}</strong><span class="list-meta"> &middot; ${escapeHtml(id)}</span>
                 </span>
                 <span aria-hidden="true">Edit</span>
               </button>
@@ -2032,8 +2032,7 @@ function renderObjectList() {
             <li>
               <button class="${selectedClass}" type="button" data-id="${escapeHtml(id)}">
                 <span>
-                  <strong style="color: ${escapeHtml(color)};">${name}</strong>
-                  <span class="list-meta">${escapeHtml(traits)}</span>
+                  <strong style="color: ${escapeHtml(color)};">${name}</strong><span class="list-meta"> &middot; ${escapeHtml(id)} &middot; ${escapeHtml(traits)}</span>
                 </span>
                   <span aria-hidden="true">Edit</span>
               </button>
