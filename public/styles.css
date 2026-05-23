@@ -789,6 +789,20 @@ body {
   display: none;
 }
 
+/* Multi-select for event trigger/target name pickers */
+#event-field-trigger-names,
+#event-field-target-names {
+  width: 100%;
+  min-height: 72px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg, #fff);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
 .result-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;

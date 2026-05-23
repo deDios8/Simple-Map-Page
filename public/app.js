@@ -668,6 +668,16 @@ function handleCriteriaSnapshot(nextCriteria) {
     showEmptyCriteriaEditor();
   }
 
+  // Refresh event name dropdowns with updated criteria list
+  if (state.selectedEventId) {
+    const eventEntry = state.events[state.selectedEventId];
+    const triggerNames = eventEntry?.properties?.EventTriggerNames?.criteria_ids || [];
+    const targetNames = eventEntry?.properties?.EventTargetNames?.criteria_ids || [];
+    renderEventNameSelects(triggerNames, targetNames);
+  } else {
+    renderEventNameSelects([], []);
+  }
+
   applyCriteriaCollapseState();
 }
 
@@ -972,6 +982,29 @@ function extractEventResults(properties) {
   return out;
 }
 
+function renderEventNameSelects(selectedTriggers = [], selectedTargets = []) {
+  const triggerSet = new Set(selectedTriggers);
+  const targetSet = new Set(selectedTargets);
+  const criteriaEntries = Object.values(state.criteria);
+
+  const buildOptions = (selectedSet) => {
+    if (!criteriaEntries.length) {
+      return '<option disabled value="">No criteria available</option>';
+    }
+    return criteriaEntries
+      .map((entry) => {
+        const id = entry.properties?.id || "";
+        const name = entry.properties?.metaData?.name || id || "Unnamed";
+        const sel = selectedSet.has(id) ? " selected" : "";
+        return `<option value="${escapeHtml(id)}"${sel}>${escapeHtml(name)} (${escapeHtml(id)})</option>`;
+      })
+      .join("");
+  };
+
+  if (eventFieldTriggerNames) eventFieldTriggerNames.innerHTML = buildOptions(triggerSet);
+  if (eventFieldTargetNames) eventFieldTargetNames.innerHTML = buildOptions(targetSet);
+}
+
 function populateEventEditor(id) {
   const entry = state.events[id];
   if (!entry) {
@@ -986,8 +1019,7 @@ function populateEventEditor(id) {
   eventEditorEmptyState.textContent = `Editing ${metaData.name || id}`;
   eventFieldName.value = metaData.name || "";
   eventFieldDescription.value = metaData.description || "";
-  eventFieldTriggerNames.value = Array.isArray(triggerNames) ? triggerNames.join(", ") : "";
-  eventFieldTargetNames.value = Array.isArray(targetNames) ? targetNames.join(", ") : "";
+  renderEventNameSelects(triggerNames, targetNames);
   renderEventResultsEditor(results);
   applyEventEditorPermissions();
 }
@@ -996,6 +1028,7 @@ function showEmptyEventEditor() {
   if (eventEditorForm) eventEditorForm.hidden = true;
   if (eventEditorEmptyState) eventEditorEmptyState.textContent = "Select an event to edit.";
   if (eventSaveStatus) eventSaveStatus.textContent = "";
+  renderEventNameSelects([], []);
   renderEventResultsEditor({});
   applyEventEditorPermissions();
 }
@@ -1348,8 +1381,8 @@ function bindUi() {
     const formData = {
       name: eventFieldName?.value.trim() || "",
       description: eventFieldDescription?.value.trim() || "",
-      triggerNames: triggerRaw.split(",").map((s) => s.trim()).filter(Boolean),
-      targetNames: targetRaw.split(",").map((s) => s.trim()).filter(Boolean),
+      triggerNames: Array.from(eventFieldTriggerNames?.selectedOptions || []).map((o) => o.value),
+      targetNames: Array.from(eventFieldTargetNames?.selectedOptions || []).map((o) => o.value),
       results: collectResultsFromEditor(),
     };
 
