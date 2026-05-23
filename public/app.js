@@ -54,6 +54,49 @@ const state = {
   eventListenerUnsubscribe: null,
 };
 
+const CRITERIA_COMPONENT_OPTIONS = [
+  "CriteriaHasTags",
+  "CriteriaIsWithin",
+  "CriteriaJustEntered",
+  "CriteriaJustExited",
+  "CriteriaIsVisible",
+  "CriteriaIsNotVisible",
+  "CriteriaFirstEntered",
+];
+
+const RESULT_COMPONENT_OPTIONS = [
+  "ResultSetVisibility",
+  "ResultToggleVisibility",
+  "ResultChangeColor",
+  "ResultChangeRadius",
+  "ResultAddTraits",
+  "ResultRemoveTraits",
+  "ResultToggleTraits",
+  "ResultAddStats",
+  "ResultRemoveStats",
+  "ResultToggleStats",
+  "ResultSetStatsToValues",
+  "ResultIncreaseStatsByValues",
+  "ResultDecreaseStatsByValues",
+];
+
+const RESULT_COMPONENT_FIELD_CONFIG = {
+  ResultSetVisibility:         { fieldName: "visible",        fieldType: "bool",   label: "Visible" },
+  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "bool",   label: "Toggle" },
+  ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
+  ResultChangeRadius:          { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
+  ResultAddTraits:             { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultRemoveTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultToggleTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultAddStats:              { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultRemoveStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
+  ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+  ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+};
+
+
 const locationStatus = document.querySelector("#location-status");
 const drawer = document.querySelector("#drawer");
 const drawerTitle = document.querySelector("#drawer-session-title");
@@ -490,16 +533,6 @@ function normalizeCriteria(rawCriteria) {
   }, {});
 }
 
-const CRITERIA_COMPONENT_OPTIONS = [
-  "CriteriaHasTags",
-  "CriteriaIsWithin",
-  "CriteriaJustEntered",
-  "CriteriaJustExited",
-  "CriteriaIsVisible",
-  "CriteriaIsNotVisible",
-  "CriteriaFirstEntered",
-];
-
 function renderCriteriaList() {
   if (!criteriaList) return;
   const entries = Object.values(state.criteria);
@@ -744,38 +777,6 @@ async function submitDeletedCriteriaRequest(targetId) {
 // ---------------------------------------------------------------------------
 // Event results system
 // ---------------------------------------------------------------------------
-
-const RESULT_COMPONENT_OPTIONS = [
-  "ResultSetVisibility",
-  "ResultToggleVisibility",
-  "ResultChangeColor",
-  "ResultChangeRadius",
-  "ResultAddTraits",
-  "ResultRemoveTraits",
-  "ResultToggleTraits",
-  "ResultAddStats",
-  "ResultRemoveStats",
-  "ResultToggleStats",
-  "ResultSetStatsToValues",
-  "ResultIncreaseStatsByValues",
-  "ResultDecreaseStatsByValues",
-];
-
-const RESULT_COMPONENT_FIELD_CONFIG = {
-  ResultSetVisibility:         { fieldName: "visible",        fieldType: "bool",   label: "Visible" },
-  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "bool",   label: "Toggle" },
-  ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
-  ResultChangeRadius:          { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
-  ResultAddTraits:             { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultRemoveTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultToggleTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultAddStats:              { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultRemoveStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
-  ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
-  ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
-};
 
 function buildDefaultResultData(componentName) {
   const config = RESULT_COMPONENT_FIELD_CONFIG[componentName];
