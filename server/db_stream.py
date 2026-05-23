@@ -37,6 +37,24 @@ CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaFirstEntered",
 })
 
+EVENT_RESULTS_NODE = "eventResults"
+
+EVENT_RESULT_COMPONENT_NAMES = frozenset({
+    "ResultSetVisibility",
+    "ResultToggleVisibility",
+    "ResultChangeColor",
+    "ResultChangeRadius",
+    "ResultAddTraits",
+    "ResultRemoveTraits",
+    "ResultToggleTraits",
+    "ResultAddStats",
+    "ResultRemoveStats",
+    "ResultToggleStats",
+    "ResultSetStatsToValues",
+    "ResultIncreaseStatsByValues",
+    "ResultDecreaseStatsByValues",
+})
+
 
 # ---------------------------------------------------------------------------
 # Data models
@@ -174,6 +192,20 @@ class CriteriaEntry(DBEntry):
         self.objects_that_met_any: list = any_met.get("object_ids", []) if isinstance(any_met, dict) else []
 
 
+class EventResultEntry(DBEntry):
+    def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
+        super().update_from_db_entry(db_entry)
+        trigger = self.properties.get("EventTriggerNames", {})
+        self.trigger_names: list = trigger.get("criteria_ids", []) if isinstance(trigger, dict) else []
+        target = self.properties.get("EventTargetNames", {})
+        self.target_names: list = target.get("criteria_ids", []) if isinstance(target, dict) else []
+        results = self.properties.get("Results", {})
+        self.result_components: dict[str, dict] = {
+            k: v for k, v in results.items()
+            if k in EVENT_RESULT_COMPONENT_NAMES and isinstance(v, dict)
+        } if isinstance(results, dict) else {}
+
+
 @dataclass
 class StreamEvent:
     """Single parsed Firebase SSE payload."""
@@ -213,6 +245,10 @@ def build_geo_objects_url(database_url: str, session_name: str) -> str:
 
 def build_event_criteria_url(database_url: str, session_name: str) -> str:
     return build_node_url(database_url, session_name, EVENT_CRITERIA_NODE)
+
+
+def build_event_results_url(database_url: str, session_name: str) -> str:
+    return build_node_url(database_url, session_name, EVENT_RESULTS_NODE)
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +301,10 @@ def fetch_geo_objects(database_url: str, session_name: str) -> dict[str, dict[st
 
 def fetch_event_criteria(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
     return _fetch_snapshot(build_event_criteria_url(database_url, session_name))
+
+
+def fetch_event_results(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
+    return _fetch_snapshot(build_event_results_url(database_url, session_name))
 
 
 # ---------------------------------------------------------------------------
@@ -557,11 +597,14 @@ class DatabaseStream:
         self.request_index: dict[str, ClientRequestEntry] = {}
         self.geo_object_index: dict[str, GeoObjectEntry] = {}
         self.criteria_index: dict[str, CriteriaEntry] = {}
+        self.event_results_state: dict[str, Any] = {}
+        self.event_results_index: dict[str, EventResultEntry] = {}
         self.event_queue: queue.Queue[SyncChange] = queue.Queue()
         self._stop_event = threading.Event()
         self._client_request_thread: threading.Thread | None = None
         self._geo_object_thread: threading.Thread | None = None
         self._criteria_thread: threading.Thread | None = None
+        self._event_results_thread: threading.Thread | None = None
 
     def start(self) -> None:
         def _iter_client_requests(db: str, session: str):
@@ -572,6 +615,9 @@ class DatabaseStream:
 
         def _iter_event_criteria(db: str, session: str):
             yield from _iter_stream_from_url(build_event_criteria_url(db, session))
+
+        def _iter_event_results(db: str, session: str):
+            yield from _iter_stream_from_url(build_event_results_url(db, session))
 
         self._client_request_thread = threading.Thread(
             target=_run_stream_worker,
@@ -624,9 +670,27 @@ class DatabaseStream:
             daemon=True,
         )
 
+        self._event_results_thread = threading.Thread(
+            target=_run_stream_worker,
+            args=(
+                self.database_url,
+                self.session_name,
+                EVENT_RESULTS_NODE,
+                self.event_results_state,
+                self.event_results_index,
+                fetch_event_results,
+                _iter_event_results,
+                EventResultEntry,
+                self.event_queue,
+                self._stop_event,
+            ),
+            daemon=True,
+        )
+
         self._client_request_thread.start()
         self._geo_object_thread.start()
         self._criteria_thread.start()
+        self._event_results_thread.start()
 
     def stop(self) -> None:
         self._stop_event.set()

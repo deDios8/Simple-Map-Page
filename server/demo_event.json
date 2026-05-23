@@ -1,23 +1,54 @@
 {
-    "type": "Feature",
-    "geometry": null,
-    "properties": {
-        "id": "criteria_1",
-        "metaData": {
-            "name": "Criteria 1",
-            "description": "A description of Criteria 1."
-        },
-        "ObjectsThatMetAllCriteria": {
-            "object_ids": ["object1", "object2"]
-        },
-        "ObjectsThatMetAnyCriteria": {
-            "object_ids": ["object3", "object4"]
-        },
-        "CriteriaHasTags": {
-            "tags": ["tag1"]
-        },
-        "CriteriaFirstEntered": {
-            "tags": ["tag5", "tag6"]
+    "type": "FeatureCollection",
+    "features": [
+        {
+        "type": "Feature",
+        "geometry": null,
+        "properties": {
+            "id": "criteria_1",
+            "metaData": {
+                "name": "Criteria 1",
+                "description": "A description of Criteria 1."
+            },
+            "ObjectsThatMetAllCriteria": {
+                "object_ids": ["object1", "object2"]
+            },
+            "ObjectsThatMetAnyCriteria": {
+                "object_ids": ["object3", "object4"]
+            },
+            "CriteriaHasTags": {
+                "tags": ["tag1"]
+            },
+            "CriteriaFirstEntered": {
+                "tags": ["tag5", "tag6"]
+            }
         }
-    }
+        },
+        {
+        "type": "Feature",
+        "geometry": null,
+        "properties": {
+            "id": "event_1",
+            "metaData": {
+                "name": "Event 1",
+                "description": "A description of Event 1."
+            },
+            "EventTriggerNames": {
+                "criteria_ids": ["criteria_1"]
+            },
+            "EventTargetNames": {
+                "criteria_ids": ["criteria_1"]
+            },
+            "Results": {
+                "ResultSetVisibility": {
+                    "visible": true
+                },
+                "ResultAddTraits": {
+                    "traits": ["found", "trait2"]
+                }
+            }
+        }
+        }
+
+    ]
 }

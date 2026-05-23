@@ -50,6 +50,15 @@
         aria-label="Open event criteria editor"
       >C</button>
 
+      <button
+        id="events-results-drawer-toggle"
+        class="events-results-drawer-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="events-results-drawer"
+        aria-label="Open event results editor"
+      >E</button>
+
       <aside id="drawer" class="drawer" aria-label="GeoJSON objects">
         <div class="drawer-header">
           <div>
@@ -216,6 +225,82 @@
                   <button id="delete-criteria-button" class="danger-button" type="button">Delete</button>
                 </div>
                 <p id="criteria-save-status" class="save-status" aria-live="polite"></p>
+              </div>
+
+              <div class="editor-bottom-spacer" aria-hidden="true"></div>
+            </form>
+          </section>
+        </div>
+      </aside>
+
+      <aside id="events-results-drawer" class="drawer events-results-drawer" aria-label="Event results">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Event System</p>
+            <h1>Event Results</h1>
+          </div>
+          <div class="drawer-header-actions">
+            <button id="events-results-drawer-close" class="text-button" type="button">Close</button>
+          </div>
+        </div>
+
+        <div class="drawer-body">
+          <section class="panel-section">
+            <ul id="events-list" class="object-list"></ul>
+          </section>
+
+          <section class="panel-section">
+            <div class="editor-header">
+              <h2 id="event-editor-empty-state">Select an event to edit.</h2>
+              <div class="section-actions">
+                <button id="event-editor-form-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="event-editor-form">Expand editor</button>
+                <button id="add-event-button" class="text-button" type="button" aria-label="Add new event">Add event</button>
+              </div>
+            </div>
+
+            <form id="event-editor-form" class="editor-form" hidden>
+              <label>
+                Name
+                <input id="event-field-name" name="name" type="text" placeholder="Event label" />
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  id="event-field-description"
+                  name="description"
+                  rows="1"
+                  placeholder="Extra details"
+                ></textarea>
+              </label>
+
+              <label>
+                Trigger Names
+                <input id="event-field-trigger-names" name="triggerNames" type="text" placeholder="criteria_1, criteria_2" />
+              </label>
+
+              <label>
+                Target Names
+                <input id="event-field-target-names" name="targetNames" type="text" placeholder="criteria_1, criteria_2" />
+              </label>
+
+              <section class="event-results-section" aria-labelledby="event-results-heading">
+                <div class="stats-header">
+                  <h3 id="event-results-heading">Results</h3>
+                  <div class="section-actions">
+                    <button id="event-results-section-toggle" class="text-button section-toggle" type="button" aria-expanded="false" aria-controls="event-results-list">Expand</button>
+                    <button id="add-result-button" class="text-button" type="button">Add result</button>
+                  </div>
+                </div>
+                <div id="event-results-list" class="stats-list"></div>
+              </section>
+
+              <div class="editor-actions">
+                <div class="editor-action-buttons">
+                  <button class="primary-button" type="submit">Save changes</button>
+                  <button id="delete-event-button" class="danger-button" type="button">Delete</button>
+                </div>
+                <p id="event-save-status" class="save-status" aria-live="polite"></p>
               </div>
 
               <div class="editor-bottom-spacer" aria-hidden="true"></div>

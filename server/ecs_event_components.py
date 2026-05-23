@@ -61,17 +61,15 @@ class Criteria:
         esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
 
 
-
-
 # ---------------------------------------------------------------------------
 # Components for results
 # ---------------------------------------------------------------------------
 @dataclass
-class ResultTriggerNames: # should maybe use ID's
+class EventTriggerNames: # should maybe use ID's
     names: list
 
 @dataclass
-class ResultTargetNames: # should maybe use ID's
+class EventTargetNames: # should maybe use ID's
     names: list
 
 @dataclass
@@ -89,6 +87,18 @@ class ResultChangeColor:
 @dataclass
 class ResultChangeRadius:
     radius: int
+
+@dataclass
+class ResultAddTraits:
+    traits: list
+
+@dataclass
+class ResultRemoveTraits:
+    traits: list
+
+@dataclass
+class ResultToggleTraits:
+    traits: list
 
 @dataclass
 class ResultAddStats:
@@ -115,6 +125,16 @@ class ResultDecreaseStatsByValues:
     stats_to_values: dict
 
 
+class Event:
+    def __init__(self, id: str, name: str, description: str = "") -> None:
+        new_entity_id = esper.create_entity()
+        self.entity_id = new_entity_id
+        esper.add_component(new_entity_id, ID(id=id))
+        esper.add_component(new_entity_id, MetaData(name=name, description=description))
+        esper.add_component(new_entity_id, EventTriggerNames(names=[]))
+        esper.add_component(new_entity_id, EventTargetNames(names=[]))
+
+
 # ---------------------------------------------------------------------------
 # Components for criteria client requests
 # ---------------------------------------------------------------------------
@@ -129,5 +149,18 @@ class EditedCriteria:
 
 @dataclass
 class DeletedCriteria:
+    target_id: str
+
+@dataclass
+class AddEvent:
+    requester_id: str
+
+@dataclass
+class EditedEvent:
+    target_id: str
+    form_data: dict
+
+@dataclass
+class DeletedEvent:
     target_id: str
 

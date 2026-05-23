@@ -697,10 +697,57 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Event results drawer toggle button
+   --------------------------------------------------------------------------- */
+
+.events-results-drawer-toggle {
+  position: fixed;
+  top: 126px;
+  right: 10px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 4px 12px rgba(14, 43, 36, 0.15);
+  backdrop-filter: blur(8px);
+  color: var(--accent-dark);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.events-results-drawer-toggle:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.events-results-drawer-toggle[aria-expanded="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent-dark);
+}
+
+/* ---------------------------------------------------------------------------
    Events drawer positioning
    --------------------------------------------------------------------------- */
 
 .events-drawer {
+  right: 12px;
+  bottom: calc(var(--safe-bottom) + 78px);
+}
+
+/* ---------------------------------------------------------------------------
+   Event results drawer positioning
+   --------------------------------------------------------------------------- */
+
+.events-results-drawer {
   right: 12px;
   bottom: calc(var(--safe-bottom) + 78px);
 }
@@ -729,9 +776,33 @@ body {
   align-items: end;
 }
 
+/* ---------------------------------------------------------------------------
+   Event result row (two-column component + value layout)
+   --------------------------------------------------------------------------- */
+
+.event-results-section {
+  display: grid;
+  gap: 12px;
+}
+
+.event-results-section.is-collapsed .stats-list {
+  display: none;
+}
+
+.result-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
 @media (max-width: 760px) {
   .events-drawer-toggle {
     top: 80px;
+    right: 14px;
+  }
+  .events-results-drawer-toggle {
+    top: 122px;
     right: 14px;
   }
 }

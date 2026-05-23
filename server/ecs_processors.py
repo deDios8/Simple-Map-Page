@@ -33,6 +33,15 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedCriteria)):
             self.session_state.apply_deleted_criteria_request(entity_id)
 
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.AddEvent)):
+            self.session_state.apply_add_event_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.EditedEvent)):
+            self.session_state.apply_edited_event_request(entity_id)
+
+        for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedEvent)):
+            self.session_state.apply_deleted_event_request(entity_id)
+
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self) -> None:
         super().__init__()

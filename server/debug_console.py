@@ -20,6 +20,8 @@ class DebugState(Protocol):
     ClientRequestEntityIds: dict[str, int]
     EventCriteria: dict[str, ecs_event_components.Criteria]
     EventCriteriaEntityIds: dict[str, int]
+    EventResults: dict[str, ecs_event_components.Event]
+    EventResultEntityIds: dict[str, int]
 
 
 class SessionDebugConsole:
@@ -48,8 +50,8 @@ class SessionDebugConsole:
     def print_help(self) -> None:
         print(
             "[DEBUG] Commands: "
-            "help | stats | world | list [geo|req|criteria] [count] | "
-            "dump <key> | dumpgeo <key> | dumpreq <key> | dumpcriteria <key> | "
+            "help | stats | world | list [geo|req|criteria|events] [count] | "
+            "dump <key> | dumpgeo <key> | dumpreq <key> | dumpcriteria <key> | dumpevent <key> | "
             "zoneborders [key]"
         )
 
@@ -104,7 +106,9 @@ class SessionDebugConsole:
             f"clientRequests={len(self._state.ClientRequests)} "
             f"requestEntityIds={len(self._state.ClientRequestEntityIds)} "
             f"eventCriteria={len(self._state.EventCriteria)} "
-            f"criteriaEntityIds={len(self._state.EventCriteriaEntityIds)}"
+            f"criteriaEntityIds={len(self._state.EventCriteriaEntityIds)} "
+            f"eventResults={len(self._state.EventResults)} "
+            f"eventResultEntityIds={len(self._state.EventResultEntityIds)}"
         )
 
     def _print_world_stats(self) -> None:
@@ -140,7 +144,11 @@ class SessionDebugConsole:
             keys = sorted(self._state.EventCriteriaEntityIds.keys())
             print(f"[DEBUG] criteria keys ({len(keys)} total): {keys[:count]}")
             return
-        print("[DEBUG] list usage: list [geo|req|criteria] [count]")
+        if subject == "events":
+            keys = sorted(self._state.EventResultEntityIds.keys())
+            print(f"[DEBUG] events keys ({len(keys)} total): {keys[:count]}")
+            return
+        print("[DEBUG] list usage: list [geo|req|criteria|events] [count]")
 
     def _print_geo_dump(self, key: str) -> bool:
         entity_id = self._state.GeoObjectEntityIds.get(key)
@@ -202,6 +210,44 @@ class SessionDebugConsole:
         )
         return True
 
+    def _print_event_dump(self, key: str) -> bool:
+        entity_id = self._state.EventResultEntityIds.get(key)
+        if entity_id is None:
+            return False
+        id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
+        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        trigger = esper.try_component(entity_id, ecs_event_components.EventTriggerNames)
+        target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
+        active_results: dict[str, object] = {}
+        for comp_name, comp_type in {
+            "ResultSetVisibility": ecs_event_components.ResultSetVisibility,
+            "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
+            "ResultChangeColor": ecs_event_components.ResultChangeColor,
+            "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
+            "ResultAddTraits": ecs_event_components.ResultAddTraits,
+            "ResultRemoveTraits": ecs_event_components.ResultRemoveTraits,
+            "ResultToggleTraits": ecs_event_components.ResultToggleTraits,
+            "ResultAddStats": ecs_event_components.ResultAddStats,
+            "ResultRemoveStats": ecs_event_components.ResultRemoveStats,
+            "ResultToggleStats": ecs_event_components.ResultToggleStats,
+            "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
+            "ResultIncreaseStatsByValues": ecs_event_components.ResultIncreaseStatsByValues,
+            "ResultDecreaseStatsByValues": ecs_event_components.ResultDecreaseStatsByValues,
+        }.items():
+            comp = esper.try_component(entity_id, comp_type)
+            if comp is not None:
+                active_results[comp_name] = comp
+        print(
+            "[DEBUG][event] "
+            f"key={key} entity={entity_id} "
+            f"id={id_component.id} name={metadata.name!r} "
+            f"description={metadata.description!r} "
+            f"triggerNames={trigger.names if trigger is not None else []} "
+            f"targetNames={target.names if target is not None else []} "
+            f"results={active_results}"
+        )
+        return True
+
     def _process_command(self, raw_command: str) -> None:
         parts = raw_command.split()
         if not parts:
@@ -252,6 +298,13 @@ class SessionDebugConsole:
             if not self._print_criteria_dump(parts[1]):
                 print(f"[DEBUG] criteria key not found: {parts[1]}")
             return
+        if command == "dumpevent":
+            if len(parts) < 2:
+                print("[DEBUG] dumpevent usage: dumpevent <key>")
+                return
+            if not self._print_event_dump(parts[1]):
+                print(f"[DEBUG] event key not found: {parts[1]}")
+            return
         if command == "dump":
             if len(parts) < 2:
                 print("[DEBUG] dump usage: dump <key>")
@@ -263,7 +316,9 @@ class SessionDebugConsole:
                 return
             if self._print_criteria_dump(key):
                 return
-            print(f"[DEBUG] key not found in geo, req, or criteria maps: {key}")
+            if self._print_event_dump(key):
+                return
+            print(f"[DEBUG] key not found in geo, req, criteria, or event maps: {key}")
             return
         if command == "zoneborders":
             if len(parts) >= 2:

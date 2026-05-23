@@ -21,6 +21,7 @@ const firebaseConfig = {
 const firebaseCollectionNode = "geoObjects";
 const firebaseClientRequestNode = "clientRequests";
 const firebaseEventCriteriaNode = "eventCriteria";
+const firebaseEventResultsNode = "eventResults";
 
 const state = {
   version: "0.1.032",
@@ -48,6 +49,9 @@ const state = {
   criteria: {},
   selectedCriteriaId: null,
   criteriaListenerUnsubscribe: null,
+  events: {},
+  selectedEventId: null,
+  eventListenerUnsubscribe: null,
 };
 
 const locationStatus = document.querySelector("#location-status");
@@ -100,9 +104,35 @@ const criteriaEditorFormToggle = document.querySelector("#criteria-editor-form-t
 const criteriaComponentsSectionToggle = document.querySelector("#criteria-components-section-toggle");
 const criteriaComponentsSection = document.querySelector(".criteria-components-section");
 
+// Event results drawer DOM references
+const eventsResultsDrawer = document.querySelector("#events-results-drawer");
+const eventsResultsDrawerToggle = document.querySelector("#events-results-drawer-toggle");
+const eventsResultsDrawerClose = document.querySelector("#events-results-drawer-close");
+const eventsList = document.querySelector("#events-list");
+const eventEditorForm = document.querySelector("#event-editor-form");
+const eventEditorEmptyState = document.querySelector("#event-editor-empty-state");
+const eventSaveStatus = document.querySelector("#event-save-status");
+const deleteEventButton = document.querySelector("#delete-event-button");
+const eventFieldName = document.querySelector("#event-field-name");
+const eventFieldDescription = document.querySelector("#event-field-description");
+const eventFieldTriggerNames = document.querySelector("#event-field-trigger-names");
+const eventFieldTargetNames = document.querySelector("#event-field-target-names");
+const eventResultsList = document.querySelector("#event-results-list");
+const addResultButton = document.querySelector("#add-result-button");
+const addEventButton = document.querySelector("#add-event-button");
+const eventEditorFormToggle = document.querySelector("#event-editor-form-toggle");
+const eventResultsSectionToggle = document.querySelector("#event-results-section-toggle");
+const eventResultsSection = document.querySelector(".event-results-section");
+
 const criteriaEditableFields = [
   criteriaFieldName,
   criteriaFieldDescription,
+];
+const eventEditableFields = [
+  eventFieldName,
+  eventFieldDescription,
+  eventFieldTriggerNames,
+  eventFieldTargetNames,
 ];
 const editableFields = [
   fieldName,
@@ -121,6 +151,11 @@ const editorCollapseState = {
 const criteriaCollapseState = {
   form: true,
   components: true,
+};
+
+const eventCollapseState = {
+  form: true,
+  results: true,
 };
 
 // Persist collapse state to localStorage
@@ -214,6 +249,53 @@ function setCriteriaComponentsSectionCollapsed(isCollapsed) {
     criteriaComponentsSectionToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.components));
   }
   saveCriteriaCollapseState();
+}
+
+// ---------------------------------------------------------------------------
+// Event results collapse state helpers
+// ---------------------------------------------------------------------------
+
+function saveEventCollapseState() {
+  localStorage.setItem("eventCollapseState", JSON.stringify(eventCollapseState));
+}
+
+function loadEventCollapseState() {
+  const saved = localStorage.getItem("eventCollapseState");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed === "object") {
+        Object.assign(eventCollapseState, parsed);
+      }
+    } catch (e) {
+      console.error("Failed to parse event collapse state from localStorage", e);
+    }
+  }
+}
+
+function applyEventCollapseState() {
+  setEventFormCollapsed(eventCollapseState.form);
+  setEventResultsSectionCollapsed(eventCollapseState.results);
+}
+
+function setEventFormCollapsed(isCollapsed) {
+  eventCollapseState.form = Boolean(isCollapsed);
+  eventEditorForm?.classList.toggle("is-collapsed", eventCollapseState.form);
+  if (eventEditorFormToggle) {
+    eventEditorFormToggle.textContent = eventCollapseState.form ? "Expand editor" : "Collapse editor";
+    eventEditorFormToggle.setAttribute("aria-expanded", String(!eventCollapseState.form));
+  }
+  saveEventCollapseState();
+}
+
+function setEventResultsSectionCollapsed(isCollapsed) {
+  eventCollapseState.results = Boolean(isCollapsed);
+  eventResultsSection?.classList.toggle("is-collapsed", eventCollapseState.results);
+  if (eventResultsSectionToggle) {
+    eventResultsSectionToggle.textContent = eventCollapseState.results ? "Expand" : "Collapse";
+    eventResultsSectionToggle.setAttribute("aria-expanded", String(!eventCollapseState.results));
+  }
+  saveEventCollapseState();
 }
 
 function nameToKey(name) {
@@ -649,12 +731,381 @@ async function submitDeletedCriteriaRequest(targetId) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Event results system
+// ---------------------------------------------------------------------------
+
+const RESULT_COMPONENT_OPTIONS = [
+  "ResultSetVisibility",
+  "ResultToggleVisibility",
+  "ResultChangeColor",
+  "ResultChangeRadius",
+  "ResultAddTraits",
+  "ResultRemoveTraits",
+  "ResultToggleTraits",
+  "ResultAddStats",
+  "ResultRemoveStats",
+  "ResultToggleStats",
+  "ResultSetStatsToValues",
+  "ResultIncreaseStatsByValues",
+  "ResultDecreaseStatsByValues",
+];
+
+const RESULT_COMPONENT_FIELD_CONFIG = {
+  ResultSetVisibility:         { fieldName: "visible",        fieldType: "bool",   label: "Visible" },
+  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "bool",   label: "Toggle" },
+  ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
+  ResultChangeRadius:          { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
+  ResultAddTraits:             { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultRemoveTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultToggleTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultAddStats:              { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultRemoveStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
+  ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+  ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+};
+
+function buildDefaultResultData(componentName) {
+  const config = RESULT_COMPONENT_FIELD_CONFIG[componentName];
+  if (!config) return {};
+  if (config.fieldType === "bool") return { [config.fieldName]: true };
+  if (config.fieldType === "number") return { [config.fieldName]: 0 };
+  if (config.fieldType === "csv") return { [config.fieldName]: [] };
+  if (config.fieldType === "json") return { [config.fieldName]: {} };
+  return { [config.fieldName]: "" };
+}
+
+function renderResultValueField(componentName, data) {
+  const config = RESULT_COMPONENT_FIELD_CONFIG[componentName];
+  if (!config) return '<input type="text" data-field="value" value="" />';
+  const { fieldName, fieldType, label, placeholder = "" } = config;
+  const rawValue = data != null && typeof data === "object" ? data[fieldName] : undefined;
+  if (fieldType === "bool") {
+    const val = rawValue === false ? "false" : "true";
+    return `
+      <label>
+        ${escapeHtml(label)}
+        <select data-field="value">
+          <option value="true"${val === "true" ? " selected" : ""}>true</option>
+          <option value="false"${val === "false" ? " selected" : ""}>false</option>
+        </select>
+      </label>`;
+  }
+  if (fieldType === "number") {
+    const val = rawValue != null ? String(rawValue) : "0";
+    return `
+      <label>
+        ${escapeHtml(label)}
+        <input type="number" data-field="value" value="${escapeHtml(val)}" placeholder="${escapeHtml(placeholder)}" />
+      </label>`;
+  }
+  if (fieldType === "csv") {
+    const val = Array.isArray(rawValue) ? rawValue.join(", ") : (rawValue != null ? String(rawValue) : "");
+    return `
+      <label>
+        ${escapeHtml(label)}
+        <input type="text" data-field="value" value="${escapeHtml(val)}" placeholder="${escapeHtml(placeholder)}" />
+      </label>`;
+  }
+  if (fieldType === "json") {
+    let val = "";
+    if (rawValue != null && typeof rawValue === "object") {
+      try { val = JSON.stringify(rawValue); } catch (e) { val = "{}"; }
+    } else if (typeof rawValue === "string") {
+      val = rawValue;
+    } else {
+      val = "{}";
+    }
+    return `
+      <label>
+        ${escapeHtml(label)}
+        <input type="text" data-field="value" value="${escapeHtml(val)}" placeholder="${escapeHtml(placeholder)}" />
+      </label>`;
+  }
+  const val = rawValue != null ? String(rawValue) : "";
+  return `
+    <label>
+      ${escapeHtml(label)}
+      <input type="text" data-field="value" value="${escapeHtml(val)}" placeholder="${escapeHtml(placeholder)}" />
+    </label>`;
+}
+
+function renderEventResultsEditor(results) {
+  if (!eventResultsList) return;
+  const entries = Object.entries(results || {});
+  if (!entries.length) {
+    eventResultsList.innerHTML = '<div class="stats-empty">No results yet. Add one to define actions.</div>';
+    return;
+  }
+  eventResultsList.innerHTML = entries
+    .map(([name, data], index) => {
+      return `
+        <article class="stat-row" data-result-index="${index}" data-result-name="${escapeHtml(name)}">
+          <div class="result-row-grid">
+            <label>
+              Result
+              <select data-field="name">
+                ${RESULT_COMPONENT_OPTIONS.map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
+              </select>
+            </label>
+            ${renderResultValueField(name, data)}
+            <button class="stat-remove-button" type="button" data-action="remove-result" aria-label="Remove result">✕</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function addEmptyResultRow() {
+  const currentResults = collectResultsFromEditor();
+  const nextResults = { ...currentResults };
+  const nextKey =
+    RESULT_COMPONENT_OPTIONS.find((opt) => !Object.prototype.hasOwnProperty.call(nextResults, opt)) ??
+    RESULT_COMPONENT_OPTIONS[0];
+  nextResults[nextKey] = buildDefaultResultData(nextKey);
+  renderEventResultsEditor(nextResults);
+  applyEventEditorPermissions();
+}
+
+function collectResultsFromEditor() {
+  const rows = Array.from(eventResultsList?.querySelectorAll(".stat-row") || []);
+  const results = {};
+  for (const row of rows) {
+    const name = row.querySelector('[data-field="name"]')?.value?.trim() || "";
+    const valueEl = row.querySelector('[data-field="value"]');
+    if (!name || !valueEl) continue;
+    const config = RESULT_COMPONENT_FIELD_CONFIG[name];
+    if (!config) continue;
+    const rawValue = valueEl.value?.trim() ?? "";
+    let parsedValue;
+    if (config.fieldType === "bool") {
+      parsedValue = rawValue === "true";
+    } else if (config.fieldType === "number") {
+      parsedValue = parseInt(rawValue, 10) || 0;
+    } else if (config.fieldType === "csv") {
+      parsedValue = rawValue.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (config.fieldType === "json") {
+      try { parsedValue = JSON.parse(rawValue); } catch (e) { parsedValue = {}; }
+    } else {
+      parsedValue = rawValue;
+    }
+    results[name] = { [config.fieldName]: parsedValue };
+  }
+  return results;
+}
+
+function normalizeEventEntry(key, entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const id = entry.properties?.id || key;
+  return {
+    type: entry.type || "Feature",
+    geometry: null,
+    properties: {
+      ...entry.properties,
+      id,
+    },
+  };
+}
+
+function normalizeEvents(rawEvents) {
+  if (!rawEvents || typeof rawEvents !== "object") return {};
+  return Object.entries(rawEvents).reduce((acc, [key, entry]) => {
+    const normalized = normalizeEventEntry(key, entry);
+    if (!normalized) return acc;
+    acc[key] = normalized;
+    return acc;
+  }, {});
+}
+
+function renderEventList() {
+  if (!eventsList) return;
+  const entries = Object.values(state.events);
+  eventsList.innerHTML = entries.length
+    ? entries
+        .map((entry) => {
+          const id = entry.properties?.id;
+          const name = escapeHtml(entry.properties?.metaData?.name || id || "Unnamed event");
+          const selectedClass = state.selectedEventId === id ? "is-selected" : "";
+          return `
+            <li>
+              <button class="${selectedClass}" type="button" data-event-id="${escapeHtml(id)}">
+                <span>
+                  <strong>${name}</strong>
+                </span>
+                <span aria-hidden="true">Edit</span>
+              </button>
+            </li>
+          `;
+        })
+        .join("")
+    : "<li>No events found.</li>";
+}
+
+function selectEvent(id) {
+  const entry = state.events[id];
+  if (!entry) return;
+  state.selectedEventId = id;
+  populateEventEditor(id);
+  renderEventList();
+  setEventDrawerOpen(true);
+}
+
+function setEventDrawerOpen(isOpen) {
+  eventsResultsDrawer?.classList.toggle("is-open", isOpen);
+  eventsResultsDrawerToggle?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function extractEventResults(properties) {
+  if (!properties || typeof properties !== "object") return {};
+  const results = properties.Results;
+  if (!results || typeof results !== "object") return {};
+  const knownNames = new Set(RESULT_COMPONENT_OPTIONS);
+  const out = {};
+  for (const [key, value] of Object.entries(results)) {
+    if (knownNames.has(key) && value && typeof value === "object") {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function populateEventEditor(id) {
+  const entry = state.events[id];
+  if (!entry) {
+    showEmptyEventEditor();
+    return;
+  }
+  const metaData = entry.properties?.metaData || {};
+  const triggerNames = entry.properties?.EventTriggerNames?.criteria_ids || [];
+  const targetNames = entry.properties?.EventTargetNames?.criteria_ids || [];
+  const results = extractEventResults(entry.properties);
+  eventEditorForm.hidden = false;
+  eventEditorEmptyState.textContent = `Editing ${metaData.name || id}`;
+  eventFieldName.value = metaData.name || "";
+  eventFieldDescription.value = metaData.description || "";
+  eventFieldTriggerNames.value = Array.isArray(triggerNames) ? triggerNames.join(", ") : "";
+  eventFieldTargetNames.value = Array.isArray(targetNames) ? targetNames.join(", ") : "";
+  renderEventResultsEditor(results);
+  applyEventEditorPermissions();
+}
+
+function showEmptyEventEditor() {
+  if (eventEditorForm) eventEditorForm.hidden = true;
+  if (eventEditorEmptyState) eventEditorEmptyState.textContent = "Select an event to edit.";
+  if (eventSaveStatus) eventSaveStatus.textContent = "";
+  renderEventResultsEditor({});
+  applyEventEditorPermissions();
+}
+
+function applyEventEditorPermissions() {
+  const isEditable = canEditObjects();
+  eventEditableFields.forEach((field) => {
+    if (field) field.disabled = !isEditable;
+  });
+  const isFormVisible = eventEditorForm && !eventEditorForm.hidden;
+  if (deleteEventButton) {
+    deleteEventButton.disabled = !isEditable || !isFormVisible;
+  }
+  const saveButton = eventEditorForm?.querySelector('button[type="submit"]');
+  if (saveButton) {
+    saveButton.disabled = !isEditable || !isFormVisible;
+  }
+  if (addResultButton) {
+    addResultButton.disabled = !isEditable || !isFormVisible;
+  }
+  eventResultsList?.querySelectorAll("input, select, button").forEach((el) => {
+    el.disabled = !isEditable || !isFormVisible;
+  });
+}
+
+function handleEventSnapshot(nextEvents) {
+  state.events = normalizeEvents(nextEvents);
+  renderEventList();
+
+  if (state.selectedEventId && !state.events[state.selectedEventId]) {
+    state.selectedEventId = null;
+  }
+
+  if (state.selectedEventId) {
+    populateEventEditor(state.selectedEventId);
+  } else {
+    showEmptyEventEditor();
+  }
+
+  applyEventCollapseState();
+}
+
+function getFirebaseEventResultsPath() {
+  return `${state.sessionName}/${firebaseEventResultsNode}`;
+}
+
+function resetEventListener() {
+  if (!state.firebaseReady || !state.database) return;
+
+  if (typeof state.eventListenerUnsubscribe === "function") {
+    state.eventListenerUnsubscribe();
+    handleEventSnapshot({});
+  }
+
+  const eventRef = ref(state.database, getFirebaseEventResultsPath());
+  state.eventListenerUnsubscribe = onValue(eventRef, (snapshot) => {
+    if (state.listenerActive) {
+      handleEventSnapshot(snapshot.val() || {});
+      applyEventCollapseState();
+    }
+  });
+}
+
+async function submitAddEventRequest() {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: "add_event",
+    requestType: "add_event",
+    coordinates,
+    successMessage: "Add event request sent",
+  });
+}
+
+async function submitEditedEventRequest(targetId, formData) {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: `edit-event-${targetId}`,
+    requestType: "edited_event",
+    coordinates,
+    clientRequestPayload: { targetId },
+    properties: { formData },
+    successMessage: `Edit event request for ${targetId} sent`,
+  });
+}
+
+async function submitDeletedEventRequest(targetId) {
+  const coordinates = Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
+  await submitRequest({
+    requestId: `delete-event-${targetId}`,
+    requestType: "deleted_event",
+    coordinates,
+    clientRequestPayload: { targetId },
+    successMessage: `Delete event request for ${targetId} sent`,
+  });
+}
+
 function init() {
   renderVersionInfo();
   loadCollapseState();
   applyCollapseState();
   loadCriteriaCollapseState();
   applyCriteriaCollapseState();
+  loadEventCollapseState();
+  applyEventCollapseState();
   initMap();
   bindUi();
   locateUser();
@@ -829,6 +1280,109 @@ function bindUi() {
     } catch (error) {
       console.error(error);
       criteriaSaveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
+    }
+  });
+
+  // Event results drawer bindings
+  eventsResultsDrawerToggle?.addEventListener("click", () => {
+    setEventDrawerOpen(!eventsResultsDrawer?.classList.contains("is-open"));
+  });
+  eventsResultsDrawerClose?.addEventListener("click", () => setEventDrawerOpen(false));
+  addEventButton?.addEventListener("click", () => {
+    void submitAddEventRequest();
+  });
+  eventEditorFormToggle?.addEventListener("click", () => {
+    setEventFormCollapsed(!eventCollapseState.form);
+  });
+  eventResultsSectionToggle?.addEventListener("click", () => {
+    setEventResultsSectionCollapsed(!eventCollapseState.results);
+  });
+  addResultButton?.addEventListener("click", () => {
+    addEmptyResultRow();
+  });
+  eventResultsList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-result"]');
+    if (!button) return;
+    button.closest(".stat-row")?.remove();
+    if (!eventResultsList.querySelector(".stat-row")) {
+      renderEventResultsEditor({});
+    }
+    applyEventEditorPermissions();
+  });
+  eventResultsList?.addEventListener("change", (event) => {
+    const select = event.target.closest('select[data-field="name"]');
+    if (!select) return;
+    const row = select.closest(".stat-row");
+    const oldName = row?.dataset.resultName || "";
+    const newName = select.value;
+    if (oldName === newName) return;
+    const currentResults = collectResultsFromEditor();
+    const nextResults = {};
+    for (const [k, v] of Object.entries(currentResults)) {
+      if (k === oldName) {
+        nextResults[newName] = buildDefaultResultData(newName);
+      } else {
+        nextResults[k] = v;
+      }
+    }
+    renderEventResultsEditor(nextResults);
+    applyEventEditorPermissions();
+  });
+  eventsList?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-event-id]");
+    if (!button) return;
+    selectEvent(button.dataset.eventId);
+  });
+  eventEditorForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!canEditObjects()) {
+      if (eventSaveStatus) eventSaveStatus.textContent = "Read-only mode: editing requires gm password.";
+      return;
+    }
+    if (!state.selectedEventId) return;
+    const eventEntry = state.events[state.selectedEventId];
+    if (!eventEntry) return;
+
+    const triggerRaw = eventFieldTriggerNames?.value.trim() || "";
+    const targetRaw = eventFieldTargetNames?.value.trim() || "";
+    const formData = {
+      name: eventFieldName?.value.trim() || "",
+      description: eventFieldDescription?.value.trim() || "",
+      triggerNames: triggerRaw.split(",").map((s) => s.trim()).filter(Boolean),
+      targetNames: targetRaw.split(",").map((s) => s.trim()).filter(Boolean),
+      results: collectResultsFromEditor(),
+    };
+
+    if (eventSaveStatus) eventSaveStatus.textContent = state.firebaseReady ? "Sending edit request..." : "Saving...";
+    try {
+      await submitEditedEventRequest(state.selectedEventId, formData);
+      if (eventSaveStatus) eventSaveStatus.textContent = state.firebaseReady
+        ? "Edit request sent. Server will apply updates shortly."
+        : "Saved locally.";
+    } catch (error) {
+      console.error(error);
+      if (eventSaveStatus) eventSaveStatus.textContent = "Edit request failed. Check Firebase configuration and permissions.";
+    }
+  });
+  deleteEventButton?.addEventListener("click", async () => {
+    if (!canEditObjects()) {
+      if (eventSaveStatus) eventSaveStatus.textContent = "Read-only mode: deleting requires gm password.";
+      return;
+    }
+    if (!state.selectedEventId || !state.events[state.selectedEventId]) {
+      if (eventSaveStatus) eventSaveStatus.textContent = "Delete failed: no event selected.";
+      return;
+    }
+    const deletingId = state.selectedEventId;
+    if (eventSaveStatus) eventSaveStatus.textContent = state.firebaseReady ? "Sending delete request..." : "Deleting...";
+    try {
+      await submitDeletedEventRequest(deletingId);
+      if (eventSaveStatus) eventSaveStatus.textContent = state.firebaseReady
+        ? "Delete request sent. Server will remove the event shortly."
+        : "Deleted locally.";
+    } catch (error) {
+      console.error(error);
+      if (eventSaveStatus) eventSaveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
     }
   });
 
@@ -1050,6 +1604,7 @@ function promptUserId() {
 
     resetObjectListener();
     resetCriteriaListener();
+    resetEventListener();
     modal.hidden = true;
 
     // Defer createUserObject/startCoordinateTracking until the first Firebase
@@ -1118,6 +1673,7 @@ function initFirebaseListener() {
   state.firebaseReady = true;
   resetObjectListener();
   resetCriteriaListener();
+  resetEventListener();
 }
 
 function toggleListener() {
