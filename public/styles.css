@@ -621,6 +621,24 @@ body {
   gap: 12px;
 }
 
+.modal-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-field-label {
+  flex: 0 0 100px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+}
+
+.modal-field-row input {
+  flex: 1;
+}
+
 .id-modal-card input[type="text"],
 .id-modal-card input[type="password"] {
   width: 100%;

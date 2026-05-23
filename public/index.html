@@ -228,31 +228,39 @@
     <div id="user-id-modal" class="id-modal-overlay">
       <div class="id-modal-card">
         <p class="eyebrow">Welcome</p>
-        <h2>Enter your ID</h2>
-        <p>Your location will be tracked on the map under this identifier.</p>
+        <h2>Enter your Session and ID</h2>
         <form id="user-id-form">
-          <input
-            id="session-name-input"
-            type="text"
-            placeholder="Session name"
-            value="testBed"
-            autocomplete="off"
-            required
-          />
-          <input
-            id="user-id-input"
-            type="text"
-            placeholder="Your identifier"
-            autocomplete="off"
-            required
-          />
-          <input
-            id="user-pass-input"
-            type="password"
-            placeholder="Password"
-            autocomplete="off"
-            required
-          />
+          <label class="modal-field-row">
+            <span class="modal-field-label">Session Name</span>
+            <input
+              id="session-name-input"
+              type="text"
+              placeholder="Session name"
+              value="testBed"
+              autocomplete="off"
+              required
+            />
+          </label>
+          <label class="modal-field-row">
+            <span class="modal-field-label">User ID</span>
+            <input
+              id="user-id-input"
+              type="text"
+              placeholder="Your identifier"
+              autocomplete="off"
+              required
+            />
+          </label>
+          <label class="modal-field-row">
+            <span class="modal-field-label">Password</span>
+            <input
+              id="user-pass-input"
+              type="password"
+              placeholder="Password"
+              autocomplete="off"
+              required
+            />
+          </label>
           <p id="user-id-status" aria-live="polite"></p>
           <button class="primary-button" type="submit">Start tracking</button>
         </form>
