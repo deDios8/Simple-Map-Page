@@ -23,8 +23,8 @@ const firebaseClientRequestNode = "clientRequests";
 const firebaseEventCriteriaNode = "eventCriteria";
 
 const state = {
-  version: "0.1.031",
-  updateFrequency: 2000,
+  version: "0.1.032",
+  updateLocationInterval: 10000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
   mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -1101,7 +1101,7 @@ function startCoordinateTracking() {
       coordinates: [lng, lat],
       quiet: true,
     });
-  }, state.updateFrequency);
+  }, state.updateLocationInterval);
 }
 
 function initFirebaseListener() {
