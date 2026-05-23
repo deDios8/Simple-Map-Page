@@ -1,10 +1,5 @@
 # TODO
-Editor windows opening on top of one another
-Open criteria editor to the left side of the screen
-Criteria and Event menu lists shows metaData/name and id on the selection button
-Make the trigger and target fields on the event editor form a dropdown showing criteria on the eventCriteria database by their metaData/name
 Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
-Formatting on front end editor result rows 
 
 # Dependencies
 ## macos
