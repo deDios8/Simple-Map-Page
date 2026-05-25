@@ -1002,9 +1002,9 @@ class SessionState:
             self.EventResults[key] = event
             self.EventResultEntityIds[key] = event.entity_id
             trigger_comp = esper.component_for_entity(event.entity_id, ecs_event_components.EventTriggerNames)
-            trigger_comp.names = entry.trigger_names
+            trigger_comp.criteria_ids = entry.trigger_names
             target_comp = esper.component_for_entity(event.entity_id, ecs_event_components.EventTargetNames)
-            target_comp.names = entry.target_names
+            target_comp.criteria_ids = entry.target_names
             self._sync_event_result_components(event.entity_id, entry.result_components)
             return event.entity_id
 
@@ -1019,9 +1019,9 @@ class SessionState:
         metadata.description = meta_data.get("description", "")
 
         trigger_comp = esper.component_for_entity(existing_entity_id, ecs_event_components.EventTriggerNames)
-        trigger_comp.names = entry.trigger_names
+        trigger_comp.criteria_ids = entry.trigger_names
         target_comp = esper.component_for_entity(existing_entity_id, ecs_event_components.EventTargetNames)
-        target_comp.names = entry.target_names
+        target_comp.criteria_ids = entry.target_names
 
         self._sync_event_result_components(existing_entity_id, entry.result_components)
         return existing_entity_id
@@ -1271,8 +1271,9 @@ def main() -> None:
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
     esper.add_processor(ecs_processors.ApplyClientRequests(session_state), priority=100)
     esper.add_processor(ecs_processors.CheckZoneEntryExit(), priority=99)
-    esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=1)
     esper.add_processor(ecs_processors.CriteriaProcessor(session_state), priority=90)
+    esper.add_processor(ecs_processors.EventProcessor(session_state), priority=80)
+    esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=1)
     session_state.run_db_and_ecs_processor()
 
 

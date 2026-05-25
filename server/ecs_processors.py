@@ -335,3 +335,152 @@ class CriteriaProcessor(esper.Processor):
     def _check_first_entered(self, geo_eid: int, component: ecs_event_components.CriteriaFirstEntered) -> bool:
         # TODO: implement
         return False
+    
+class EventProcessor(esper.Processor):
+    def __init__(self, session_state) -> None:
+        super().__init__()
+        self.session_state = session_state
+
+    def process(self) -> None:
+        geo_entity_ids = list(self.session_state.GeoObjectEntityIds.values())
+
+        ## For each event, check if any of its triggers have met all trigger criteria, and if so, apply the event's result to its targets that have met all target criteria.
+        for event_entity_id, (event_id_comp, event_meta, event_triggers, event_targets) in esper.get_components(
+            ecs_geo_components.ID,
+            ecs_geo_components.MetaData,
+            ecs_event_components.EventTriggerNames,
+            ecs_event_components.EventTargetNames,
+        ):
+            
+            event_trigger_ids = event_triggers.criteria_ids
+            event_target_ids = event_targets.criteria_ids
+
+            # Get the objects that met all criteria for each trigger and target
+            trigger_objects_sets = []
+            for trigger_id in event_trigger_ids:
+                if trigger_comp := esper.try_component(trigger_id, ecs_event_components.ObjectsThatMetAllCriteria):
+                    trigger_objects_sets.append(set(trigger_comp.object_ids))
+            target_objects_sets = []
+            for target_id in event_target_ids:
+                if target_comp := esper.try_component(target_id, ecs_event_components.ObjectsThatMetAllCriteria):
+                    target_objects_sets.append(set(target_comp.object_ids))
+
+            # Check if any trigger has met all criteria
+            trigger_met = any(trigger_objects_sets)
+
+            if trigger_met:
+                # If a trigger has met all criteria, apply the event's result to targets that have met all criteria
+                for target_objects in target_objects_sets:
+                    for target_entity_id in target_objects:
+
+                        results_to_apply = []
+
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetVisibility):
+                            results_to_apply.append(lambda eid, c=comp: self._set_visibility(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleVisibility):
+                            results_to_apply.append(lambda eid, c=comp: self._toggle_visibility(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeColor):
+                            results_to_apply.append(lambda eid, c=comp: self._change_color(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeRadius):
+                            results_to_apply.append(lambda eid, c=comp: self._change_radius(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultAddTraits):
+                            results_to_apply.append(lambda eid, c=comp: self._add_traits(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRemoveTraits):
+                            results_to_apply.append(lambda eid, c=comp: self._remove_traits(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleTraits):
+                            results_to_apply.append(lambda eid, c=comp: self._toggle_traits(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultAddStats):
+                            results_to_apply.append(lambda eid, c=comp: self._add_stats(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRemoveStats):
+                            results_to_apply.append(lambda eid, c=comp: self._remove_stats(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleStats):
+                            results_to_apply.append(lambda eid, c=comp: self._toggle_stats(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetStatsToValues):
+                            results_to_apply.append(lambda eid, c=comp: self._set_stats_to_values(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultIncreaseStatsByValues):
+                            results_to_apply.append(lambda eid, c=comp: self._increase_stats_by_values(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultDecreaseStatsByValues):
+                            results_to_apply.append(lambda eid, c=comp: self._decrease_stats_by_values(eid, c))
+
+                        for result in results_to_apply:
+                            result(target_entity_id)
+
+    def _set_visibility(self, target_entity_id: int, component: ecs_event_components.ResultSetVisibility) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            appearance.visible = component.visible
+
+    def _toggle_visibility(self, target_entity_id: int, component: ecs_event_components.ResultToggleVisibility) -> None:
+        # TODO: implement — Appearance.visible is a list; define toggle semantics
+        pass
+
+    def _change_color(self, target_entity_id: int, component: ecs_event_components.ResultChangeColor) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            appearance.color = component.color
+
+    def _change_radius(self, target_entity_id: int, component: ecs_event_components.ResultChangeRadius) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            appearance.radius = component.radius
+
+    def _add_traits(self, target_entity_id: int, component: ecs_event_components.ResultAddTraits) -> None:
+        traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
+        if traits is None:
+            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.traits)))
+        else:
+            for trait in component.traits:
+                if trait not in traits.traits:
+                    traits.traits.append(trait)
+
+    def _remove_traits(self, target_entity_id: int, component: ecs_event_components.ResultRemoveTraits) -> None:
+        if traits := esper.try_component(target_entity_id, ecs_geo_components.Traits):
+            for trait in component.traits:
+                try:
+                    traits.traits.remove(trait)
+                except ValueError:
+                    pass
+
+    def _toggle_traits(self, target_entity_id: int, component: ecs_event_components.ResultToggleTraits) -> None:
+        traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
+        if traits is None:
+            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.traits)))
+        else:
+            for trait in component.traits:
+                if trait in traits.traits:
+                    traits.traits.remove(trait)
+                else:
+                    traits.traits.append(trait)
+
+    def _add_stats(self, target_entity_id: int, component: ecs_event_components.ResultAddStats) -> None:
+        # TODO: implement — define the item format in ResultAddStats.stats
+        pass
+
+    def _remove_stats(self, target_entity_id: int, component: ecs_event_components.ResultRemoveStats) -> None:
+        # TODO: implement — define the item format in ResultRemoveStats.stats
+        pass
+
+    def _toggle_stats(self, target_entity_id: int, component: ecs_event_components.ResultToggleStats) -> None:
+        # TODO: implement — define the item format in ResultToggleStats.stats
+        pass
+
+    def _set_stats_to_values(self, target_entity_id: int, component: ecs_event_components.ResultSetStatsToValues) -> None:
+        stats = esper.try_component(target_entity_id, ecs_geo_components.Stats)
+        if stats is None:
+            esper.add_component(target_entity_id, ecs_geo_components.Stats(items=dict(component.stats_to_values)))
+        else:
+            if stats.items is None:
+                stats.items = {}
+            stats.items.update(component.stats_to_values)
+
+    def _increase_stats_by_values(self, target_entity_id: int, component: ecs_event_components.ResultIncreaseStatsByValues) -> None:
+        if stats := esper.try_component(target_entity_id, ecs_geo_components.Stats):
+            if stats.items:
+                for key, delta in component.stats_to_values.items():
+                    if key in stats.items:
+                        stats.items[key] += delta
+
+    def _decrease_stats_by_values(self, target_entity_id: int, component: ecs_event_components.ResultDecreaseStatsByValues) -> None:
+        if stats := esper.try_component(target_entity_id, ecs_geo_components.Stats):
+            if stats.items:
+                for key, delta in component.stats_to_values.items():
+                    if key in stats.items:
+                        stats.items[key] -= delta
+

@@ -66,11 +66,11 @@ class Criteria:
 # ---------------------------------------------------------------------------
 @dataclass
 class EventTriggerNames: # should maybe use ID's
-    names: list
+    criteria_ids: list
 
 @dataclass
 class EventTargetNames: # should maybe use ID's
-    names: list
+    criteria_ids: list
 
 @dataclass
 class ResultSetVisibility:
@@ -131,8 +131,8 @@ class Event:
         self.entity_id = new_entity_id
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, MetaData(name=name, description=description))
-        esper.add_component(new_entity_id, EventTriggerNames(names=[]))
-        esper.add_component(new_entity_id, EventTargetNames(names=[]))
+        esper.add_component(new_entity_id, EventTriggerNames(criteria_ids=[]))
+        esper.add_component(new_entity_id, EventTargetNames(criteria_ids=[]))
 
 
 # ---------------------------------------------------------------------------
