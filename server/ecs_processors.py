@@ -56,7 +56,7 @@ class CheckZoneEntryExit(esper.Processor):
 
         for entity_id, (geometry, id_component, _) in all_entities:
             current_zones = set()
-            for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in all_entities:
+            for zone_entity_id, (zone_geometry, zone_id_component, zone_appearance) in all_entities:
                 if zone_entity_id == entity_id:
                     continue
                 if id_component.id == zone_id_component.id:

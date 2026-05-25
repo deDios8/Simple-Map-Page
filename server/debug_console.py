@@ -158,6 +158,7 @@ class SessionDebugConsole:
         metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
         appearance = esper.component_for_entity(entity_id, ecs_geo_components.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs_geo_components.Geometry)
+        traits = esper.try_component(entity_id, ecs_geo_components.Traits)
         stats = esper.try_component(entity_id, ecs_geo_components.Stats)
         print(
             "[DEBUG][geo] "
@@ -166,6 +167,7 @@ class SessionDebugConsole:
             f"description={metadata.description!r} color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates} "
+            f"traits={traits.traits if traits is not None else []} "
             f"stats={stats.items if stats is not None else {}}"
         )
         return True
