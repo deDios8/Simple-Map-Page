@@ -47,41 +47,36 @@ class CheckZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        for entity_id, (geometry, id_component, _) in esper.get_components(
-            ecs_geo_components.Geometry, 
-            ecs_geo_components.ID, 
-            ecs_geo_components.Appearance
-        ):
+        all_entities = list(esper.get_components(
+            ecs_geo_components.Geometry,
+            ecs_geo_components.ID,
+            ecs_geo_components.Appearance,
+        ))
+        transformer_cache: dict = {}
+
+        for entity_id, (geometry, id_component, _) in all_entities:
             current_zones = set()
-            for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in esper.get_components(
-                    ecs_geo_components.Geometry,
-                    ecs_geo_components.Appearance,
-                    ecs_geo_components.ID,
-                ):
-                # print(f"[CheckZoneEntryExit] Checking entity {id_component.id} against zone {zone_id_component.id}")
+            for zone_entity_id, (zone_geometry, zone_appearance, zone_id_component) in all_entities:
                 if zone_entity_id == entity_id:
                     continue
                 if id_component.id == zone_id_component.id:
                     continue
 
-                zone_payload = {
-                    "geometry": {"coordinates": zone_geometry.coordinates},
-                    "properties": {
-                        "appearance": {
-                            "radius": zone_appearance.radius if zone_appearance is not None else 0,
-                        }
-                    },
-                }
-
-                if self.is_within_zone_intersect(geometry.coordinates, zone_payload):
+                zone_radius = zone_appearance.radius if zone_appearance is not None else 0
+                if self.is_within_zone_intersect(
+                    geometry.coordinates,
+                    zone_geometry.coordinates,
+                    zone_radius,
+                    transformer_cache,
+                ):
                     current_zones.add(str(zone_id_component.id))
-            
+
             previous_within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             previous_zones = set(previous_within.zone_ids) if previous_within else set()
-            
+
             entered_zones = current_zones - previous_zones
             exited_zones = previous_zones - current_zones
-            
+
             if entered_zones:
                 esper.add_component(entity_id, ecs_geo_components.EnteredZones(zone_ids=list(entered_zones)))
                 print(f"[CheckZoneEntryExit] Entity {id_component.id} entered zones: {entered_zones}")
@@ -137,41 +132,30 @@ class CheckZoneEntryExit(esper.Processor):
         combined_radius_m = max(0.0, object_radius_m) + max(0.0, zone_radius_m)
         return distance_m <= combined_radius_m
 
-    def is_within_zone_intersect(self, object_coordinates: list, zone: dict) -> bool:
+    def is_within_zone_intersect(self, object_coordinates: list, zone_coordinates: list, zone_radius_value: float, transformer_cache: dict) -> bool:
         if not isinstance(object_coordinates, list) or len(object_coordinates) < 2:
             return False
-
-        geometry = zone.get("geometry") if isinstance(zone, dict) else None
-        properties = zone.get("properties") if isinstance(zone, dict) else None
-        if not isinstance(geometry, dict) or not isinstance(properties, dict):
-            return False
-
-        zone_coordinates = geometry.get("coordinates")
         if not isinstance(zone_coordinates, list) or len(zone_coordinates) < 2:
             return False
-
-        appearance = properties.get("appearance", {})
-        if not isinstance(appearance, dict):
-            appearance = {}
-
-        object_radius_value = 0
-        zone_radius_value = appearance.get("radius", 0)
 
         try:
             obj_lon = float(object_coordinates[0])
             obj_lat = float(object_coordinates[1])
             zone_lon = float(zone_coordinates[0])
             zone_lat = float(zone_coordinates[1])
-            object_radius_m = max(0.0, float(object_radius_value) * 0.3)
+            object_radius_m = 0.0
             zone_radius_m = max(0.0, float(zone_radius_value) * 0.3)
         except (TypeError, ValueError):
             return False
 
         # Local azimuthal-equidistant CRS keeps distances in meters near the zone center.
-        local_crs = CRS.from_proj4(
-            f"+proj=aeqd +lat_0={zone_lat} +lon_0={zone_lon} +datum=WGS84 +units=m +no_defs"
-        )
-        transformer = Transformer.from_crs("EPSG:4326", local_crs, always_xy=True)
+        cache_key = (zone_lon, zone_lat)
+        if cache_key not in transformer_cache:
+            local_crs = CRS.from_proj4(
+                f"+proj=aeqd +lat_0={zone_lat} +lon_0={zone_lon} +datum=WGS84 +units=m +no_defs"
+            )
+            transformer_cache[cache_key] = Transformer.from_crs("EPSG:4326", local_crs, always_xy=True)
+        transformer = transformer_cache[cache_key]
 
         obj_x, obj_y = transformer.transform(obj_lon, obj_lat)
         zone_x, zone_y = transformer.transform(zone_lon, zone_lat)

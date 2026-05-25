@@ -2,6 +2,8 @@
 Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
 Allow triggers to assign targets reflexively targeting the object the triggered
 Debug console needs to show traits during a geo dump
+_sync_dirty_zone_borders_to_database should maybe be an ecs processor
+remove metaData and replace it with displayName
 
 
 # Dependencies
