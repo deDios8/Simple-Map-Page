@@ -176,11 +176,12 @@ class RemoveZoneEntryExit(esper.Processor):
         
     def process(self) -> None:
         for entity_id, entered in list(esper.get_component(ecs_geo_components.EnteredZones)):
+            entered_set = set(entered.zone_ids)
+
             # WithinZones: add entered zones
             within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             before_zones = set(within.zone_ids) if within else set()
-            within_zones = set(before_zones)
-            within_zones.update(entered.zone_ids)
+            within_zones = before_zones | entered_set
 
             esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
             if within_zones != before_zones:
@@ -189,10 +190,7 @@ class RemoveZoneEntryExit(esper.Processor):
             # NotWithinZones: remove entered zones
             not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
             if not_within is not None:
-                before_not = set(not_within.zone_ids)
-                not_within_zones = set(before_not)
-                not_within_zones.difference_update(entered.zone_ids)
-
+                not_within_zones = set(not_within.zone_ids) - entered_set
                 if not_within_zones:
                     esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
                 else:
@@ -207,12 +205,13 @@ class RemoveZoneEntryExit(esper.Processor):
                 pass
 
         for entity_id, exited in list(esper.get_component(ecs_geo_components.ExitedZones)):
+            exited_set = set(exited.zone_ids)
+
             # WithinZones: remove exited zones
             within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
             if within is not None:
                 before_zones = set(within.zone_ids)
-                within_zones = set(before_zones)
-                within_zones.difference_update(exited.zone_ids)
+                within_zones = before_zones - exited_set
 
                 if within_zones:
                     esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
@@ -227,9 +226,7 @@ class RemoveZoneEntryExit(esper.Processor):
 
             # NotWithinZones: add exited zones
             not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
-            before_not = set(not_within.zone_ids) if not_within else set()
-            not_within_zones = set(before_not)
-            not_within_zones.update(exited.zone_ids)
+            not_within_zones = (set(not_within.zone_ids) if not_within else set()) | exited_set
 
             esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
 
