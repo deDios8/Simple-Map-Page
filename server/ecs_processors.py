@@ -66,6 +66,7 @@ class CheckZoneEntryExit(esper.Processor):
                     continue
 
                 zone_radius = zone_appearance.radius if zone_appearance is not None else 0
+
                 if self.is_within_zone_intersect(
                     geometry.coordinates,
                     zone_geometry.coordinates,
@@ -113,8 +114,8 @@ class CheckZoneEntryExit(esper.Processor):
             obj_lat = float(object_coordinates[1])
             zone_lon = float(zone_coordinates[0])
             zone_lat = float(zone_coordinates[1])
-            object_radius_m = float(object_radius_value) * 0.3
-            zone_radius_m = float(zone_radius_value) * 0.3
+            object_radius_m = float(object_radius_value)
+            zone_radius_m = float(zone_radius_value)
         except (TypeError, ValueError):
             return False
 
@@ -147,7 +148,7 @@ class CheckZoneEntryExit(esper.Processor):
             zone_lon = float(zone_coordinates[0])
             zone_lat = float(zone_coordinates[1])
             object_radius_m = 0.0
-            zone_radius_m = max(0.0, float(zone_radius_value) * 0.3)
+            zone_radius_m = max(0.0, float(zone_radius_value))
         except (TypeError, ValueError):
             return False
 
@@ -182,9 +183,8 @@ class SyncZoneBordersToDatabase(esper.Processor):
 
 
     def process(self) -> None:
-        ss = self.session_state
-        geo_by_entity = {entity_id: key for key, entity_id in ss.GeoObjectEntityIds.items()}
-        req_by_entity = {entity_id: key for key, entity_id in ss.ClientRequestEntityIds.items()}
+        geo_by_entity = {entity_id: key for key, entity_id in self.session_state.GeoObjectEntityIds.items()}
+        req_by_entity = {entity_id: key for key, entity_id in self.session_state.ClientRequestEntityIds.items()}
 
         for entity_id, _ in list(esper.get_component(ecs_geo_components.ZoneBordersDirty)):
             geo_key = geo_by_entity.get(entity_id)
