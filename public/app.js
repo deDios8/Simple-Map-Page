@@ -8,52 +8,6 @@ import {
   update,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
-  authDomain: "geogm-simple-map.firebaseapp.com",
-  databaseURL: "https://geogm-simple-map-default-rtdb.firebaseio.com",
-  projectId: "geogm-simple-map",
-  storageBucket: "geogm-simple-map.firebasestorage.app",
-  messagingSenderId: "554186481304",
-  appId: "1:554186481304:web:35df4f22e9539a991b3aed"
-};
-
-const firebaseCollectionNode = "geoObjects";
-const firebaseClientRequestNode = "clientRequests";
-const firebaseEventCriteriaNode = "eventCriteria";
-const firebaseEventResultsNode = "eventResults";
-
-const state = {
-  version: "0.1.033",
-  updateLocationInterval: 10000,
-  // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  // mapLayerAttribution: "&copy; OpenStreetMap contributors",
-  mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  mapLayerAttribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-  map: null,
-  userMarker: null,
-  geoJsonLayer: null,
-  database: null,
-  firebaseReady: false,
-  objects: {},
-  selectedId: null,
-  userLocation: null,
-  userId: null,
-  userPass: null,
-  sessionName: "testBed",
-  trackingInterval: null,
-  listenerActive: true,
-  listenerUnsubscribe: null,
-  pendingUserSetup: false,
-  coordPickMode: false,
-  criteria: {},
-  selectedCriteriaId: null,
-  criteriaListenerUnsubscribe: null,
-  events: {},
-  selectedEventId: null,
-  eventListenerUnsubscribe: null,
-};
-
 const CRITERIA_COMPONENT_OPTIONS = [
   "CriteriaHasTags",
   "CriteriaIsWithin",
@@ -94,6 +48,52 @@ const RESULT_COMPONENT_FIELD_CONFIG = {
   ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
   ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
   ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+};
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
+  authDomain: "geogm-simple-map.firebaseapp.com",
+  databaseURL: "https://geogm-simple-map-default-rtdb.firebaseio.com",
+  projectId: "geogm-simple-map",
+  storageBucket: "geogm-simple-map.firebasestorage.app",
+  messagingSenderId: "554186481304",
+  appId: "1:554186481304:web:35df4f22e9539a991b3aed"
+};
+
+const firebaseGeoObjectsNode = "geoObjects";
+const firebaseClientRequestNode = "clientRequests";
+const firebaseEventCriteriaNode = "eventCriteria";
+const firebaseEventResultsNode = "eventResults";
+
+const state = {
+  version: "0.1.033",
+  updateLocationInterval: 10000,
+  // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  // mapLayerAttribution: "&copy; OpenStreetMap contributors",
+  mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  mapLayerAttribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+  map: null,
+  userMarker: null,
+  geoJsonLayer: null,
+  database: null,
+  firebaseReady: false,
+  objects: {},
+  selectedId: null,
+  userLocation: null,
+  userId: null,
+  userPass: null,
+  sessionName: "testBed",
+  trackingInterval: null,
+  listenerActive: true,
+  listenerUnsubscribe: null,
+  pendingUserSetup: false,
+  coordPickMode: false,
+  criteria: {},
+  selectedCriteriaId: null,
+  criteriaListenerUnsubscribe: null,
+  events: {},
+  selectedEventId: null,
+  eventListenerUnsubscribe: null,
 };
 
 
@@ -1802,7 +1802,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
+      targetPath: `${getFirebaseGeoObjectPath()}/${targetId}`,
     },
     properties: {
       formData,
@@ -1823,7 +1823,7 @@ async function submitDeletedObjectRequest(targetId) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebaseCollectionPath()}/${targetId}`,
+      targetPath: `${getFirebaseGeoObjectPath()}/${targetId}`,
     },
     successMessage: `Delete request for ${targetId} sent`,
   });
@@ -2139,8 +2139,8 @@ function normalizeSessionName(rawValue) {
   return withoutSlashes || "testBed";
 }
 
-function getFirebaseCollectionPath() {
-  return `${state.sessionName}/${firebaseCollectionNode}`;
+function getFirebaseGeoObjectPath() {
+  return `${state.sessionName}/${firebaseGeoObjectsNode}`;
 }
 
 function getFirebaseClientRequestPath() {
@@ -2157,7 +2157,7 @@ function resetObjectListener() {
     handleObjectSnapshot({});
   }
 
-  const objectRef = ref(state.database, getFirebaseCollectionPath());
+  const objectRef = ref(state.database, getFirebaseGeoObjectPath());
   state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
     if (state.listenerActive) {
       handleObjectSnapshot(snapshot.val() || {});
