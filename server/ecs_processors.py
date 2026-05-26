@@ -4,6 +4,7 @@ import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
+from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE
 
 
 class ApplyClientRequests(esper.Processor):
@@ -169,7 +170,31 @@ class CheckZoneEntryExit(esper.Processor):
 
         object_area = object_point.buffer(object_radius_m)
         return object_area.intersects(zone_area)
-    
+
+class SyncZoneBordersToDatabase(esper.Processor):
+    def __init__(self, session_state) -> None:
+        super().__init__()
+        self.session_state = session_state
+
+    def process(self) -> None:
+        ss = self.session_state
+        geo_by_entity = {entity_id: key for key, entity_id in ss.GeoObjectEntityIds.items()}
+        req_by_entity = {entity_id: key for key, entity_id in ss.ClientRequestEntityIds.items()}
+
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.ZoneBordersDirty)):
+            geo_key = geo_by_entity.get(entity_id)
+            req_key = req_by_entity.get(entity_id)
+
+            if geo_key is not None:
+                ss._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
+            elif req_key is not None:
+                ss._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
+
+            try:
+                esper.remove_component(entity_id, ecs_geo_components.ZoneBordersDirty)
+            except KeyError:
+                pass
+
 class RemoveZoneEntryExit(esper.Processor):
     def __init__(self) -> None:
         super().__init__()
