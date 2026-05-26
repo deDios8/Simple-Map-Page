@@ -183,18 +183,6 @@ class SessionState:
             except KeyError:
                 pass
 
-    def _find_geo_object_key_by_identifier(self, identifier: str) -> str | None:
-        if not identifier:
-            return None
-        if identifier in self.GeoObjectEntityIds:
-            return identifier
-
-        for key, entity_id in self.GeoObjectEntityIds.items():
-            id_component = esper.try_component(entity_id, ecs_geo_components.ID)
-            if id_component is not None and str(id_component.id) == identifier:
-                return key
-        return None
-
     def _extract_geo_key_from_target_path(self, target_path: str) -> str:
         if not isinstance(target_path, str):
             return ""
@@ -291,7 +279,7 @@ class SessionState:
             self._consume_client_request(request_entity_id)
             return
 
-        target_key = self._find_geo_object_key_by_identifier(requester_id) or requester_id
+        target_key = self._find_key_by_identifier(self.GeoObjectEntityIds, requester_id) or requester_id
         target_entity_id = self.GeoObjectEntityIds.get(target_key)
 
         if target_entity_id is None:
@@ -407,8 +395,8 @@ class SessionState:
             return
 
         target_key = (
-            self._find_geo_object_key_by_identifier(edited.target_id)
-            or self._find_geo_object_key_by_identifier(self._extract_geo_key_from_target_path(edited.target_path))
+            self._find_key_by_identifier(self.GeoObjectEntityIds, edited.target_id)
+            or self._find_key_by_identifier(self.GeoObjectEntityIds, self._extract_geo_key_from_target_path(edited.target_path))
         )
         if target_key is None:
             self._consume_client_request(request_entity_id)
@@ -504,14 +492,14 @@ class SessionState:
             return
 
         target_key = (
-            self._find_geo_object_key_by_identifier(deleted.target_id)
-            or self._find_geo_object_key_by_identifier(self._extract_geo_key_from_target_path(deleted.target_path))
+            self._find_key_by_identifier(self.GeoObjectEntityIds, deleted.target_id)
+            or self._find_key_by_identifier(self.GeoObjectEntityIds, self._extract_geo_key_from_target_path(deleted.target_path))
         )
         if target_key is None:
             self._consume_client_request(request_entity_id)
             return
 
-        self._delete_geo_object_entity(target_key)
+        self._delete_tracked_entity(self.GeoObjectEntityIds, self.GeoObjects, target_key)
         delete_db_entry(
             self.database_url,
             self.session_name,
@@ -658,26 +646,47 @@ class SessionState:
         self._apply_zone_borders_from_properties(existing_entity_id, props)
         return existing_entity_id
 
-    def _delete_geo_object_entity(self, key: str) -> int | None:
-        entity_id = self.GeoObjectEntityIds.pop(key, None)
-        self.GeoObjects.pop(key, None)
+    def _find_key_by_identifier(self, entity_ids: dict, identifier: str) -> str | None:
+        if not identifier:
+            return None
+        if identifier in entity_ids:
+            return identifier
+        for key, entity_id in entity_ids.items():
+            id_component = esper.try_component(entity_id, ecs_geo_components.ID)
+            if id_component is not None and str(id_component.id) == identifier:
+                return key
+        return None
+
+    def _delete_tracked_entity(self, entity_ids: dict, entity_dict: dict, key: str) -> int | None:
+        entity_id = entity_ids.pop(key, None)
+        entity_dict.pop(key, None)
         if entity_id is not None:
             esper.delete_entity(entity_id)
         return entity_id
 
-    def _delete_client_request_entity(self, key: str) -> int | None:
-        entity_id = self.ClientRequestEntityIds.pop(key, None)
-        self.ClientRequests.pop(key, None)
-        if entity_id is not None:
-            esper.delete_entity(entity_id)
-        return entity_id
+    def _apply_deleted_request(
+        self,
+        request_entity_id: int,
+        deleted_component_type: type,
+        entity_ids: dict,
+        entity_dict: dict,
+        node: str,
+    ) -> None:
+        deleted = esper.try_component(request_entity_id, deleted_component_type)
+        if deleted is None:
+            self._consume_client_request(request_entity_id)
+            return
 
+        target_key = self._find_key_by_identifier(entity_ids, deleted.target_id)
+        if target_key is None:
+            self._consume_client_request(request_entity_id)
+            return
 
-    # ---------------------------------------------------------------------------
-    # Criteria and Event entity management
-    # ---------------------------------------------------------------------------
+        self._delete_tracked_entity(entity_ids, entity_dict, target_key)
+        delete_db_entry(self.database_url, self.session_name, target_key, node=node)
+        self._consume_client_request(request_entity_id)
 
-
+    ## Criteria management
     def _sync_criteria_components(self, entity_id: int, criteria_components: dict) -> None:
         """Remove all existing criteria ECS components and re-add from criteria_components dict."""
         for comp_type in list(_CRITERIA_TAGS_COMPONENT_MAP.values()) + list(_CRITERIA_BOOL_COMPONENT_MAP.values()):
@@ -722,24 +731,6 @@ class SessionState:
 
         self._sync_criteria_components(existing_entity_id, entry.criteria_components)
         return existing_entity_id
-
-    def _delete_tracked_entity(self, entity_ids: dict, entity_dict: dict, key: str) -> int | None:
-        entity_id = entity_ids.pop(key, None)
-        entity_dict.pop(key, None)
-        if entity_id is not None:
-            esper.delete_entity(entity_id)
-        return entity_id
-
-    def _find_key_by_identifier(self, entity_ids: dict, identifier: str) -> str | None:
-        if not identifier:
-            return None
-        if identifier in entity_ids:
-            return identifier
-        for key, entity_id in entity_ids.items():
-            id_component = esper.try_component(entity_id, ecs_geo_components.ID)
-            if id_component is not None and str(id_component.id) == identifier:
-                return key
-        return None
 
     def apply_add_criteria_request(self, request_entity_id: int) -> None:
         request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
@@ -833,28 +824,6 @@ class SessionState:
 
         self._consume_client_request(request_entity_id)
 
-    def _apply_deleted_request(
-        self,
-        request_entity_id: int,
-        deleted_component_type: type,
-        entity_ids: dict,
-        entity_dict: dict,
-        node: str,
-    ) -> None:
-        deleted = esper.try_component(request_entity_id, deleted_component_type)
-        if deleted is None:
-            self._consume_client_request(request_entity_id)
-            return
-
-        target_key = self._find_key_by_identifier(entity_ids, deleted.target_id)
-        if target_key is None:
-            self._consume_client_request(request_entity_id)
-            return
-
-        self._delete_tracked_entity(entity_ids, entity_dict, target_key)
-        delete_db_entry(self.database_url, self.session_name, target_key, node=node)
-        self._consume_client_request(request_entity_id)
-
     def apply_deleted_criteria_request(self, request_entity_id: int) -> None:
         self._apply_deleted_request(
             request_entity_id,
@@ -864,6 +833,7 @@ class SessionState:
             EVENT_CRITERIA_NODE,
         )
 
+    ## Event management
     def _sync_event_result_components(self, entity_id: int, result_components: dict) -> None:
         """Remove all existing result ECS components and re-add from result_components dict."""
         for comp_type in _EVENT_RESULT_COMPONENT_MAP.values():
@@ -1058,11 +1028,7 @@ class SessionState:
         )
 
 
-    # ---------------------------------------------------------------------------
-    # DB maintenance loop and ECS processing
-    # ---------------------------------------------------------------------------
-
-
+    ## DB maintenance loop and ECS processing
     def run_db_and_ecs_processor(self) -> None:
         self.stream.start()
         self.debug.start()
@@ -1122,17 +1088,17 @@ class SessionState:
                             self._upsert_geo_object_entity(change.key, change.feature)
                     elif change.action == "delete":
                         if change.stream_name == CLIENT_REQUESTS_NODE:
-                            self._delete_client_request_entity(change.key)
+                            self._delete_tracked_entity(self.ClientRequestEntityIds, self.ClientRequests, change.key)
                         elif change.stream_name == GEO_OBJECTS_NODE:
-                            self._delete_geo_object_entity(change.key)
+                            self._delete_tracked_entity(self.GeoObjectEntityIds, self.GeoObjects, change.key)
                         elif change.stream_name == EVENT_CRITERIA_NODE:
                             self._delete_tracked_entity(self.EventCriteriaEntityIds, self.EventCriteria, change.key)
                         elif change.stream_name == EVENT_RESULTS_NODE:
                             self._delete_tracked_entity(self.EventResultEntityIds, self.EventResults, change.key)
                         elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
-                            self._delete_client_request_entity(change.key)
+                            self._delete_tracked_entity(self.ClientRequestEntityIds, self.ClientRequests, change.key)
                         else:
-                            self._delete_geo_object_entity(change.key)
+                            self._delete_tracked_entity(self.GeoObjectEntityIds, self.GeoObjects, change.key)
                     try:
                         change = self.stream.event_queue.get_nowait()
                     except queue.Empty:
@@ -1142,6 +1108,11 @@ class SessionState:
                 self.stream.stop()
                 print("\nStopped listener.")
                 return
+
+
+    # ---------------------------------------------------------------------------
+    ## Main SessionState setup and processors
+    # ---------------------------------------------------------------------------
 
 
 def main() -> None:
