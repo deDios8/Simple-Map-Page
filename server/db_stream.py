@@ -149,7 +149,7 @@ class SyncChange:
 
 
 # ---------------------------------------------------------------------------
-# Normalization helpers
+# Snapshot fetching and normalization helpers
 # ---------------------------------------------------------------------------
 
 
@@ -227,10 +227,6 @@ def _normalize_objects(raw: Any) -> dict[str, dict[str, Any]]:
         return result
     return {}
 
-
-# ---------------------------------------------------------------------------
-# Snapshot fetching
-# ---------------------------------------------------------------------------
 
 def fetch_node(database_url: str, session_name: str, node: str) -> dict[str, dict[str, Any]]:
     url = build_node_url(database_url, session_name, node)
@@ -433,7 +429,7 @@ def delete_db_entry(
 
 
 # ---------------------------------------------------------------------------
-# Low-level SSE stream iterator
+# Listener thread managers and stream worker
 # ---------------------------------------------------------------------------
 
 
@@ -477,11 +473,6 @@ def _iter_stream_from_url(url: str):
                 data_lines.append(line.split(":", 1)[1].strip())
 
 
-# ---------------------------------------------------------------------------
-# Background stream worker
-# ---------------------------------------------------------------------------
-
-
 def _run_stream_worker(
     database_url: str,
     session_name: str,
@@ -522,11 +513,6 @@ def _run_stream_worker(
             print(f"[WARN] {stream_name} stream disconnected: {error}")
             print(f"[INFO] Reconnecting {stream_name} in 2 seconds...")
             time.sleep(2)
-
-
-# ---------------------------------------------------------------------------
-# DatabaseStream — manages the clientRequests listener thread
-# ---------------------------------------------------------------------------
 
 
 class DatabaseStream:
