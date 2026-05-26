@@ -4,7 +4,7 @@ import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
-from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE
+from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE, patch_db_entry, normalize_string_list
 
 
 class ApplyClientRequests(esper.Processor):
@@ -175,6 +175,8 @@ class SyncZoneBordersToDatabase(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
+        self._zone_borders_cache: dict[tuple[str, str], dict | None] = {}
+
 
     def process(self) -> None:
         ss = self.session_state
@@ -186,14 +188,46 @@ class SyncZoneBordersToDatabase(esper.Processor):
             req_key = req_by_entity.get(entity_id)
 
             if geo_key is not None:
-                ss._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
+                self._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
             elif req_key is not None:
-                ss._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
+                self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
 
             try:
                 esper.remove_component(entity_id, ecs_geo_components.ZoneBordersDirty)
             except KeyError:
                 pass
+
+    def _patch_zone_borders(self, node: str, key: str, entity_id: int) -> None:
+        payload = self._build_zone_borders_payload(entity_id)
+        cache_key = (node, key)
+        if self._zone_borders_cache.get(cache_key) == payload:
+            return
+        patch_db_entry(
+            self.session_state.database_url,
+            self.session_state.session_name,
+            key,
+            {"properties/zoneBorders": payload},
+            node=node,
+        )
+        self._zone_borders_cache[cache_key] = payload
+
+    def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
+        zone_borders: dict[str, dict[str, list[str]]] = {}
+
+        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
+        if within is not None:
+            zone_borders["withinZones"] = {"zone_ids": normalize_string_list(within.zone_ids)}
+
+        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
+        if entered is not None:
+            zone_borders["enteredZones"] = {"zone_ids": normalize_string_list(entered.zone_ids)}
+
+        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
+        if exited is not None:
+            zone_borders["exitedZones"] = {"zone_ids": normalize_string_list(exited.zone_ids)}
+
+        return zone_borders or None
+
 
 class RemoveZoneEntryExit(esper.Processor):
     def __init__(self) -> None:

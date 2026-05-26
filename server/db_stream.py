@@ -88,75 +88,6 @@ class ClientRequestEntry(DBEntry):
         self.form_data = self.properties.get("formData", {}) if isinstance(self.properties.get("formData"), dict) else {}
 
 
-def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
-    if not isinstance(properties, dict):
-        return {}
-    stats_value = properties.get("stats")
-    if isinstance(stats_value, dict):
-        normalized_stats: dict[str, dict[str, Any]] = {}
-        for key, raw_stat in stats_value.items():
-            if not isinstance(raw_stat, dict):
-                continue
-            stat_key = str(key).strip() or str(raw_stat.get("name", "")).strip()
-            if not stat_key:
-                continue
-            normalized_stats[stat_key] = {
-                "name": str(raw_stat.get("name", "") or ""),
-                "value": raw_stat.get("value", 0),
-                "max_value": raw_stat.get("max_value", 100),
-                "min_value": raw_stat.get("min_value", 0),
-            }
-        if normalized_stats:
-            return normalized_stats
-
-    return {}
-
-
-
-def to_bool(value: object, fallback: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "y", "on"}:
-            return True
-        if normalized in {"false", "0", "no", "n", "off", ""}:
-            return False
-    if isinstance(value, (int, float)):
-        return value != 0
-    return fallback
-
-
-def normalize_visible(value: object) -> list[str]:
-    """Normalize a ``visible`` field to a list of permission-key strings.
-
-    Each string in the list is a stat *name* value; a geo object is rendered
-    for the current user only when the user's own geo object has at least one
-    stat whose ``name`` field matches (case-insensitively) one of the entries.
-    """
-    if isinstance(value, list):
-        return [str(s) for s in value if isinstance(s, str) and s.strip()]
-    if isinstance(value, str) and value.strip():
-        return [s.strip() for s in value.split(",") if s.strip()]
-    return []
-
-
-def normalize_traits(value: object) -> list[str]:
-    """Normalize a ``traits`` field to a list of trait strings."""
-    if isinstance(value, list):
-        return [str(s) for s in value if isinstance(s, str) and s.strip()]
-    if isinstance(value, str) and value.strip():
-        return [s.strip() for s in value.split(",") if s.strip()]
-    return []
-
-
-def to_float(value: object, fallback: float) -> float:
-    try:
-        return float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return fallback
-
-
 class GeoObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
@@ -164,13 +95,13 @@ class GeoObjectEntry(DBEntry):
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
-        self.visible = normalize_visible(self.appearance.get("visible", [])) if isinstance(self.appearance, dict) else []
+        self.visible = normalize_string_list(self.appearance.get("visible", [])) if isinstance(self.appearance, dict) else []
 
         self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
         
         self.stats = normalize_stats(self.properties)
 
-        self.traits = normalize_traits(self.properties.get("traits", []))
+        self.traits = normalize_string_list(self.properties.get("traits", []))
 
         self.data = self.properties.get("data", {})
 
@@ -248,8 +179,65 @@ def build_event_results_url(database_url: str, session_name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Snapshot fetching
+# Normalization helpers
 # ---------------------------------------------------------------------------
+
+
+def to_float(value: object, fallback: float) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return fallback
+
+
+def to_bool(value: object, fallback: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off", ""}:
+            return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    return fallback
+
+
+def normalize_string_list(value: object) -> list[str]:
+    """Normalize a field to a list of non-empty strings.
+
+    Accepts a list of strings or a comma-separated string.
+    """
+    if isinstance(value, list):
+        return [str(s) for s in value if isinstance(s, str) and s.strip()]
+    if isinstance(value, str) and value.strip():
+        return [s.strip() for s in value.split(",") if s.strip()]
+    return []
+
+
+def normalize_stats(properties: Any) -> dict[str, dict[str, Any]]:
+    if not isinstance(properties, dict):
+        return {}
+    stats_value = properties.get("stats")
+    if isinstance(stats_value, dict):
+        normalized_stats: dict[str, dict[str, Any]] = {}
+        for key, raw_stat in stats_value.items():
+            if not isinstance(raw_stat, dict):
+                continue
+            stat_key = str(key).strip() or str(raw_stat.get("name", "")).strip()
+            if not stat_key:
+                continue
+            normalized_stats[stat_key] = {
+                "name": str(raw_stat.get("name", "") or ""),
+                "value": raw_stat.get("value", 0),
+                "max_value": raw_stat.get("max_value", 100),
+                "min_value": raw_stat.get("min_value", 0),
+            }
+        if normalized_stats:
+            return normalized_stats
+
+    return {}
 
 
 def _normalize_objects(raw: Any) -> dict[str, dict[str, Any]]:
@@ -269,6 +257,10 @@ def _normalize_objects(raw: Any) -> dict[str, dict[str, Any]]:
         return result
     return {}
 
+
+# ---------------------------------------------------------------------------
+# Snapshot fetching
+# ---------------------------------------------------------------------------
 
 def _fetch_snapshot(url: str) -> dict[str, dict[str, Any]]:
     try:

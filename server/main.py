@@ -33,9 +33,8 @@ from db_stream import (
     put_db_entry,
     patch_db_entry,
     delete_db_entry,
+    normalize_string_list,
     normalize_stats,
-    normalize_visible,
-    normalize_traits,
     to_float, )
 
 
@@ -86,7 +85,6 @@ class SessionState:
         self.EventCriteriaEntityIds: dict[str, int] = {}
         self.EventResults: dict[str, ecs_event_components.Event] = {}
         self.EventResultEntityIds: dict[str, int] = {}
-        self._zone_borders_cache: dict[tuple[str, str], dict | None] = {}
 
         self.stream = DatabaseStream(self.database_url, self.session_name)
         self.debug = SessionDebugConsole(self)
@@ -94,11 +92,6 @@ class SessionState:
 
     def _random_string(self, length: int = 2) -> str:
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-
-    def _normalize_zone_ids(self, zone_ids: object) -> list[str]:
-        if not isinstance(zone_ids, list):
-            return []
-        return [str(z) for z in zone_ids if z is not None]
 
     def _sync_zone_component_from_payload(
         self,
@@ -108,7 +101,7 @@ class SessionState:
         component_type: type,
     ) -> None:
         entry = payload.get(payload_key)
-        zone_ids = self._normalize_zone_ids(entry.get("zone_ids")) if isinstance(entry, dict) else None
+        zone_ids = normalize_string_list(entry.get("zone_ids")) if isinstance(entry, dict) else None
         if zone_ids is None:
             try:
                 esper.remove_component(entity_id, component_type)
@@ -154,7 +147,7 @@ class SessionState:
 
     def _sync_traits_component(self, entity_id: int, props: object) -> list[str]:
         traits_value = props.get("traits", []) if isinstance(props, dict) else []
-        normalized_traits = normalize_traits(traits_value)
+        normalized_traits = normalize_string_list(traits_value)
         traits_component = esper.try_component(entity_id, ecs_geo_components.Traits)
         if normalized_traits:
             if traits_component is None:
@@ -165,37 +158,6 @@ class SessionState:
             esper.remove_component(entity_id, ecs_geo_components.Traits)
 
         return normalized_traits
-
-    def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
-        zone_borders: dict[str, dict[str, list[str]]] = {}
-
-        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
-        if within is not None:
-            zone_borders["withinZones"] = {"zone_ids": self._normalize_zone_ids(within.zone_ids)}
-
-        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
-        if entered is not None:
-            zone_borders["enteredZones"] = {"zone_ids": self._normalize_zone_ids(entered.zone_ids)}
-
-        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
-        if exited is not None:
-            zone_borders["exitedZones"] = {"zone_ids": self._normalize_zone_ids(exited.zone_ids)}
-
-        return zone_borders or None
-
-    def _patch_zone_borders(self, node: str, key: str, entity_id: int) -> None:
-        payload = self._build_zone_borders_payload(entity_id)
-        cache_key = (node, key)
-        if self._zone_borders_cache.get(cache_key) == payload:
-            return
-        patch_db_entry(
-            self.database_url,
-            self.session_name,
-            key,
-            {"properties/zoneBorders": payload},
-            node=node,
-        )
-        self._zone_borders_cache[cache_key] = payload
 
     def _initialize_from_snapshot(self) -> None:
         geo_objects = fetch_geo_objects(self.database_url, self.session_name)
@@ -482,12 +444,12 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        appearance_visible = normalize_visible(form_data.get("visible")) if "visible" in form_data else appearance.visible
+        appearance_visible = normalize_string_list(form_data.get("visible")) if "visible" in form_data else appearance.visible
         appearance.visible = appearance_visible
 
         traits_component = esper.try_component(target_entity_id, ecs_geo_components.Traits)
         current_traits = traits_component.traits if traits_component is not None else []
-        next_traits = normalize_traits(form_data.get("traits")) if "traits" in form_data else current_traits
+        next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else current_traits
         self._sync_traits_component(target_entity_id, {"traits": next_traits})
 
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
@@ -603,7 +565,7 @@ class SessionState:
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
-        appearance.visible = normalize_visible(appearance_data.get("visible", []))
+        appearance.visible = normalize_string_list(appearance_data.get("visible", []))
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
