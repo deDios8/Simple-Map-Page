@@ -1164,7 +1164,7 @@ def main() -> None:
     session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
     esper.add_processor(ecs_processors.ApplyClientRequests(session_state), priority=100)
-    esper.add_processor(ecs_processors.CheckZoneEntryExit(), priority=95)
+    esper.add_processor(ecs_processors.CheckZoneEntryExit(session_state), priority=95)
     esper.add_processor(ecs_processors.CriteriaProcessor(session_state), priority=90)
     esper.add_processor(ecs_processors.EventProcessor(session_state), priority=80)
     esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=10)
