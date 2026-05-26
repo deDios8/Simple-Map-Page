@@ -1,13 +1,5 @@
-"""Firebase RTDB stream initialization and local-dict synchronization.
-
-Responsibilities:
-- Dataclasses and feature models (DBEntry, ClientRequestEntry, StreamEvent, SyncChange)
-- URL construction helpers
-- Snapshot fetching and normalization
-- Stream event parsing and application
-- Feature index building and diffing
-- Background stream worker thread
-- DatabaseStream class: manages the clientRequests listener and exposes a change queue
+"""
+Firebase RTDB stream initialization and local-dict synchronization.
 """
 
 import json
@@ -19,7 +11,6 @@ from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
-
 
 CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaHasTags",
@@ -54,6 +45,7 @@ CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
 EVENT_CRITERIA_NODE = "eventCriteria"
 EVENT_RESULTS_NODE = "eventResults"
 
+
 def build_node_url(database_url: str, *path_segments: str) -> str:
     """Build a Firebase REST URL from path segments, appending .json."""
     base = database_url.rstrip("/")
@@ -62,7 +54,7 @@ def build_node_url(database_url: str, *path_segments: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Data models
+# Dataclasses and feature models 
 # ---------------------------------------------------------------------------
 
 
@@ -431,7 +423,8 @@ def patch_db_entry(
         response.read()
 
 
-def delete_db_entry(database_url: str, session_name: str, key: str, node: str = GEO_OBJECTS_NODE) -> None:
+def delete_db_entry(
+    database_url: str, session_name: str, key: str, node: str = GEO_OBJECTS_NODE) -> None:
     """Delete a geoObject entry by key."""
     url = build_node_url(database_url, session_name, node, key)
     req = Request(url, method="DELETE")
@@ -560,9 +553,9 @@ class DatabaseStream:
     def start(self) -> None:
         _streams = [
             (CLIENT_REQUESTS_NODE, self.request_state,       self.request_index,       ClientRequestEntry, "_client_request_thread"),
-            (GEO_OBJECTS_NODE,     self.geo_object_state,    self.geo_object_index,    GeoObjectEntry,     "_geo_object_thread"),
-            (EVENT_CRITERIA_NODE,  self.criteria_state,      self.criteria_index,      CriteriaEntry,      "_criteria_thread"),
-            (EVENT_RESULTS_NODE,   self.event_results_state, self.event_results_index, EventResultEntry,   "_event_results_thread"),
+            # (GEO_OBJECTS_NODE,     self.geo_object_state,    self.geo_object_index,    GeoObjectEntry,     "_geo_object_thread"),
+            # (EVENT_CRITERIA_NODE,  self.criteria_state,      self.criteria_index,      CriteriaEntry,      "_criteria_thread"),
+            # (EVENT_RESULTS_NODE,   self.event_results_state, self.event_results_index, EventResultEntry,   "_event_results_thread"),
         ]
         for node, state, index, factory, attr in _streams:
             fetch_fn = lambda db, session, n=node: fetch_node(db, session, n)

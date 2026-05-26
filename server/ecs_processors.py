@@ -43,6 +43,7 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedEvent)):
             self.session_state.apply_deleted_event_request(entity_id)
 
+
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self) -> None:
         super().__init__()
@@ -171,6 +172,7 @@ class CheckZoneEntryExit(esper.Processor):
         object_area = object_point.buffer(object_radius_m)
         return object_area.intersects(zone_area)
 
+
 class SyncZoneBordersToDatabase(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
@@ -294,6 +296,7 @@ class RemoveZoneEntryExit(esper.Processor):
             except KeyError:
                 pass
 
+
 class CriteriaProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
@@ -379,6 +382,7 @@ class CriteriaProcessor(esper.Processor):
     def _check_first_entered(self, geo_eid: int, component: ecs_event_components.CriteriaFirstEntered) -> bool:
         # TODO: implement
         return False
+    
     
 class EventProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
