@@ -162,21 +162,6 @@ def build_node_url(database_url: str, *path_segments: str) -> str:
     return f"{base}/{encoded}.json"
 
 
-def build_client_requests_url(database_url: str, session_name: str) -> str:
-    return build_node_url(database_url, session_name, CLIENT_REQUESTS_NODE)
-
-
-def build_geo_objects_url(database_url: str, session_name: str) -> str:
-    return build_node_url(database_url, session_name, GEO_OBJECTS_NODE)
-
-
-def build_event_criteria_url(database_url: str, session_name: str) -> str:
-    return build_node_url(database_url, session_name, EVENT_CRITERIA_NODE)
-
-
-def build_event_results_url(database_url: str, session_name: str) -> str:
-    return build_node_url(database_url, session_name, EVENT_RESULTS_NODE)
-
 
 # ---------------------------------------------------------------------------
 # Normalization helpers
@@ -280,19 +265,19 @@ def _fetch_snapshot(url: str) -> dict[str, dict[str, Any]]:
 
 
 def fetch_client_requests(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_client_requests_url(database_url, session_name))
+    return _fetch_snapshot(build_node_url(database_url, session_name, CLIENT_REQUESTS_NODE))
 
 
 def fetch_geo_objects(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_geo_objects_url(database_url, session_name))
+    return _fetch_snapshot(build_node_url(database_url, session_name, GEO_OBJECTS_NODE))
 
 
 def fetch_event_criteria(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_event_criteria_url(database_url, session_name))
+    return _fetch_snapshot(build_node_url(database_url, session_name, EVENT_CRITERIA_NODE))
 
 
 def fetch_event_results(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_event_results_url(database_url, session_name))
+    return _fetch_snapshot(build_node_url(database_url, session_name, EVENT_RESULTS_NODE))
 
 
 # ---------------------------------------------------------------------------
@@ -596,16 +581,16 @@ class DatabaseStream:
 
     def start(self) -> None:
         def _iter_client_requests(db: str, session: str):
-            yield from _iter_stream_from_url(build_client_requests_url(db, session))
+            yield from _iter_stream_from_url(build_node_url(db, session, CLIENT_REQUESTS_NODE))
 
         def _iter_geo_objects(db: str, session: str):
-            yield from _iter_stream_from_url(build_geo_objects_url(db, session))
+            yield from _iter_stream_from_url(build_node_url(db, session, GEO_OBJECTS_NODE))
 
         def _iter_event_criteria(db: str, session: str):
-            yield from _iter_stream_from_url(build_event_criteria_url(db, session))
+            yield from _iter_stream_from_url(build_node_url(db, session, EVENT_CRITERIA_NODE))
 
         def _iter_event_results(db: str, session: str):
-            yield from _iter_stream_from_url(build_event_results_url(db, session))
+            yield from _iter_stream_from_url(build_node_url(db, session, EVENT_RESULTS_NODE))
 
         self._client_request_thread = threading.Thread(
             target=_run_stream_worker,
