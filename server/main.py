@@ -355,10 +355,7 @@ class SessionState:
                 },
                 "properties": {
                     "id": requester_id,
-                    "metaData": {
-                        "name": requester_id,
-                        "description": "Live user location.",
-                    },
+                    "displayName": requester_id,
                     "appearance": {
                         "color": "#000000",
                         "visible": ["USER"],
@@ -434,10 +431,7 @@ class SessionState:
             },
             "properties": {
                 "id": new_object_key,
-                "metaData": {
-                    "name": f"{new_object_key}",
-                    "description": f"Added by {requester_id}.",
-                },
+                "displayName": f"{new_object_key}",
                 "appearance": {
                     "color": "#0b8f87",
                     "visible": ["USER"],
@@ -479,12 +473,11 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        metadata = esper.component_for_entity(target_entity_id, ecs_geo_components.MetaData)
+        display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
         appearance = esper.component_for_entity(target_entity_id, ecs_geo_components.Appearance)
         geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
 
-        metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
-        metadata.description = str(form_data.get("description", metadata.description) or metadata.description)
+        display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
@@ -518,8 +511,7 @@ class SessionState:
             target_key,
             {
                 "geometry/coordinates": [lon, lat],
-                "properties/metaData/name": metadata.name,
-                "properties/metaData/description": metadata.description,
+                "properties/displayName": display_name_comp.display_name,
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
                 "properties/appearance/visible": appearance_visible,
@@ -542,10 +534,7 @@ class SessionState:
                 geo["coordinates"] = [lon, lat]
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
-                meta = props.setdefault("metaData", {})
-                if isinstance(meta, dict):
-                    meta["name"] = metadata.name
-                    meta["description"] = metadata.description
+                props["displayName"] = display_name_comp.display_name
                 appr = props.setdefault("appearance", {})
                 if isinstance(appr, dict):
                     appr["color"] = appearance.color
@@ -606,10 +595,8 @@ class SessionState:
         id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
         id_component.id = props.get("id", geo_object.id or key)
 
-        metadata = esper.component_for_entity(existing_entity_id, ecs_geo_components.MetaData)
-        meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
-        metadata.name = meta_data.get("name", "")
-        metadata.description = meta_data.get("description", "")
+        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp.display_name = props.get("displayName", "")
 
         appearance = esper.component_for_entity(existing_entity_id, ecs_geo_components.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
@@ -768,7 +755,6 @@ class SessionState:
             criteria = ecs_event_components.Criteria(
                 id=entry.id or key,
                 name=entry.name,
-                description=entry.description,
             )
             self.EventCriteria[key] = criteria
             self.EventCriteriaEntityIds[key] = criteria.entity_id
@@ -780,10 +766,8 @@ class SessionState:
         id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
         id_component.id = props.get("id", entry.id or key)
 
-        metadata = esper.component_for_entity(existing_entity_id, ecs_geo_components.MetaData)
-        meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
-        metadata.name = meta_data.get("name", "")
-        metadata.description = meta_data.get("description", "")
+        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp.display_name = props.get("displayName", "")
 
         self._sync_criteria_components(existing_entity_id, entry.criteria_components)
         return existing_entity_id
@@ -826,10 +810,7 @@ class SessionState:
             "geometry": None,
             "properties": {
                 "id": new_key,
-                "metaData": {
-                    "name": new_key,
-                    "description": "",
-                },
+                "displayName": new_key,
                 "ObjectsThatMetAllCriteria": {"object_ids": []},
                 "ObjectsThatMetAnyCriteria": {"object_ids": []},
             },
@@ -863,9 +844,8 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        metadata = esper.component_for_entity(target_entity_id, ecs_geo_components.MetaData)
-        metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
-        metadata.description = str(form_data.get("description", "") or "")
+        display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
         criteria_components = form_data.get("criteriaComponents", {})
         if not isinstance(criteria_components, dict):
@@ -875,8 +855,7 @@ class SessionState:
 
         # Build patch: null out all known criteria components, then set the ones present
         patch_data: dict = {
-            "properties/metaData/name": metadata.name,
-            "properties/metaData/description": metadata.description,
+            "properties/displayName": display_name_comp.display_name,
         }
         for comp_name in CRITERIA_COMPONENT_NAMES:
             patch_data[f"properties/{comp_name}"] = criteria_components.get(comp_name)  # None removes it
@@ -894,10 +873,7 @@ class SessionState:
         if isinstance(stream_obj, dict):
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
-                meta = props.setdefault("metaData", {})
-                if isinstance(meta, dict):
-                    meta["name"] = metadata.name
-                    meta["description"] = metadata.description
+                props["displayName"] = display_name_comp.display_name
                 for comp_name in CRITERIA_COMPONENT_NAMES:
                     props.pop(comp_name, None)
                 for comp_name, comp_data in criteria_components.items():
@@ -978,7 +954,6 @@ class SessionState:
             event = ecs_event_components.Event(
                 id=entry.id or key,
                 name=entry.name,
-                description=entry.description,
             )
             self.EventResults[key] = event
             self.EventResultEntityIds[key] = event.entity_id
@@ -994,10 +969,8 @@ class SessionState:
         id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
         id_component.id = props.get("id", entry.id or key)
 
-        metadata = esper.component_for_entity(existing_entity_id, ecs_geo_components.MetaData)
-        meta_data = props.get("metaData", {}) if isinstance(props.get("metaData"), dict) else {}
-        metadata.name = meta_data.get("name", "")
-        metadata.description = meta_data.get("description", "")
+        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp.display_name = props.get("displayName", "")
 
         trigger_comp = esper.component_for_entity(existing_entity_id, ecs_event_components.EventTriggerNames)
         trigger_comp.criteria_ids = entry.trigger_names
@@ -1045,10 +1018,7 @@ class SessionState:
             "geometry": None,
             "properties": {
                 "id": new_key,
-                "metaData": {
-                    "name": new_key,
-                    "description": "",
-                },
+                "displayName": new_key,
                 "EventTriggerNames": {"criteria_ids": []},
                 "EventTargetNames": {"criteria_ids": []},
                 "Results": {},
@@ -1083,9 +1053,8 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        metadata = esper.component_for_entity(target_entity_id, ecs_geo_components.MetaData)
-        metadata.name = str(form_data.get("name", metadata.name) or metadata.name)
-        metadata.description = str(form_data.get("description", "") or "")
+        display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
         trigger_names = form_data.get("triggerNames", [])
         if not isinstance(trigger_names, list):
@@ -1106,8 +1075,7 @@ class SessionState:
         self._sync_event_result_components(target_entity_id, result_components)
 
         patch_data: dict = {
-            "properties/metaData/name": metadata.name,
-            "properties/metaData/description": metadata.description,
+            "properties/displayName": display_name_comp.display_name,
             "properties/EventTriggerNames/criteria_ids": trigger_names,
             "properties/EventTargetNames/criteria_ids": target_names,
         }
@@ -1127,10 +1095,7 @@ class SessionState:
         if isinstance(stream_obj, dict):
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
-                meta = props.setdefault("metaData", {})
-                if isinstance(meta, dict):
-                    meta["name"] = metadata.name
-                    meta["description"] = metadata.description
+                props["displayName"] = display_name_comp.display_name
                 props["EventTriggerNames"] = {"criteria_ids": trigger_names}
                 props["EventTargetNames"] = {"criteria_ids": target_names}
                 results = props.setdefault("Results", {})

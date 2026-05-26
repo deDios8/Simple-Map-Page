@@ -113,7 +113,7 @@ class SessionDebugConsole:
 
     def _print_world_stats(self) -> None:
         id_count = len(list(esper.get_component(ecs_geo_components.ID)))
-        metadata_count = len(list(esper.get_component(ecs_geo_components.MetaData)))
+        display_name_count = len(list(esper.get_component(ecs_geo_components.DisplayName)))
         appearance_count = len(list(esper.get_component(ecs_geo_components.Appearance)))
         geometry_count = len(list(esper.get_component(ecs_geo_components.Geometry)))
         request_count = len(list(esper.get_component(ecs_geo_components.ClientRequestPayload)))
@@ -127,7 +127,7 @@ class SessionDebugConsole:
         print(
             "[DEBUG][world] "
             f"entities={len(all_entities)} "
-            f"id={id_count} meta={metadata_count} appearance={appearance_count} geometry={geometry_count} "
+            f"id={id_count} display_name={display_name_count} appearance={appearance_count} geometry={geometry_count} "
             f"requestParameters={request_count}"
         )
 
@@ -155,7 +155,7 @@ class SessionDebugConsole:
         if entity_id is None:
             return False
         id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
-        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
         appearance = esper.component_for_entity(entity_id, ecs_geo_components.Appearance)
         geometry = esper.component_for_entity(entity_id, ecs_geo_components.Geometry)
         traits = esper.try_component(entity_id, ecs_geo_components.Traits)
@@ -163,8 +163,8 @@ class SessionDebugConsole:
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
-            f"id={id_component.id} name={metadata.name!r} "
-            f"description={metadata.description!r} color={appearance.color!r} "
+            f"id={id_component.id} display_name={display_name_comp.display_name!r} "
+            f"color={appearance.color!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates} "
             f"traits={traits.traits if traits is not None else []} "
@@ -189,7 +189,7 @@ class SessionDebugConsole:
         if entity_id is None:
             return False
         id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
-        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
         active_components: dict[str, object] = {}
         for comp_name, comp_type in {
             "CriteriaHasTags": ecs_event_components.CriteriaHasTags,
@@ -206,8 +206,7 @@ class SessionDebugConsole:
         print(
             "[DEBUG][criteria] "
             f"key={key} entity={entity_id} "
-            f"id={id_component.id} name={metadata.name!r} "
-            f"description={metadata.description!r} "
+            f"id={id_component.id} display_name={display_name_comp.display_name!r} "
             f"components={active_components}"
         )
         return True
@@ -217,7 +216,7 @@ class SessionDebugConsole:
         if entity_id is None:
             return False
         id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
-        metadata = esper.component_for_entity(entity_id, ecs_geo_components.MetaData)
+        display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
         trigger = esper.try_component(entity_id, ecs_event_components.EventTriggerNames)
         target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
         active_results: dict[str, object] = {}
@@ -242,8 +241,7 @@ class SessionDebugConsole:
         print(
             "[DEBUG][event] "
             f"key={key} entity={entity_id} "
-            f"id={id_component.id} name={metadata.name!r} "
-            f"description={metadata.description!r} "
+            f"id={id_component.id} display_name={display_name_comp.display_name!r} "
             f"triggerNames={trigger.names if trigger is not None else []} "
             f"targetNames={target.names if target is not None else []} "
             f"results={active_results}"

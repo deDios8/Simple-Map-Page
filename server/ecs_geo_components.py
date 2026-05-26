@@ -10,9 +10,8 @@ class ID:
     id: str
 
 @dataclass
-class MetaData:
-    name: str
-    description: str
+class DisplayName:
+    display_name: str
 
 @dataclass
 class IsUser:
@@ -108,14 +107,12 @@ class GeoObject:
         self.entity_id = new_entity_id
         appearance = properties.get("appearance", {}) if isinstance(properties, dict) else {}
         nested_data = properties.get("data", {}) if isinstance(properties, dict) else {}
-        meta_data = properties.get("metaData", {}) if isinstance(properties, dict) else {}
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, Geometry(coordinates=geometry.get("coordinates", [0,0])))
         esper.add_component(
             new_entity_id,
-            MetaData(
-                name=meta_data.get("name", ""),
-                description=meta_data.get("description", ""),
+            DisplayName(
+                display_name=properties.get("displayName", "") if isinstance(properties, dict) else "",
             ),
         )
         esper.add_component(

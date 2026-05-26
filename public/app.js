@@ -24,7 +24,7 @@ const firebaseEventCriteriaNode = "eventCriteria";
 const firebaseEventResultsNode = "eventResults";
 
 const state = {
-  version: "0.1.032",
+  version: "0.1.033",
   updateLocationInterval: 10000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -121,7 +121,6 @@ const coordDisplayLat = document.querySelector("#coord-display-lat");
 const coordDisplayLng = document.querySelector("#coord-display-lng");
 const coordPickButton = document.querySelector("#coord-pick-button");
 const fieldRadius = document.querySelector("#field-radius");
-const fieldDescription = document.querySelector("#field-description");
 const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
 const editorFormToggle = document.querySelector("#editor-form-toggle");
@@ -139,7 +138,6 @@ const criteriaEditorEmptyState = document.querySelector("#criteria-editor-empty-
 const criteriaSaveStatus = document.querySelector("#criteria-save-status");
 const deleteCriteriaButton = document.querySelector("#delete-criteria-button");
 const criteriaFieldName = document.querySelector("#criteria-field-name");
-const criteriaFieldDescription = document.querySelector("#criteria-field-description");
 const criteriaComponentsList = document.querySelector("#criteria-components-list");
 const addCriterionButton = document.querySelector("#add-criterion-button");
 const addCriteriaButton = document.querySelector("#add-criteria-button");
@@ -157,7 +155,6 @@ const eventEditorEmptyState = document.querySelector("#event-editor-empty-state"
 const eventSaveStatus = document.querySelector("#event-save-status");
 const deleteEventButton = document.querySelector("#delete-event-button");
 const eventFieldName = document.querySelector("#event-field-name");
-const eventFieldDescription = document.querySelector("#event-field-description");
 const eventFieldTriggerNames = document.querySelector("#event-field-trigger-names");
 const eventFieldTargetNames = document.querySelector("#event-field-target-names");
 const eventResultsList = document.querySelector("#event-results-list");
@@ -169,11 +166,9 @@ const eventResultsSection = document.querySelector(".event-results-section");
 
 const criteriaEditableFields = [
   criteriaFieldName,
-  criteriaFieldDescription,
 ];
 const eventEditableFields = [
   eventFieldName,
-  eventFieldDescription,
   eventFieldTriggerNames,
   eventFieldTargetNames,
 ];
@@ -183,7 +178,6 @@ const editableFields = [
   fieldVisible,
   fieldTraits,
   fieldRadius,
-  fieldDescription,
 ];
 
 const editorCollapseState = {
@@ -540,7 +534,7 @@ function renderCriteriaList() {
     ? entries
         .map((entry) => {
           const id = entry.properties?.id;
-          const name = escapeHtml(entry.properties?.metaData?.name || id || "Unnamed criteria");
+          const name = escapeHtml(entry.properties?.displayName || id || "Unnamed criteria");
           const selectedClass = state.selectedCriteriaId === id ? "is-selected" : "";
           return `
             <li>
@@ -633,12 +627,11 @@ function populateCriteriaEditor(id) {
     showEmptyCriteriaEditor();
     return;
   }
-  const metaData = entry.properties?.metaData || {};
+  const displayName = entry.properties?.displayName || "";
   const components = extractCriteriaComponents(entry.properties);
   criteriaEditorForm.hidden = false;
-  criteriaEditorEmptyState.textContent = `Editing ${metaData.name || id}`;
-  criteriaFieldName.value = metaData.name || "";
-  criteriaFieldDescription.value = metaData.description || "";
+  criteriaEditorEmptyState.textContent = `Editing ${displayName || id}`;
+  criteriaFieldName.value = displayName;
   renderCriteriaComponentsEditor(components);
   applyCriteriaEditorPermissions();
 }
@@ -938,7 +931,7 @@ function renderEventList() {
     ? entries
         .map((entry) => {
           const id = entry.properties?.id;
-          const name = escapeHtml(entry.properties?.metaData?.name || id || "Unnamed event");
+          const name = escapeHtml(entry.properties?.displayName || id || "Unnamed event");
           const selectedClass = state.selectedEventId === id ? "is-selected" : "";
           return `
             <li>
@@ -995,7 +988,7 @@ function renderEventNameSelects(selectedTriggers = [], selectedTargets = []) {
     return criteriaEntries
       .map((entry) => {
         const id = entry.properties?.id || "";
-        const name = entry.properties?.metaData?.name || id || "Unnamed";
+        const name = entry.properties?.displayName || id || "Unnamed";
         const sel = selectedSet.has(id) ? " selected" : "";
         return `<option value="${escapeHtml(id)}"${sel}>${escapeHtml(name)} (${escapeHtml(id)})</option>`;
       })
@@ -1012,14 +1005,13 @@ function populateEventEditor(id) {
     showEmptyEventEditor();
     return;
   }
-  const metaData = entry.properties?.metaData || {};
+  const displayName = entry.properties?.displayName || "";
   const triggerNames = entry.properties?.EventTriggerNames?.criteria_ids || [];
   const targetNames = entry.properties?.EventTargetNames?.criteria_ids || [];
   const results = extractEventResults(entry.properties);
   eventEditorForm.hidden = false;
-  eventEditorEmptyState.textContent = `Editing ${metaData.name || id}`;
-  eventFieldName.value = metaData.name || "";
-  eventFieldDescription.value = metaData.description || "";
+  eventEditorEmptyState.textContent = `Editing ${displayName || id}`;
+  eventFieldName.value = displayName;
   renderEventNameSelects(triggerNames, targetNames);
   renderEventResultsEditor(results);
   applyEventEditorPermissions();
@@ -1280,7 +1272,6 @@ function bindUi() {
 
     const formData = {
       name: criteriaFieldName.value.trim(),
-      description: criteriaFieldDescription.value.trim(),
       criteriaComponents: collectCriteriaComponentsFromEditor(),
     };
 
@@ -1381,7 +1372,6 @@ function bindUi() {
     const targetRaw = eventFieldTargetNames?.value.trim() || "";
     const formData = {
       name: eventFieldName?.value.trim() || "",
-      description: eventFieldDescription?.value.trim() || "",
       triggerNames: Array.from(eventFieldTriggerNames?.selectedOptions || []).map((o) => o.value),
       targetNames: Array.from(eventFieldTargetNames?.selectedOptions || []).map((o) => o.value),
       results: collectResultsFromEditor(),
@@ -1461,7 +1451,6 @@ function bindUi() {
     const fallbackRadius = Number.isFinite(objectEntry.properties?.appearance?.radius)
       ? objectEntry.properties.appearance.radius
       : null;
-    const currentMetaData = objectEntry.properties?.metaData || {};
     
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
@@ -1482,11 +1471,7 @@ function bindUi() {
       geometry: nextGeometry,
       properties: {
         ...objectEntry.properties,
-        metaData: {
-          ...currentMetaData,
-          name: fieldName.value.trim() || currentMetaData.name || state.selectedId,
-          description: fieldDescription.value.trim(),
-        },
+        displayName: fieldName.value.trim() || objectEntry.properties?.displayName || state.selectedId,
         appearance: {
           ...objectEntry.properties?.appearance,
           color: fieldColor.value,
@@ -1808,7 +1793,6 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     latitude: coordDisplayLat.textContent.replace(/^Lat:\s*/i, "").trim(),
     longitude: coordDisplayLng.textContent.replace(/^Lng:\s*/i, "").trim(),
     radius: fieldRadius.value.trim(),
-    description: fieldDescription.value.trim(),
     stats: nextEntry?.properties?.stats || {},
   };
 
@@ -2006,12 +1990,10 @@ function polygonStyle(feature) {
 
 function buildPopupMarkup(feature) {
   const properties = feature.properties || {};
-  const metaData = properties.metaData || {};
 
   return `
     <div>
-      <strong>${escapeHtml(metaData.name || properties.id || "Untitled object")}</strong>
-      <p>${escapeHtml(metaData.description || "No description available.")}</p>
+      <strong>${escapeHtml(properties.displayName || properties.id || "Untitled object")}</strong>
     </div>
   `;
 }
@@ -2027,7 +2009,7 @@ function renderObjectList() {
           const traitsList = feature.properties?.traits;
           const traits = Array.isArray(traitsList) && traitsList.length > 0 ? traitsList.join(", ") : "--";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
-          const name = escapeHtml(feature.properties?.metaData?.name || id || "Unnamed object");
+          const name = escapeHtml(feature.properties?.displayName || id || "Unnamed object");
 
           return `
             <li>
@@ -2087,11 +2069,11 @@ function populateEditor(id) {
     return;
   }
 
-  const metaData = feature.properties?.metaData || {};
+  const displayName = feature.properties?.displayName || "";
   const stats = normalizeStats(feature.properties);
   editorForm.hidden = false;
-  editorEmptyState.textContent = `Editing ${metaData.name || id}`;
-  fieldName.value = metaData.name || "";
+  editorEmptyState.textContent = `Editing ${displayName || id}`;
+  fieldName.value = displayName;
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
   const rawVisible = feature.properties?.appearance?.visible;
   fieldVisible.value = Array.isArray(rawVisible) ? rawVisible.join(", ") : "";
@@ -2100,7 +2082,6 @@ function populateEditor(id) {
   coordDisplayLat.textContent = feature.geometry?.coordinates ? `Lat: ${feature.geometry.coordinates[1]}` : "Lat: --";
   coordDisplayLng.textContent = feature.geometry?.coordinates ? `Lng: ${feature.geometry.coordinates[0]}` : "Lng: --";
   fieldRadius.value = Number.isFinite(feature.properties?.appearance?.radius) ? String(feature.properties.appearance.radius) : "";
-  fieldDescription.value = metaData.description || "";
   renderStatsEditor(stats);
   applyEditorPermissions();
 }

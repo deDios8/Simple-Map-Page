@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import esper
-from ecs_geo_components import ID, MetaData
+from ecs_geo_components import ID, DisplayName
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
@@ -52,11 +52,11 @@ class ObjectsThatMetAnyCriteria:
 
 
 class Criteria:
-    def __init__(self, id: str, name: str, description: str = "") -> None:
+    def __init__(self, id: str, name: str) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
         esper.add_component(new_entity_id, ID(id=id))
-        esper.add_component(new_entity_id, MetaData(name=name, description=description))
+        esper.add_component(new_entity_id, DisplayName(display_name=name))
         esper.add_component(new_entity_id, ObjectsThatMetAllCriteria(object_ids=[]))
         esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
 
@@ -126,11 +126,11 @@ class ResultDecreaseStatsByValues:
 
 
 class Event:
-    def __init__(self, id: str, name: str, description: str = "") -> None:
+    def __init__(self, id: str, name: str) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
         esper.add_component(new_entity_id, ID(id=id))
-        esper.add_component(new_entity_id, MetaData(name=name, description=description))
+        esper.add_component(new_entity_id, DisplayName(display_name=name))
         esper.add_component(new_entity_id, EventTriggerNames(criteria_ids=[]))
         esper.add_component(new_entity_id, EventTargetNames(criteria_ids=[]))
 

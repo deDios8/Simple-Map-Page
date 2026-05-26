@@ -313,8 +313,8 @@ class CriteriaProcessor(esper.Processor):
 
     def _check_has_tags(self, geo_eid: int, component: ecs_event_components.CriteriaHasTags) -> bool:
         geo_tags: set[str] = set()
-        if meta := esper.try_component(geo_eid, ecs_geo_components.MetaData):
-            geo_tags.add(meta.name)
+        if dn := esper.try_component(geo_eid, ecs_geo_components.DisplayName):
+            geo_tags.add(dn.display_name)
         if traits := esper.try_component(geo_eid, ecs_geo_components.Traits):
             geo_tags.update(traits.traits)
         if stats := esper.try_component(geo_eid, ecs_geo_components.Stats):
@@ -355,9 +355,9 @@ class EventProcessor(esper.Processor):
         geo_entity_ids = list(self.session_state.GeoObjectEntityIds.values())
 
         ## For each event, check if any of its triggers have met all trigger criteria, and if so, apply the event's result to its targets that have met all target criteria.
-        for event_entity_id, (event_id_comp, event_meta, event_triggers, event_targets) in esper.get_components(
+        for event_entity_id, (event_id_comp, event_display_name, event_triggers, event_targets) in esper.get_components(
             ecs_geo_components.ID,
-            ecs_geo_components.MetaData,
+            ecs_geo_components.DisplayName,
             ecs_event_components.EventTriggerNames,
             ecs_event_components.EventTargetNames,
         ):

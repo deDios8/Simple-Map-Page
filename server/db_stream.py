@@ -70,9 +70,7 @@ class DBEntry:
         self.geometry = db_entry.get("geometry", {})
         self.properties = db_entry.get("properties", {})
         self.id = self.properties.get("id", "")
-        meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
-        self.name = meta_data.get("name", "")
-        self.description = meta_data.get("description", "")
+        self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
         if isinstance(self.geometry, dict):
             self.coordinates = self.geometry.get("coordinates", [])
 
@@ -168,9 +166,7 @@ class GeoObjectEntry(DBEntry):
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
         self.visible = normalize_visible(self.appearance.get("visible", [])) if isinstance(self.appearance, dict) else []
 
-        meta_data = self.properties.get("metaData", {}) if isinstance(self.properties.get("metaData"), dict) else {}
-        self.name = meta_data.get("name", "")
-        self.description = meta_data.get("description", "")
+        self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
         
         self.stats = normalize_stats(self.properties)
 
