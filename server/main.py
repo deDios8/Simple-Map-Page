@@ -1253,7 +1253,7 @@ def main() -> None:
     esper.add_processor(ecs_processors.CheckZoneEntryExit(), priority=99)
     esper.add_processor(ecs_processors.CriteriaProcessor(session_state), priority=90)
     esper.add_processor(ecs_processors.EventProcessor(session_state), priority=80)
-    esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=1)
+    esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=10)
     esper.add_processor(ecs_processors.SyncZoneBordersToDatabase(session_state), priority=0)
     session_state.run_db_and_ecs_processor()
 
