@@ -21,12 +21,6 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 
-DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
-GEO_OBJECTS_NODE = "geoObjects"
-CLIENT_REQUESTS_NODE = "clientRequests"
-CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
-EVENT_CRITERIA_NODE = "eventCriteria"
-
 CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaHasTags",
     "CriteriaIsWithin",
@@ -36,8 +30,6 @@ CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaIsNotVisible",
     "CriteriaFirstEntered",
 })
-
-EVENT_RESULTS_NODE = "eventResults"
 
 EVENT_RESULT_COMPONENT_NAMES = frozenset({
     "ResultSetVisibility",
@@ -54,6 +46,19 @@ EVENT_RESULT_COMPONENT_NAMES = frozenset({
     "ResultIncreaseStatsByValues",
     "ResultDecreaseStatsByValues",
 })
+
+DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
+GEO_OBJECTS_NODE = "geoObjects"
+CLIENT_REQUESTS_NODE = "clientRequests"
+CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
+EVENT_CRITERIA_NODE = "eventCriteria"
+EVENT_RESULTS_NODE = "eventResults"
+
+def build_node_url(database_url: str, *path_segments: str) -> str:
+    """Build a Firebase REST URL from path segments, appending .json."""
+    base = database_url.rstrip("/")
+    encoded = "/".join(quote(s, safe="") for s in path_segments)
+    return f"{base}/{encoded}.json"
 
 
 # ---------------------------------------------------------------------------
@@ -150,18 +155,6 @@ class SyncChange:
     feature: DBEntry | None
 
 
-# ---------------------------------------------------------------------------
-# URL helpers
-# ---------------------------------------------------------------------------
-
-
-def build_node_url(database_url: str, *path_segments: str) -> str:
-    """Build a Firebase REST URL from path segments, appending .json."""
-    base = database_url.rstrip("/")
-    encoded = "/".join(quote(s, safe="") for s in path_segments)
-    return f"{base}/{encoded}.json"
-
-
 
 # ---------------------------------------------------------------------------
 # Normalization helpers
@@ -247,7 +240,8 @@ def _normalize_objects(raw: Any) -> dict[str, dict[str, Any]]:
 # Snapshot fetching
 # ---------------------------------------------------------------------------
 
-def _fetch_snapshot(url: str) -> dict[str, dict[str, Any]]:
+def fetch_node(database_url: str, session_name: str, node: str) -> dict[str, dict[str, Any]]:
+    url = build_node_url(database_url, session_name, node)
     try:
         with urlopen(url) as response:
             payload = response.read().decode("utf-8")
@@ -262,22 +256,6 @@ def _fetch_snapshot(url: str) -> dict[str, dict[str, Any]]:
         raise RuntimeError("Firebase response was not valid JSON.") from error
 
     return _normalize_objects(decoded)
-
-
-def fetch_client_requests(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_node_url(database_url, session_name, CLIENT_REQUESTS_NODE))
-
-
-def fetch_geo_objects(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_node_url(database_url, session_name, GEO_OBJECTS_NODE))
-
-
-def fetch_event_criteria(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_node_url(database_url, session_name, EVENT_CRITERIA_NODE))
-
-
-def fetch_event_results(database_url: str, session_name: str) -> dict[str, dict[str, Any]]:
-    return _fetch_snapshot(build_node_url(database_url, session_name, EVENT_RESULTS_NODE))
 
 
 # ---------------------------------------------------------------------------
@@ -580,90 +558,23 @@ class DatabaseStream:
         self._event_results_thread: threading.Thread | None = None
 
     def start(self) -> None:
-        def _iter_client_requests(db: str, session: str):
-            yield from _iter_stream_from_url(build_node_url(db, session, CLIENT_REQUESTS_NODE))
-
-        def _iter_geo_objects(db: str, session: str):
-            yield from _iter_stream_from_url(build_node_url(db, session, GEO_OBJECTS_NODE))
-
-        def _iter_event_criteria(db: str, session: str):
-            yield from _iter_stream_from_url(build_node_url(db, session, EVENT_CRITERIA_NODE))
-
-        def _iter_event_results(db: str, session: str):
-            yield from _iter_stream_from_url(build_node_url(db, session, EVENT_RESULTS_NODE))
-
-        self._client_request_thread = threading.Thread(
-            target=_run_stream_worker,
-            args=(
-                self.database_url,
-                self.session_name,
-                CLIENT_REQUESTS_NODE,
-                self.request_state,
-                self.request_index,
-                fetch_client_requests,
-                _iter_client_requests,
-                ClientRequestEntry,
-                self.event_queue,
-                self._stop_event,
-            ),
-            daemon=True,
-        )
-
-        self._geo_object_thread = threading.Thread(
-            target=_run_stream_worker,
-            args=(
-                self.database_url,
-                self.session_name,
-                GEO_OBJECTS_NODE,
-                self.geo_object_state,
-                self.geo_object_index,
-                fetch_geo_objects,
-                _iter_geo_objects,
-                GeoObjectEntry,
-                self.event_queue,
-                self._stop_event,
-            ),
-            daemon=True,
-        )
-
-        self._criteria_thread = threading.Thread(
-            target=_run_stream_worker,
-            args=(
-                self.database_url,
-                self.session_name,
-                EVENT_CRITERIA_NODE,
-                self.criteria_state,
-                self.criteria_index,
-                fetch_event_criteria,
-                _iter_event_criteria,
-                CriteriaEntry,
-                self.event_queue,
-                self._stop_event,
-            ),
-            daemon=True,
-        )
-
-        self._event_results_thread = threading.Thread(
-            target=_run_stream_worker,
-            args=(
-                self.database_url,
-                self.session_name,
-                EVENT_RESULTS_NODE,
-                self.event_results_state,
-                self.event_results_index,
-                fetch_event_results,
-                _iter_event_results,
-                EventResultEntry,
-                self.event_queue,
-                self._stop_event,
-            ),
-            daemon=True,
-        )
-
-        self._client_request_thread.start()
-        self._geo_object_thread.start()
-        self._criteria_thread.start()
-        self._event_results_thread.start()
+        _streams = [
+            (CLIENT_REQUESTS_NODE, self.request_state,       self.request_index,       ClientRequestEntry, "_client_request_thread"),
+            (GEO_OBJECTS_NODE,     self.geo_object_state,    self.geo_object_index,    GeoObjectEntry,     "_geo_object_thread"),
+            (EVENT_CRITERIA_NODE,  self.criteria_state,      self.criteria_index,      CriteriaEntry,      "_criteria_thread"),
+            (EVENT_RESULTS_NODE,   self.event_results_state, self.event_results_index, EventResultEntry,   "_event_results_thread"),
+        ]
+        for node, state, index, factory, attr in _streams:
+            fetch_fn = lambda db, session, n=node: fetch_node(db, session, n)
+            iter_fn = lambda db, session, n=node: _iter_stream_from_url(build_node_url(db, session, n))
+            t = threading.Thread(
+                target=_run_stream_worker,
+                args=(self.database_url, self.session_name, node, state, index,
+                      fetch_fn, iter_fn, factory, self.event_queue, self._stop_event),
+                daemon=True,
+            )
+            setattr(self, attr, t)
+            t.start()
 
     def stop(self) -> None:
         self._stop_event.set()

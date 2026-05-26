@@ -26,10 +26,7 @@ from db_stream import (
     GeoObjectEntry,
     CriteriaEntry,
     EventResultEntry,
-    fetch_client_requests,
-    fetch_geo_objects,
-    fetch_event_criteria,
-    fetch_event_results,
+    fetch_node,
     put_db_entry,
     patch_db_entry,
     delete_db_entry,
@@ -160,25 +157,15 @@ class SessionState:
         return normalized_traits
 
     def _initialize_from_snapshot(self) -> None:
-        geo_objects = fetch_geo_objects(self.database_url, self.session_name)
-        for key, raw in geo_objects.items():
-            entry = GeoObjectEntry(raw)
-            self._upsert_geo_object_entity(key, entry)
-
-        client_requests = fetch_client_requests(self.database_url, self.session_name)
-        for key, raw in client_requests.items():
-            entry = ClientRequestEntry(raw)
-            self._upsert_client_request_entity(key, entry)
-
-        event_criteria = fetch_event_criteria(self.database_url, self.session_name)
-        for key, raw in event_criteria.items():
-            entry = CriteriaEntry(raw)
-            self._upsert_criteria_entity(key, entry)
-
-        event_results = fetch_event_results(self.database_url, self.session_name)
-        for key, raw in event_results.items():
-            entry = EventResultEntry(raw)
-            self._upsert_event_entity(key, entry)
+        _nodes = [
+            (GEO_OBJECTS_NODE,     GeoObjectEntry,     self._upsert_geo_object_entity),
+            (CLIENT_REQUESTS_NODE, ClientRequestEntry, self._upsert_client_request_entity),
+            (EVENT_CRITERIA_NODE,  CriteriaEntry,      self._upsert_criteria_entity),
+            (EVENT_RESULTS_NODE,   EventResultEntry,   self._upsert_event_entity),
+        ]
+        for node, entry_class, upsert_fn in _nodes:
+            for key, raw in fetch_node(self.database_url, self.session_name, node).items():
+                upsert_fn(key, entry_class(raw))
 
 
     def _sync_is_user_component(self, entity_id: int) -> None:
