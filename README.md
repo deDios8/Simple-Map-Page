@@ -6,7 +6,11 @@ Entering and exiting zones doesn't seem to work consistently.
 If no object is selected, the editor form should not populate
 Dropdowns for object selector? Can they be in color?
 New login, new collapsed state.
-Change lat/long automatically minimizes the editor and submits when done.
+Change lat/long automatically minimizes the editor then submits when done.
+Change Visible to Visible To in editor, db, and variables
+
+Display ObjectsThatMetAnyCriteria and ObjectsThatMetAllCriteria on debug
+Make simple criteria that is hasTags, etc and test using debug
 
 
 

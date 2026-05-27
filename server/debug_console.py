@@ -199,6 +199,8 @@ class SessionDebugConsole:
             "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
             "CriteriaIsVisible": ecs_event_components.CriteriaIsVisible,
             "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
+            "ObjectsThatMetAnyCriteria": ecs_event_components.ObjectsThatMetAnyCriteria,
+            "ObjectsThatMetAllCriteria": ecs_event_components.ObjectsThatMetAllCriteria,
         }.items():
             comp = esper.try_component(entity_id, comp_type)
             if comp is not None:
