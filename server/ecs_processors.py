@@ -4,7 +4,7 @@ import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
-from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE, patch_db_entry, normalize_string_list
+from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE, patch_db_entry, multi_path_patch, normalize_string_list
 
 
 class ApplyClientRequests(esper.Processor):
@@ -175,47 +175,69 @@ class CheckZoneEntryExit(esper.Processor):
         return object_area.intersects(zone_area)
 
 
-class SyncZoneBordersToDatabase(esper.Processor):
+class SyncGeoObjectsToDatabase(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
-        self._zone_borders_cache: dict[tuple[str, str], dict | None] = {}
-
+        self._cache: dict[int, dict] = {}
 
     def process(self) -> None:
         geo_by_entity = {entity_id: key for key, entity_id in self.session_state.GeoObjectEntityIds.items()}
-        # req_by_entity = {entity_id: key for key, entity_id in self.session_state.ClientRequestEntityIds.items()}
+        multi_path_payload: dict = {}
 
-        for entity_id, _ in list(esper.get_component(ecs_geo_components.ZoneBordersDirty)):
-            geo_key = geo_by_entity.get(entity_id)
-            # req_key = req_by_entity.get(entity_id)
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.GeoObjectDirty)):
+            key = geo_by_entity.get(entity_id)
+            if key is None:
+                try:
+                    esper.remove_component(entity_id, ecs_geo_components.GeoObjectDirty)
+                except KeyError:
+                    pass
+                continue
 
-            if geo_key is not None:
-                self._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
-            # elif req_key is not None:
-            #     self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
+            fields = self._build_properties_payload(entity_id)
+            if self._cache.get(entity_id) != fields:
+                for field_path, value in fields.items():
+                    multi_path_payload[f"{GEO_OBJECTS_NODE}/{key}/{field_path}"] = value
+                self._cache[entity_id] = fields
 
             try:
-                esper.remove_component(entity_id, ecs_geo_components.ZoneBordersDirty)
+                esper.remove_component(entity_id, ecs_geo_components.GeoObjectDirty)
             except KeyError:
                 pass
 
-    def _patch_zone_borders(self, node: str, key: str, entity_id: int) -> None:
-        payload = self._build_zone_borders_payload(entity_id)
-        cache_key = (node, key)
-        if self._zone_borders_cache.get(cache_key) == payload:
-            return
-        patch_db_entry(
-            self.session_state.database_url,
-            self.session_state.session_name,
-            key,
-            {"properties/zoneBorders": payload},
-            node=node,
-        )
-        self._zone_borders_cache[cache_key] = payload
+        if multi_path_payload:
+            multi_path_patch(
+                self.session_state.database_url,
+                self.session_state.session_name,
+                multi_path_payload,
+            )
 
-    def _build_zone_borders_payload(self, entity_id: int) -> dict | None:
-        zone_borders: dict[str, dict[str, list[str]]] = {}
+    def _build_properties_payload(self, entity_id: int) -> dict:
+        payload = {}
+
+        appearance = esper.try_component(entity_id, ecs_geo_components.Appearance)
+        if appearance is not None:
+            payload["properties/appearance"] = {
+                "color": appearance.color,
+                "shape": appearance.shape,
+                "radius": appearance.radius,
+                "visible": appearance.visible,
+            }
+
+        traits = esper.try_component(entity_id, ecs_geo_components.Traits)
+        if traits is not None:
+            payload["properties/traits"] = traits.traits
+
+        stats = esper.try_component(entity_id, ecs_geo_components.Stats)
+        if stats is not None and stats.items:
+            payload["properties/stats"] = stats.items
+
+        payload["properties/zoneBorders"] = self._build_zone_borders(entity_id)
+
+        return payload
+
+    def _build_zone_borders(self, entity_id: int) -> dict | None:
+        zone_borders: dict = {}
 
         within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
         if within is not None:
@@ -247,7 +269,7 @@ class RemoveZoneEntryExit(esper.Processor):
 
             esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
             if within_zones != before_zones:
-                esper.add_component(entity_id, ecs_geo_components.ZoneBordersDirty())
+                esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
 
             # NotWithinZones: remove entered zones
             not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
@@ -284,7 +306,7 @@ class RemoveZoneEntryExit(esper.Processor):
                         pass
 
                 if within_zones != before_zones:
-                    esper.add_component(entity_id, ecs_geo_components.ZoneBordersDirty())
+                    esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
 
             # NotWithinZones: add exited zones
             not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
@@ -448,6 +470,9 @@ class EventProcessor(esper.Processor):
 
                         for result in results_to_apply:
                             result(target_entity_id)
+
+                        if results_to_apply:
+                            esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
 
     def _set_visibility(self, target_entity_id: int, component: ecs_event_components.ResultSetVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):

@@ -312,7 +312,7 @@ class SessionState:
 
         geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_geo_components.ZoneBordersDirty())
+        esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
 
         patch_db_entry(
             self.database_url,
@@ -421,7 +421,7 @@ class SessionState:
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_geo_components.ZoneBordersDirty())
+        esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
 
         stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
         next_stats_payload = normalize_stats({"stats": stats_payload})
@@ -1115,8 +1115,8 @@ def main() -> None:
     esper.add_processor(ecs_processors.CheckZoneEntryExit(session_state), priority=95)
     esper.add_processor(ecs_processors.CriteriaProcessor(session_state), priority=90)
     esper.add_processor(ecs_processors.EventProcessor(session_state), priority=80)
-    esper.add_processor(ecs_processors.SyncZoneBordersToDatabase(session_state), priority=20)
     esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=10)
+    esper.add_processor(ecs_processors.SyncGeoObjectsToDatabase(session_state), priority=5)
     session_state.run_db_and_ecs_processor()
 
 

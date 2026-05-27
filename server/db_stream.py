@@ -419,6 +419,21 @@ def patch_db_entry(
         response.read()
 
 
+def multi_path_patch(
+    database_url: str, session_name: str, multi_path_payload: dict[str, Any]
+) -> None:
+    """Apply a multi-location update at the session root level in a single request.
+
+    Keys in multi_path_payload are slash-separated paths relative to the session node
+    (e.g. "geoObjects/Mob/properties/traits").
+    """
+    url = build_node_url(database_url, session_name)
+    data = json.dumps(multi_path_payload).encode("utf-8")
+    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
+    with urlopen(req) as response:
+        response.read()
+
+
 def delete_db_entry(
     database_url: str, session_name: str, key: str, node: str = GEO_OBJECTS_NODE) -> None:
     """Delete a geoObject entry by key."""

@@ -92,7 +92,7 @@ class ExitedZones:
     zone_ids: list
 
 @dataclass
-class ZoneBordersDirty:
+class GeoObjectDirty:
     '''Marker component to indicate that zone borders need to be uploaded to the db.'''
     is_dirty: bool = True
 
