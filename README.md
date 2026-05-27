@@ -11,6 +11,7 @@ Change Visible to Visible To in editor, db, and variables
 
 Display ObjectsThatMetAnyCriteria and ObjectsThatMetAllCriteria on debug
 Make simple criteria that is hasTags, etc and test using debug
+Make most rows on the editor into a single label-input, label-input, etc rather than label above input
 
 
 

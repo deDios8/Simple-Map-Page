@@ -293,14 +293,14 @@ class SessionDebugConsole:
             if not self._print_request_dump(parts[1]):
                 print(f"[DEBUG] req key not found: {parts[1]}")
             return
-        if command == "dumpcriteria":
+        if command == "dumpcriteria" or command == "dc":
             if len(parts) < 2:
                 print("[DEBUG] dumpcriteria usage: dumpcriteria <key>")
                 return
             if not self._print_criteria_dump(parts[1]):
                 print(f"[DEBUG] criteria key not found: {parts[1]}")
             return
-        if command == "dumpevent":
+        if command == "dumpevent" or command == "de":
             if len(parts) < 2:
                 print("[DEBUG] dumpevent usage: dumpevent <key>")
                 return

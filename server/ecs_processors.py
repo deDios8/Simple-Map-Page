@@ -393,9 +393,11 @@ class EventProcessor(esper.Processor):
             # Get the objects that met all criteria for each trigger
             event_triggers = esper.try_component(event_entity_id, ecs_event_components.EventTriggerNames)
             trigger_objects_sets = []
-            for trigger_id in event_triggers.criteria_ids:
-                if trigger_comp := esper.try_component(trigger_id, ecs_event_components.ObjectsThatMetAllCriteria):
-                    trigger_objects_sets.append(set(trigger_comp.object_ids))
+            for trigger_name in event_triggers.criteria_ids:
+                trigger_entity_id = self.session_state.EventCriteriaEntityIds.get(trigger_name)
+                if trigger_entity_id is not None:
+                    if trigger_comp := esper.try_component(trigger_entity_id, ecs_event_components.ObjectsThatMetAllCriteria):
+                        trigger_objects_sets.append(set(trigger_comp.object_ids))
 
             # Check if any trigger has met all criteria
             trigger_met = any(trigger_objects_sets)
@@ -404,9 +406,11 @@ class EventProcessor(esper.Processor):
                 # Get the objects that met all criteria for each target
                 event_targets = esper.try_component(event_entity_id, ecs_event_components.EventTargetNames)
                 target_objects_sets = []
-                for target_id in event_targets.criteria_ids:
-                    if target_comp := esper.try_component(target_id, ecs_event_components.ObjectsThatMetAllCriteria):
-                        target_objects_sets.append(set(target_comp.object_ids))
+                for target_name in event_targets.criteria_ids:
+                    target_entity_id = self.session_state.EventCriteriaEntityIds.get(target_name)
+                    if target_entity_id is not None:
+                        if target_comp := esper.try_component(target_entity_id, ecs_event_components.ObjectsThatMetAllCriteria):
+                            target_objects_sets.append(set(target_comp.object_ids))
 
 
                 # If a trigger has met all criteria, apply the event's result to targets that have met all criteria
