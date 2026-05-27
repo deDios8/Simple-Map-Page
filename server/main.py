@@ -295,18 +295,10 @@ class SessionState:
                     "appearance": {
                         "color": "#000000",
                         "visible": ["USER"],
-                        "radius": 5,
+                        "radius": 2,
                     },
                     "traits": ["USER"],
-                    "stats": {
-                        "user": {
-                            "name": "USER",
-                            "value": 1,
-                            "min_value": 0,
-                            "max_value": 1,
-                        }
-                    },
-                    "data": {},
+                    "stats": {},
                 },
             }
             put_db_entry(
@@ -374,7 +366,7 @@ class SessionState:
                     "radius": 5,
                 },
                 "traits": ["ZONE"],
-                "data": {},
+                "stats": {},
             },
         }
 
@@ -1123,8 +1115,8 @@ def main() -> None:
     esper.add_processor(ecs_processors.CheckZoneEntryExit(session_state), priority=95)
     esper.add_processor(ecs_processors.CriteriaProcessor(session_state), priority=90)
     esper.add_processor(ecs_processors.EventProcessor(session_state), priority=80)
+    esper.add_processor(ecs_processors.SyncZoneBordersToDatabase(session_state), priority=20)
     esper.add_processor(ecs_processors.RemoveZoneEntryExit(), priority=10)
-    esper.add_processor(ecs_processors.SyncZoneBordersToDatabase(session_state), priority=0)
     session_state.run_db_and_ecs_processor()
 
 

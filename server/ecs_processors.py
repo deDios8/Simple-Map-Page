@@ -48,7 +48,7 @@ class CheckZoneEntryExit(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
-        
+
     def process(self) -> None:
         all_geo_entities = list(esper.get_components(
             ecs_geo_components.Geometry,
@@ -184,16 +184,16 @@ class SyncZoneBordersToDatabase(esper.Processor):
 
     def process(self) -> None:
         geo_by_entity = {entity_id: key for key, entity_id in self.session_state.GeoObjectEntityIds.items()}
-        req_by_entity = {entity_id: key for key, entity_id in self.session_state.ClientRequestEntityIds.items()}
+        # req_by_entity = {entity_id: key for key, entity_id in self.session_state.ClientRequestEntityIds.items()}
 
         for entity_id, _ in list(esper.get_component(ecs_geo_components.ZoneBordersDirty)):
             geo_key = geo_by_entity.get(entity_id)
-            req_key = req_by_entity.get(entity_id)
+            # req_key = req_by_entity.get(entity_id)
 
             if geo_key is not None:
                 self._patch_zone_borders(GEO_OBJECTS_NODE, geo_key, entity_id)
-            elif req_key is not None:
-                self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
+            # elif req_key is not None:
+            #     self._patch_zone_borders(CLIENT_REQUESTS_NODE, req_key, entity_id)
 
             try:
                 esper.remove_component(entity_id, ecs_geo_components.ZoneBordersDirty)
