@@ -3,6 +3,12 @@ Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS a
 Allow triggers to assign targets reflexively targeting the object the triggered
 Events are not working properly
 Entering and exiting zones doesn't seem to work consistently.
+If no object is selected, the editor form should not populate
+Dropdowns for object selector? Can they be in color?
+New login, new collapsed state.
+Change lat/long automatically minimizes the editor and submits when done.
+
+
 
 # Dependencies
 ## macos

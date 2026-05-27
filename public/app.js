@@ -675,6 +675,9 @@ function applyCriteriaEditorPermissions() {
   if (addCriterionButton) {
     addCriterionButton.disabled = !isEditable || !isFormVisible;
   }
+  if (criteriaEditorFormToggle) {
+    criteriaEditorFormToggle.disabled = !isFormVisible;
+  }
   criteriaComponentsList?.querySelectorAll("input, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
   });
@@ -1041,6 +1044,9 @@ function applyEventEditorPermissions() {
   }
   if (addResultButton) {
     addResultButton.disabled = !isEditable || !isFormVisible;
+  }
+  if (eventEditorFormToggle) {
+    eventEditorFormToggle.disabled = !isFormVisible;
   }
   eventResultsList?.querySelectorAll("input, select, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
@@ -2118,6 +2124,9 @@ function applyEditorPermissions() {
     saveButton.disabled = !isEditable || !isFormVisible;
   }
 
+  if (editorFormToggle) {
+    editorFormToggle.disabled = !isFormVisible;
+  }
   addStatButton.disabled = !isEditable || !isFormVisible;
   statsList.querySelectorAll("input, button").forEach((element) => {
     element.disabled = !isEditable || !isFormVisible;
