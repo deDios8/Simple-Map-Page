@@ -838,21 +838,24 @@ label.traits-label input {
 .criterion-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: 10px;
-  align-items: start;
+  gap: 8px;
+  align-items: center;
 }
 
 .criterion-row-grid > label {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
 }
 
-.criterion-row-grid select,
-.criterion-row-grid input {
-  height: 32px;
-  box-sizing: border-box;
+.criterion-row-grid > label select,
+.criterion-row-grid > label input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
 }
 
 /* ---------------------------------------------------------------------------

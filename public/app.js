@@ -566,7 +566,6 @@ function renderCriteriaComponentsEditor(components) {
         <article class="stat-row" data-criterion-index="${index}" data-criterion-name="${escapeHtml(name)}">
           <div class="criterion-row-grid">
             <label>
-              Component
               <select data-field="name">
                 ${CRITERIA_COMPONENT_OPTIONS.map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
               </select>
