@@ -378,10 +378,6 @@ label.traits-label input {
   gap: 12px;
 }
 
-.stats-section.is-collapsed .stats-list {
-  display: none;
-}
-
 .stats-header {
   display: flex;
   justify-content: space-between;

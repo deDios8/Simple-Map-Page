@@ -124,7 +124,6 @@ const fieldRadius = document.querySelector("#field-radius");
 const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
 const editorFormToggle = document.querySelector("#editor-form-toggle");
-const statsSectionToggle = document.querySelector("#stats-section-toggle");
 const statsSection = document.querySelector(".stats-section");
 const versionInfo = document.querySelector("#version-info");
 
@@ -176,7 +175,6 @@ const editableFields = [
 
 const editorCollapseState = {
   editorForm: true,
-  stats: true,
 };
 
 const criteriaCollapseState = {};
@@ -206,7 +204,6 @@ function loadCollapseState() {
 // Apply collapse state on page load
 function applyCollapseState() {
   setEditorFormCollapsed(editorCollapseState.editorForm);
-  setStatsSectionCollapsed(editorCollapseState.stats);
 }
 
 function setEditorFormCollapsed(isCollapsed) {
@@ -215,16 +212,6 @@ function setEditorFormCollapsed(isCollapsed) {
   if (editorFormToggle) {
     editorFormToggle.textContent = editorCollapseState.editorForm ? "Expand editor" : "Collapse editor";
     editorFormToggle.setAttribute("aria-expanded", String(!editorCollapseState.editorForm));
-  }
-  saveCollapseState();
-}
-
-function setStatsSectionCollapsed(isCollapsed) {
-  editorCollapseState.stats = Boolean(isCollapsed);
-  statsSection?.classList.toggle("is-collapsed", editorCollapseState.stats);
-  if (statsSectionToggle) {
-    statsSectionToggle.textContent = editorCollapseState.stats ? "Expand" : "Collapse";
-    statsSectionToggle.setAttribute("aria-expanded", String(!editorCollapseState.stats));
   }
   saveCollapseState();
 }
@@ -1110,9 +1097,6 @@ function bindUi() {
 
   editorFormToggle?.addEventListener("click", () => {
     setEditorFormCollapsed(!editorCollapseState.editorForm);
-  });
-  statsSectionToggle?.addEventListener("click", () => {
-    setStatsSectionCollapsed(!editorCollapseState.stats);
   });
   statsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-stat"]');

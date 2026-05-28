@@ -5,7 +5,9 @@ Entering and exiting zones doesn't seem to work consistently.
 If no object is selected, the editor form should not populate
 Dropdowns for object selector? Can they be in color?
 
-New login, new collapsed state.
+Remove the stat editor collapse button.
+New login, new collapsed state:
+Menu starts collapsed, then when a geo object is chosen, it expands the editor form.
 
 Change Visible to Visible To in editor, db, and variables
 
