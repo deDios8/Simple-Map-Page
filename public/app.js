@@ -1941,6 +1941,7 @@ function populateEditor(id) {
   const displayName = feature.properties?.displayName || "";
   const stats = normalizeStats(feature.properties);
   editorForm.hidden = false;
+  setEditorFormCollapsed(false);
   editorEmptyState.textContent = `Editing ${displayName || id}`;
   fieldName.value = displayName;
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
@@ -1957,6 +1958,7 @@ function populateEditor(id) {
 
 function showEmptyEditor() {
   editorForm.hidden = true;
+  setEditorFormCollapsed(true);
   editorEmptyState.textContent = "Select an object from the list.";
   saveStatus.textContent = "";
   renderStatsEditor({});
