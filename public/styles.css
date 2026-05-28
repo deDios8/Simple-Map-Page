@@ -867,10 +867,6 @@ label.traits-label input {
   gap: 12px;
 }
 
-.event-results-section.is-collapsed .stats-list {
-  display: none;
-}
-
 /* Multi-select for event trigger/target name pickers */
 #event-field-trigger-names,
 #event-field-target-names {
@@ -888,21 +884,24 @@ label.traits-label input {
 .result-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: 10px;
-  align-items: start;
+  gap: 8px;
+  align-items: center;
 }
 
 .result-row-grid > label {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
 }
 
-.result-row-grid select,
-.result-row-grid input {
-  height: 32px;
-  box-sizing: border-box;
+.result-row-grid > label select,
+.result-row-grid > label input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
 }
 
 @media (max-width: 760px) {

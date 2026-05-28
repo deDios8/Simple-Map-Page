@@ -159,8 +159,6 @@ const eventResultsList = document.querySelector("#event-results-list");
 const addResultButton = document.querySelector("#add-result-button");
 const addEventButton = document.querySelector("#add-event-button");
 const eventEditorFormToggle = document.querySelector("#event-editor-form-toggle");
-const eventResultsSectionToggle = document.querySelector("#event-results-section-toggle");
-const eventResultsSection = document.querySelector(".event-results-section");
 
 const criteriaEditableFields = [
   criteriaFieldName,
@@ -189,7 +187,6 @@ const criteriaCollapseState = {
 
 const eventCollapseState = {
   form: true,
-  results: true,
 };
 
 // Persist collapse state to localStorage
@@ -298,7 +295,6 @@ function loadEventCollapseState() {
 
 function applyEventCollapseState() {
   setEventFormCollapsed(eventCollapseState.form);
-  setEventResultsSectionCollapsed(eventCollapseState.results);
 }
 
 function setEventFormCollapsed(isCollapsed) {
@@ -307,16 +303,6 @@ function setEventFormCollapsed(isCollapsed) {
   if (eventEditorFormToggle) {
     eventEditorFormToggle.textContent = eventCollapseState.form ? "Expand editor" : "Collapse editor";
     eventEditorFormToggle.setAttribute("aria-expanded", String(!eventCollapseState.form));
-  }
-  saveEventCollapseState();
-}
-
-function setEventResultsSectionCollapsed(isCollapsed) {
-  eventCollapseState.results = Boolean(isCollapsed);
-  eventResultsSection?.classList.toggle("is-collapsed", eventCollapseState.results);
-  if (eventResultsSectionToggle) {
-    eventResultsSectionToggle.textContent = eventCollapseState.results ? "Expand" : "Collapse";
-    eventResultsSectionToggle.setAttribute("aria-expanded", String(!eventCollapseState.results));
   }
   saveEventCollapseState();
 }
@@ -837,7 +823,6 @@ function renderEventResultsEditor(results) {
         <article class="stat-row" data-result-index="${index}" data-result-name="${escapeHtml(name)}">
           <div class="result-row-grid">
             <label>
-              Result
               <select data-field="name">
                 ${RESULT_COMPONENT_OPTIONS.map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
               </select>
@@ -1306,9 +1291,6 @@ function bindUi() {
   });
   eventEditorFormToggle?.addEventListener("click", () => {
     setEventFormCollapsed(!eventCollapseState.form);
-  });
-  eventResultsSectionToggle?.addEventListener("click", () => {
-    setEventResultsSectionCollapsed(!eventCollapseState.results);
   });
   addResultButton?.addEventListener("click", () => {
     addEmptyResultRow();
