@@ -831,10 +831,6 @@ label.traits-label input {
   gap: 12px;
 }
 
-.criteria-components-section.is-collapsed .stats-list {
-  display: none;
-}
-
 /* ---------------------------------------------------------------------------
    Criterion row (two-column name + tags layout)
    --------------------------------------------------------------------------- */

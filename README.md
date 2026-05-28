@@ -9,7 +9,6 @@ Change lat/long automatically minimizes the editor then submits when done.
 Change Visible to Visible To in editor, db, and variables
 
 Make simple criteria that is hasTags, etc and test using debug
-Make most rows on the editor into a single label-input, label-input, etc rather than label above input
 
 It is good that app.js persists the collapsed/expanded states of menus. I'd like to make one change. When a user signs in on the modal #sym:promptUserId . Reset all of the collapsed states to be collapsed.
 

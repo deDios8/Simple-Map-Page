@@ -142,8 +142,6 @@ const criteriaComponentsList = document.querySelector("#criteria-components-list
 const addCriterionButton = document.querySelector("#add-criterion-button");
 const addCriteriaButton = document.querySelector("#add-criteria-button");
 const criteriaEditorFormToggle = document.querySelector("#criteria-editor-form-toggle");
-const criteriaComponentsSectionToggle = document.querySelector("#criteria-components-section-toggle");
-const criteriaComponentsSection = document.querySelector(".criteria-components-section");
 
 // Event results drawer DOM references
 const eventsResultsDrawer = document.querySelector("#events-results-drawer");
@@ -187,7 +185,6 @@ const editorCollapseState = {
 
 const criteriaCollapseState = {
   form: true,
-  components: true,
 };
 
 const eventCollapseState = {
@@ -265,7 +262,6 @@ function loadCriteriaCollapseState() {
 
 function applyCriteriaCollapseState() {
   setCriteriaFormCollapsed(criteriaCollapseState.form);
-  setCriteriaComponentsSectionCollapsed(criteriaCollapseState.components);
 }
 
 function setCriteriaFormCollapsed(isCollapsed) {
@@ -274,16 +270,6 @@ function setCriteriaFormCollapsed(isCollapsed) {
   if (criteriaEditorFormToggle) {
     criteriaEditorFormToggle.textContent = criteriaCollapseState.form ? "Expand editor" : "Collapse editor";
     criteriaEditorFormToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.form));
-  }
-  saveCriteriaCollapseState();
-}
-
-function setCriteriaComponentsSectionCollapsed(isCollapsed) {
-  criteriaCollapseState.components = Boolean(isCollapsed);
-  criteriaComponentsSection?.classList.toggle("is-collapsed", criteriaCollapseState.components);
-  if (criteriaComponentsSectionToggle) {
-    criteriaComponentsSectionToggle.textContent = criteriaCollapseState.components ? "Expand" : "Collapse";
-    criteriaComponentsSectionToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.components));
   }
   saveCriteriaCollapseState();
 }
@@ -1245,9 +1231,6 @@ function bindUi() {
   });
   criteriaEditorFormToggle?.addEventListener("click", () => {
     setCriteriaFormCollapsed(!criteriaCollapseState.form);
-  });
-  criteriaComponentsSectionToggle?.addEventListener("click", () => {
-    setCriteriaComponentsSectionCollapsed(!criteriaCollapseState.components);
   });
   addCriterionButton?.addEventListener("click", () => {
     addEmptyCriterionRow();
