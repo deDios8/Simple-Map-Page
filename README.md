@@ -4,13 +4,10 @@ Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
 If no object is selected, the editor form should not populate
 Dropdowns for object selector? Can they be in color?
+
 New login, new collapsed state.
-Change lat/long automatically minimizes the editor then submits when done.
+
 Change Visible to Visible To in editor, db, and variables
-
-Make simple criteria that is hasTags, etc and test using debug
-
-It is good that app.js persists the collapsed/expanded states of menus. I'd like to make one change. When a user signs in on the modal #sym:promptUserId . Reset all of the collapsed states to be collapsed.
 
 Cause the map to start over the users current location if available after the sign-in modal.
 

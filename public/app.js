@@ -1065,6 +1065,9 @@ function initMap() {
       coordDisplayLng.textContent = `Lng: ${Math.round(lng * 100000) / 100000}`;
     }
     setCoordPickMode(false);
+    if (!editorForm.hidden && state.selectedId) {
+      editorForm.requestSubmit();
+    }
   });
 
 
@@ -1098,7 +1101,11 @@ function bindUi() {
     addEmptyStatRow();
   });
   coordPickButton?.addEventListener("click", () => {
-    setCoordPickMode(!state.coordPickMode);
+    const entering = !state.coordPickMode;
+    setCoordPickMode(entering);
+    if (entering) {
+      setDrawerOpen(false);
+    }
   });
 
   editorFormToggle?.addEventListener("click", () => {
