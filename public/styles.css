@@ -863,6 +863,22 @@ label.traits-label input {
   gap: 12px;
 }
 
+/* Trigger/target selector row */
+.trigger-target-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.trigger-target-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  min-width: 0;
+}
+
 /* Multi-select for event trigger/target name pickers */
 #event-field-trigger-names,
 #event-field-target-names {
