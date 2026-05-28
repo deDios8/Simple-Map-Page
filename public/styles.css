@@ -338,27 +338,38 @@ body {
 
 .stats-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .stat-row {
   display: grid;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(20, 48, 42, 0.12);
 }
 
 .stat-row-grid {
   display: grid;
-  grid-template-columns: 0.875fr 0.875fr 0.75fr auto;
-  gap: 10px;
-  align-items: end;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
 }
 
 .stat-row label {
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.stat-row label input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
 }
 
 .stat-remove-button {
@@ -366,7 +377,7 @@ body {
   border-radius: 999px;
   background: rgba(216, 61, 69, 0.12);
   color: #8a1920;
-  padding: 10px 14px;
+  padding: 7px 10px;
   font-weight: 700;
 }
 
