@@ -518,6 +518,7 @@ function populateCriteriaEditor(id) {
   const displayName = entry.properties?.displayName || "";
   const components = extractCriteriaComponents(entry.properties);
   criteriaEditorForm.hidden = false;
+  criteriaEditorForm.classList.remove("is-collapsed");
   criteriaEditorEmptyState.textContent = `Editing ${displayName || id}`;
   criteriaFieldName.value = displayName;
   renderCriteriaComponentsEditor(components);
@@ -541,6 +542,7 @@ function extractCriteriaComponents(properties) {
 
 function showEmptyCriteriaEditor() {
   criteriaEditorForm.hidden = true;
+  criteriaEditorForm.classList.add("is-collapsed");
   criteriaEditorEmptyState.textContent = "Select a criteria to edit.";
   criteriaSaveStatus.textContent = "";
   renderCriteriaComponentsEditor({});
@@ -894,6 +896,7 @@ function populateEventEditor(id) {
   const targetNames = entry.properties?.EventTargetNames?.criteria_ids || [];
   const results = extractEventResults(entry.properties);
   eventEditorForm.hidden = false;
+  eventEditorForm.classList.remove("is-collapsed");
   eventEditorEmptyState.textContent = `Editing ${displayName || id}`;
   eventFieldName.value = displayName;
   renderEventNameSelects(triggerNames, targetNames);
@@ -902,7 +905,10 @@ function populateEventEditor(id) {
 }
 
 function showEmptyEventEditor() {
-  if (eventEditorForm) eventEditorForm.hidden = true;
+  if (eventEditorForm) {
+    eventEditorForm.hidden = true;
+    eventEditorForm.classList.add("is-collapsed");
+  }
   if (eventEditorEmptyState) eventEditorEmptyState.textContent = "Select an event to edit.";
   if (eventSaveStatus) eventSaveStatus.textContent = "";
   renderEventNameSelects([], []);
