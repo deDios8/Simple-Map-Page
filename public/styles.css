@@ -265,15 +265,73 @@ body {
 
 .appearance-row {
   display: grid;
-  grid-template-columns: 0.4fr 0.4fr auto;
-  gap: 10px;
-  align-items: start;
+  grid-template-columns: auto 0.5fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.appearance-row label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.appearance-row label input,
+.appearance-row label textarea {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 6px 10px;
+}
+
+.appearance-row label input[type="color"] {
+  flex: none;
+  width: 24px;
+  min-height: 30px;
+  padding: 3px 4px;
+}
+
+.name-row label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.name-row label input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 6px 10px;
+}
+
+label.traits-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+label.traits-label input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 6px 10px;
 }
 
 .coord-pick-button {
-  display: grid;
+  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -312,7 +370,7 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
-  align-items: stretch;
+  align-items: center;
 }
 
 .stats-section {
