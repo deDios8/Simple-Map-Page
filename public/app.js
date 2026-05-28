@@ -141,7 +141,6 @@ const criteriaFieldName = document.querySelector("#criteria-field-name");
 const criteriaComponentsList = document.querySelector("#criteria-components-list");
 const addCriterionButton = document.querySelector("#add-criterion-button");
 const addCriteriaButton = document.querySelector("#add-criteria-button");
-const criteriaEditorFormToggle = document.querySelector("#criteria-editor-form-toggle");
 
 // Event results drawer DOM references
 const eventsResultsDrawer = document.querySelector("#events-results-drawer");
@@ -158,7 +157,6 @@ const eventFieldTargetNames = document.querySelector("#event-field-target-names"
 const eventResultsList = document.querySelector("#event-results-list");
 const addResultButton = document.querySelector("#add-result-button");
 const addEventButton = document.querySelector("#add-event-button");
-const eventEditorFormToggle = document.querySelector("#event-editor-form-toggle");
 
 const criteriaEditableFields = [
   criteriaFieldName,
@@ -181,13 +179,9 @@ const editorCollapseState = {
   stats: true,
 };
 
-const criteriaCollapseState = {
-  form: true,
-};
+const criteriaCollapseState = {};
 
-const eventCollapseState = {
-  form: true,
-};
+const eventCollapseState = {};
 
 // Persist collapse state to localStorage
 function saveCollapseState() {
@@ -239,73 +233,9 @@ function setStatsSectionCollapsed(isCollapsed) {
 // Criteria collapse state helpers
 // ---------------------------------------------------------------------------
 
-function saveCriteriaCollapseState() {
-  localStorage.setItem("criteriaCollapseState", JSON.stringify(criteriaCollapseState));
-}
-
-function loadCriteriaCollapseState() {
-  const saved = localStorage.getItem("criteriaCollapseState");
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (typeof parsed === "object") {
-        Object.assign(criteriaCollapseState, parsed);
-      }
-    } catch (e) {
-      console.error("Failed to parse criteria collapse state from localStorage", e);
-    }
-  }
-}
-
-function applyCriteriaCollapseState() {
-  setCriteriaFormCollapsed(criteriaCollapseState.form);
-}
-
-function setCriteriaFormCollapsed(isCollapsed) {
-  criteriaCollapseState.form = Boolean(isCollapsed);
-  criteriaEditorForm?.classList.toggle("is-collapsed", criteriaCollapseState.form);
-  if (criteriaEditorFormToggle) {
-    criteriaEditorFormToggle.textContent = criteriaCollapseState.form ? "Expand editor" : "Collapse editor";
-    criteriaEditorFormToggle.setAttribute("aria-expanded", String(!criteriaCollapseState.form));
-  }
-  saveCriteriaCollapseState();
-}
-
 // ---------------------------------------------------------------------------
 // Event results collapse state helpers
 // ---------------------------------------------------------------------------
-
-function saveEventCollapseState() {
-  localStorage.setItem("eventCollapseState", JSON.stringify(eventCollapseState));
-}
-
-function loadEventCollapseState() {
-  const saved = localStorage.getItem("eventCollapseState");
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (typeof parsed === "object") {
-        Object.assign(eventCollapseState, parsed);
-      }
-    } catch (e) {
-      console.error("Failed to parse event collapse state from localStorage", e);
-    }
-  }
-}
-
-function applyEventCollapseState() {
-  setEventFormCollapsed(eventCollapseState.form);
-}
-
-function setEventFormCollapsed(isCollapsed) {
-  eventCollapseState.form = Boolean(isCollapsed);
-  eventEditorForm?.classList.toggle("is-collapsed", eventCollapseState.form);
-  if (eventEditorFormToggle) {
-    eventEditorFormToggle.textContent = eventCollapseState.form ? "Expand editor" : "Collapse editor";
-    eventEditorFormToggle.setAttribute("aria-expanded", String(!eventCollapseState.form));
-  }
-  saveEventCollapseState();
-}
 
 function nameToKey(name) {
   return String(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
@@ -646,9 +576,6 @@ function applyCriteriaEditorPermissions() {
   if (addCriterionButton) {
     addCriterionButton.disabled = !isEditable || !isFormVisible;
   }
-  if (criteriaEditorFormToggle) {
-    criteriaEditorFormToggle.disabled = !isFormVisible;
-  }
   criteriaComponentsList?.querySelectorAll("input, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
   });
@@ -677,8 +604,6 @@ function handleCriteriaSnapshot(nextCriteria) {
   } else {
     renderEventNameSelects([], []);
   }
-
-  applyCriteriaCollapseState();
 }
 
 function getFirebaseEventCriteriaPath() {
@@ -697,7 +622,6 @@ function resetCriteriaListener() {
   state.criteriaListenerUnsubscribe = onValue(criteriaRef, (snapshot) => {
     if (state.listenerActive) {
       handleCriteriaSnapshot(snapshot.val() || {});
-      applyCriteriaCollapseState();
     }
   });
 }
@@ -1015,9 +939,6 @@ function applyEventEditorPermissions() {
   if (addResultButton) {
     addResultButton.disabled = !isEditable || !isFormVisible;
   }
-  if (eventEditorFormToggle) {
-    eventEditorFormToggle.disabled = !isFormVisible;
-  }
   eventResultsList?.querySelectorAll("input, select, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
   });
@@ -1036,8 +957,6 @@ function handleEventSnapshot(nextEvents) {
   } else {
     showEmptyEventEditor();
   }
-
-  applyEventCollapseState();
 }
 
 function getFirebaseEventResultsPath() {
@@ -1056,7 +975,6 @@ function resetEventListener() {
   state.eventListenerUnsubscribe = onValue(eventRef, (snapshot) => {
     if (state.listenerActive) {
       handleEventSnapshot(snapshot.val() || {});
-      applyEventCollapseState();
     }
   });
 }
@@ -1104,10 +1022,6 @@ function init() {
   renderVersionInfo();
   loadCollapseState();
   applyCollapseState();
-  loadCriteriaCollapseState();
-  applyCriteriaCollapseState();
-  loadEventCollapseState();
-  applyEventCollapseState();
   initMap();
   bindUi();
   locateUser();
@@ -1213,9 +1127,6 @@ function bindUi() {
   addCriteriaButton?.addEventListener("click", () => {
     void submitAddCriteriaRequest();
   });
-  criteriaEditorFormToggle?.addEventListener("click", () => {
-    setCriteriaFormCollapsed(!criteriaCollapseState.form);
-  });
   addCriterionButton?.addEventListener("click", () => {
     addEmptyCriterionRow();
   });
@@ -1288,9 +1199,6 @@ function bindUi() {
   eventsResultsDrawerClose?.addEventListener("click", () => setEventDrawerOpen(false));
   addEventButton?.addEventListener("click", () => {
     void submitAddEventRequest();
-  });
-  eventEditorFormToggle?.addEventListener("click", () => {
-    setEventFormCollapsed(!eventCollapseState.form);
   });
   addResultButton?.addEventListener("click", () => {
     addEmptyResultRow();

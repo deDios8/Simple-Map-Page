@@ -12,6 +12,8 @@ Make simple criteria that is hasTags, etc and test using debug
 
 It is good that app.js persists the collapsed/expanded states of menus. I'd like to make one change. When a user signs in on the modal #sym:promptUserId . Reset all of the collapsed states to be collapsed.
 
+Cause the map to start over the users current location if available after the sign-in modal.
+
 # Dependencies
 ## macos
 brew install python@3.13
