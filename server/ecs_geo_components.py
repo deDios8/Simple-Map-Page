@@ -66,7 +66,6 @@ class Stat:
 class Stats:
     items: dict = None
 
-
 @dataclass
 class Traits:
     traits: list
@@ -101,6 +100,7 @@ class GeoObjectDirty:
 # Entities
 # ---------------------------------------------------------------------------
 
+
 class GeoObject:
     def __init__(self, id: str, geometry: dict, properties: dict) -> None:
         new_entity_id = esper.create_entity()
@@ -124,6 +124,7 @@ class GeoObject:
                 visible=appearance.get("visible", []),
             ),
         )
+
 
 class ClientRequest:
     def __init__(self, id: str, geometry: dict, properties: dict) -> None:
