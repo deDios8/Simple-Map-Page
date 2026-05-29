@@ -178,10 +178,6 @@ const editorCollapseState = {
   editorForm: true,
 };
 
-const criteriaCollapseState = {};
-
-const eventCollapseState = {};
-
 // Persist collapse state to localStorage
 function saveCollapseState() {
   localStorage.setItem("editorCollapseState", JSON.stringify(editorCollapseState));
@@ -216,14 +212,6 @@ function setEditorFormCollapsed(isCollapsed) {
   }
   saveCollapseState();
 }
-
-// ---------------------------------------------------------------------------
-// Criteria collapse state helpers
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Event results collapse state helpers
-// ---------------------------------------------------------------------------
 
 function nameToKey(name) {
   return String(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
@@ -393,26 +381,21 @@ init();
 // Criteria editor functions
 // ---------------------------------------------------------------------------
 
-function normalizeCriteriaEntry(key, entry) {
+function normalizeNonGeoEntry(key, entry) {
   if (!entry || typeof entry !== "object") return null;
   const properties = entry.properties && typeof entry.properties === "object" ? entry.properties : {};
   return {
-    ...entry,
     type: entry.type || "Feature",
     geometry: null,
-    properties: {
-      ...properties,
-      id: properties.id || key,
-    },
+    properties: { ...properties, id: properties.id || key },
   };
 }
 
-function normalizeCriteria(rawCriteria) {
-  if (!rawCriteria || typeof rawCriteria !== "object") return {};
-  return Object.entries(rawCriteria).reduce((acc, [key, entry]) => {
-    const normalized = normalizeCriteriaEntry(key, entry);
-    if (!normalized) return acc;
-    acc[key] = normalized;
+function normalizeCollection(raw, normFn) {
+  if (!raw || typeof raw !== "object") return {};
+  return Object.entries(raw).reduce((acc, [key, entry]) => {
+    const normalized = normFn(key, entry);
+    if (normalized) acc[key] = normalized;
     return acc;
   }, {});
 }
@@ -447,13 +430,9 @@ function selectCriteria(id, options = {}) {
   state.selectedCriteriaId = id;
   populateCriteriaEditor(id);
   renderCriteriaList();
-  setCriteriaDrawerOpen(true);
+  setDrawerOpen(eventsDrawer, eventsDrawerToggle, true);
 }
 
-function setCriteriaDrawerOpen(isOpen) {
-  eventsDrawer?.classList.toggle("is-open", isOpen);
-  eventsDrawerToggle?.setAttribute("aria-expanded", String(isOpen));
-}
 
 function renderCriteriaComponentsEditor(components) {
   if (!criteriaComponentsList) return;
@@ -528,10 +507,7 @@ function populateCriteriaEditor(id) {
 
 function extractCriteriaComponents(properties) {
   if (!properties || typeof properties !== "object") return {};
-  const knownNames = new Set([
-    "CriteriaHasTags", "CriteriaIsWithin", "CriteriaJustEntered",
-    "CriteriaJustExited", "CriteriaVisibleTo", "CriteriaNotVisibleTo", "CriteriaFirstEntered",
-  ]);
+  const knownNames = new Set(CRITERIA_COMPONENT_OPTIONS);
   const components = {};
   for (const [key, value] of Object.entries(properties)) {
     if (knownNames.has(key) && value && typeof value === "object") {
@@ -572,7 +548,7 @@ function applyCriteriaEditorPermissions() {
 }
 
 function handleCriteriaSnapshot(nextCriteria) {
-  state.criteria = normalizeCriteria(nextCriteria);
+  state.criteria = normalizeCollection(nextCriteria, normalizeNonGeoEntry);
   renderCriteriaList();
 
   if (state.selectedCriteriaId && !state.criteria[state.selectedCriteriaId]) {
@@ -596,46 +572,28 @@ function handleCriteriaSnapshot(nextCriteria) {
   }
 }
 
-function getFirebaseEventCriteriaPath() {
-  return `${state.sessionName}/${firebaseEventCriteriaNode}`;
-}
 
-function resetCriteriaListener() {
-  if (!state.firebaseReady || !state.database) return;
 
-  if (typeof state.criteriaListenerUnsubscribe === "function") {
-    state.criteriaListenerUnsubscribe();
-    handleCriteriaSnapshot({});
-  }
-
-  const criteriaRef = ref(state.database, getFirebaseEventCriteriaPath());
-  state.criteriaListenerUnsubscribe = onValue(criteriaRef, (snapshot) => {
-    if (state.listenerActive) {
-      handleCriteriaSnapshot(snapshot.val() || {});
-    }
-  });
+function getRequestCoordinates() {
+  return Array.isArray(state.userLocation)
+    ? [state.userLocation[1], state.userLocation[0]]
+    : [0, 0];
 }
 
 async function submitAddCriteriaRequest() {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: "add_criteria",
     requestType: "add_criteria",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     successMessage: "Add criteria request sent",
   });
 }
 
 async function submitEditedCriteriaRequest(targetId, formData) {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: `edit-criteria-${targetId}`,
     requestType: "edited_criteria",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     clientRequestPayload: { targetId },
     properties: { formData },
     successMessage: `Edit criteria request for ${targetId} sent`,
@@ -643,13 +601,10 @@ async function submitEditedCriteriaRequest(targetId, formData) {
 }
 
 async function submitDeletedCriteriaRequest(targetId) {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: `delete-criteria-${targetId}`,
     requestType: "deleted_criteria",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     clientRequestPayload: { targetId },
     successMessage: `Delete criteria request for ${targetId} sent`,
   });
@@ -788,29 +743,6 @@ function collectResultsFromEditor() {
   return results;
 }
 
-function normalizeEventEntry(key, entry) {
-  if (!entry || typeof entry !== "object") return null;
-  const id = entry.properties?.id || key;
-  return {
-    type: entry.type || "Feature",
-    geometry: null,
-    properties: {
-      ...entry.properties,
-      id,
-    },
-  };
-}
-
-function normalizeEvents(rawEvents) {
-  if (!rawEvents || typeof rawEvents !== "object") return {};
-  return Object.entries(rawEvents).reduce((acc, [key, entry]) => {
-    const normalized = normalizeEventEntry(key, entry);
-    if (!normalized) return acc;
-    acc[key] = normalized;
-    return acc;
-  }, {});
-}
-
 function renderEventList() {
   if (!eventsList) return;
   const entries = Object.values(state.events);
@@ -841,13 +773,9 @@ function selectEvent(id) {
   state.selectedEventId = id;
   populateEventEditor(id);
   renderEventList();
-  setEventDrawerOpen(true);
+  setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, true);
 }
 
-function setEventDrawerOpen(isOpen) {
-  eventsResultsDrawer?.classList.toggle("is-open", isOpen);
-  eventsResultsDrawerToggle?.setAttribute("aria-expanded", String(isOpen));
-}
 
 function extractEventResults(properties) {
   if (!properties || typeof properties !== "object") return {};
@@ -939,7 +867,7 @@ function applyEventEditorPermissions() {
 }
 
 function handleEventSnapshot(nextEvents) {
-  state.events = normalizeEvents(nextEvents);
+  state.events = normalizeCollection(nextEvents, normalizeNonGeoEntry);
   renderEventList();
 
   if (state.selectedEventId && !state.events[state.selectedEventId]) {
@@ -953,46 +881,22 @@ function handleEventSnapshot(nextEvents) {
   }
 }
 
-function getFirebaseEventResultsPath() {
-  return `${state.sessionName}/${firebaseEventResultsNode}`;
-}
 
-function resetEventListener() {
-  if (!state.firebaseReady || !state.database) return;
-
-  if (typeof state.eventListenerUnsubscribe === "function") {
-    state.eventListenerUnsubscribe();
-    handleEventSnapshot({});
-  }
-
-  const eventRef = ref(state.database, getFirebaseEventResultsPath());
-  state.eventListenerUnsubscribe = onValue(eventRef, (snapshot) => {
-    if (state.listenerActive) {
-      handleEventSnapshot(snapshot.val() || {});
-    }
-  });
-}
 
 async function submitAddEventRequest() {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: "add_event",
     requestType: "add_event",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     successMessage: "Add event request sent",
   });
 }
 
 async function submitEditedEventRequest(targetId, formData) {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: `edit-event-${targetId}`,
     requestType: "edited_event",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     clientRequestPayload: { targetId },
     properties: { formData },
     successMessage: `Edit event request for ${targetId} sent`,
@@ -1000,20 +904,17 @@ async function submitEditedEventRequest(targetId, formData) {
 }
 
 async function submitDeletedEventRequest(targetId) {
-  const coordinates = Array.isArray(state.userLocation)
-    ? [state.userLocation[1], state.userLocation[0]]
-    : [0, 0];
   await submitRequest({
     requestId: `delete-event-${targetId}`,
     requestType: "deleted_event",
-    coordinates,
+    coordinates: getRequestCoordinates(),
     clientRequestPayload: { targetId },
     successMessage: `Delete event request for ${targetId} sent`,
   });
 }
 
 function init() {
-  renderVersionInfo();
+  if (versionInfo) versionInfo.textContent = `Version: ${state.version}`;
   loadCollapseState();
   applyCollapseState();
   initMap();
@@ -1023,11 +924,6 @@ function init() {
   promptUserId();
 }
 
-function renderVersionInfo() {
-  if (versionInfo) {
-    versionInfo.textContent = `Version: ${state.version}`;
-  }
-}
 
 function setCoordPickMode(active) {
   state.coordPickMode = Boolean(active);
@@ -1073,8 +969,8 @@ function initMap() {
 }
 
 function bindUi() {
-  drawerToggle.addEventListener("click", () => setDrawerOpen(!drawer.classList.contains("is-open")));
-  drawerClose.addEventListener("click", () => setDrawerOpen(false));
+  drawerToggle.addEventListener("click", () => setDrawerOpen(drawer, drawerToggle, !drawer.classList.contains("is-open")));
+  drawerClose.addEventListener("click", () => setDrawerOpen(drawer, drawerToggle, false));
   listenerToggle.addEventListener("click", toggleListener);
   requestAButton.addEventListener("click", () => {
     void submitRequest({ requestId: "request A", requestType: "button_click", successMessage: "request A sent" });
@@ -1098,7 +994,7 @@ function bindUi() {
     const entering = !state.coordPickMode;
     setCoordPickMode(entering);
     if (entering) {
-      setDrawerOpen(false);
+      setDrawerOpen(drawer, drawerToggle, false);
     }
   });
 
@@ -1119,9 +1015,9 @@ function bindUi() {
 
   // Events drawer bindings
   eventsDrawerToggle?.addEventListener("click", () => {
-    setCriteriaDrawerOpen(!eventsDrawer?.classList.contains("is-open"));
+    setDrawerOpen(eventsDrawer, eventsDrawerToggle, !eventsDrawer?.classList.contains("is-open"));
   });
-  eventsDrawerClose?.addEventListener("click", () => setCriteriaDrawerOpen(false));
+  eventsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsDrawer, eventsDrawerToggle, false));
   addCriteriaButton?.addEventListener("click", () => {
     void submitAddCriteriaRequest();
   });
@@ -1192,9 +1088,9 @@ function bindUi() {
 
   // Event results drawer bindings
   eventsResultsDrawerToggle?.addEventListener("click", () => {
-    setEventDrawerOpen(!eventsResultsDrawer?.classList.contains("is-open"));
+    setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, !eventsResultsDrawer?.classList.contains("is-open"));
   });
-  eventsResultsDrawerClose?.addEventListener("click", () => setEventDrawerOpen(false));
+  eventsResultsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, false));
   addEventButton?.addEventListener("click", () => {
     void submitAddEventRequest();
   });
@@ -1398,9 +1294,9 @@ function bindUi() {
   });
 }
 
-function setDrawerOpen(isOpen) {
-  drawer.classList.toggle("is-open", isOpen);
-  drawerToggle.setAttribute("aria-expanded", String(isOpen));
+function setDrawerOpen(drawerEl, toggleEl, isOpen) {
+  drawerEl?.classList.toggle("is-open", isOpen);
+  toggleEl?.setAttribute("aria-expanded", String(isOpen));
 }
 
 function locateUser() {
@@ -1420,7 +1316,7 @@ function locateUser() {
       state.userLocation = latLng;
 
       if (state.userId && !state.objects[state.userId] && !state.pendingUserSetup) {
-        createUserObject();
+        startCoordinateTracking();
       }
       if (state.userId && !state.trackingInterval && !state.pendingUserSetup) {
         startCoordinateTracking();
@@ -1497,23 +1393,17 @@ function promptUserId() {
       drawerTitle.textContent = `${state.userId}'s ${sessionName}`;
     }
 
-    resetObjectListener();
-    resetCriteriaListener();
-    resetEventListener();
+    resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
+    resetListener(firebaseEventCriteriaNode, "criteriaListenerUnsubscribe", handleCriteriaSnapshot);
+    resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
     modal.hidden = true;
 
-    // Defer createUserObject/startCoordinateTracking until the first Firebase
+    // Defer startCoordinateTracking until the first Firebase
     // snapshot arrives in handleObjectSnapshot, so existing data is not overwritten.
     state.pendingUserSetup = true;
   });
 }
 
-function createUserObject() {
-  if (!state.userId || !state.userLocation) {
-    return;
-  }
-  startCoordinateTracking();
-}
 
 function startCoordinateTracking() {
   if (state.trackingInterval) {
@@ -1566,9 +1456,9 @@ function initFirebaseListener() {
   state.database = getDatabase(app);
 
   state.firebaseReady = true;
-  resetObjectListener();
-  resetCriteriaListener();
-  resetEventListener();
+  resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
+  resetListener(firebaseEventCriteriaNode, "criteriaListenerUnsubscribe", handleCriteriaSnapshot);
+  resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
 }
 
 function toggleListener() {
@@ -1641,7 +1531,7 @@ async function submitRequest({
   };
 
   try {
-    await update(ref(state.database, getFirebaseClientRequestPath()), {
+    await update(ref(state.database, getFirebasePath(firebaseClientRequestNode)), {
       [requestKey]: requestFeature,
     });
     if (!quiet) {
@@ -1678,7 +1568,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebaseGeoObjectPath()}/${targetId}`,
+      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
     },
     properties: {
       formData,
@@ -1699,7 +1589,7 @@ async function submitDeletedObjectRequest(targetId) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebaseGeoObjectPath()}/${targetId}`,
+      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
     },
     successMessage: `Delete request for ${targetId} sent`,
   });
@@ -1713,7 +1603,7 @@ function handleObjectSnapshot(nextObjects) {
   if (state.pendingUserSetup && state.userId && state.userLocation) {
     state.pendingUserSetup = false;
     if (!state.objects[state.userId]) {
-      createUserObject();
+      startCoordinateTracking();
     } else {
       startCoordinateTracking();
     }
@@ -1911,7 +1801,7 @@ function selectObject(id, options = {}) {
   state.selectedId = id;
   populateEditor(id);
   renderObjectList();
-  setDrawerOpen(true);
+  setDrawerOpen(drawer, drawerToggle, true);
 
   if (options.flyTo !== false) {
     focusFeature(feature);
@@ -2020,30 +1910,17 @@ function normalizeSessionName(rawValue) {
   return withoutSlashes || "testBed";
 }
 
-function getFirebaseGeoObjectPath() {
-  return `${state.sessionName}/${firebaseGeoObjectsNode}`;
+function getFirebasePath(node) {
+  return `${state.sessionName}/${node}`;
 }
 
-function getFirebaseClientRequestPath() {
-  return `${state.sessionName}/${firebaseClientRequestNode}`;
-}
-
-function resetObjectListener() {
-  if (!state.firebaseReady || !state.database) {
-    return;
+function resetListener(node, stateKey, handler) {
+  if (!state.firebaseReady || !state.database) return;
+  if (typeof state[stateKey] === "function") {
+    state[stateKey]();
+    handler({});
   }
-
-  if (typeof state.listenerUnsubscribe === "function") {
-    state.listenerUnsubscribe();
-    handleObjectSnapshot({});
-  }
-
-  const objectRef = ref(state.database, getFirebaseGeoObjectPath());
-  state.listenerUnsubscribe = onValue(objectRef, (snapshot) => {
-    if (state.listenerActive) {
-      handleObjectSnapshot(snapshot.val() || {});
-      // Reapply collapse state after objects are updated
-      applyCollapseState();
-    }
+  state[stateKey] = onValue(ref(state.database, getFirebasePath(node)), (snapshot) => {
+    if (state.listenerActive) handler(snapshot.val() || {});
   });
 }
