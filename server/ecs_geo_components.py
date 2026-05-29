@@ -22,7 +22,7 @@ class Appearance:
     color: str
     shape: str
     radius: int
-    visible: list
+    visible_to: list
 
 @dataclass
 class Geometry:
@@ -121,7 +121,7 @@ class GeoObject:
                 color=appearance.get("color", ""),
                 shape=appearance.get("shape", ""),
                 radius=appearance.get("radius", 0),
-                visible=appearance.get("visible", []),
+                visible_to=appearance.get("visibleTo", []),
             ),
         )
 

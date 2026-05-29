@@ -92,7 +92,7 @@ class GeoObjectEntry(DBEntry):
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
-        self.visible = normalize_string_list(self.appearance.get("visible", [])) if isinstance(self.appearance, dict) else []
+        self.visible_to = normalize_string_list(self.appearance.get("visibleTo", [])) if isinstance(self.appearance, dict) else []
 
         self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
         

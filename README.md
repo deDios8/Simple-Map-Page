@@ -2,12 +2,6 @@
 Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
 Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
-If no object is selected, the editor form should not populate
-Dropdowns for object selector? Can they be in color?
-
-Remove the stat editor collapse button.
-New login, new collapsed state:
-Menu starts collapsed, then when a geo object is chosen, it expands the editor form.
 
 Change Visible to Visible To in editor, db, and variables
 

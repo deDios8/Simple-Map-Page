@@ -397,7 +397,7 @@ class EventProcessor(esper.Processor):
 
     def _set_visibility(self, target_entity_id: int, component: ecs_event_components.ResultSetVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
-            appearance.visible = component.visible
+            appearance.visible_to = component.visible
 
     def _toggle_visibility(self, target_entity_id: int, component: ecs_event_components.ResultToggleVisibility) -> None:
         # TODO: implement — Appearance.visible is a list; define toggle semantics
@@ -521,7 +521,7 @@ class SyncGeoObjectsToDatabase(esper.Processor):
                 "color": appearance.color,
                 "shape": appearance.shape,
                 "radius": appearance.radius,
-                "visible": appearance.visible,
+                "visibleTo": appearance.visible_to,
             }
 
         traits = esper.try_component(entity_id, ecs_geo_components.Traits)

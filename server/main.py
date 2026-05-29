@@ -294,7 +294,7 @@ class SessionState:
                     "displayName": requester_id,
                     "appearance": {
                         "color": "#000000",
-                        "visible": ["USER"],
+                        "visibleTo": ["USER"],
                         "radius": 2,
                     },
                     "traits": ["USER"],
@@ -362,7 +362,7 @@ class SessionState:
                 "displayName": f"{new_object_key}",
                 "appearance": {
                     "color": "#0b8f87",
-                    "visible": ["USER"],
+                    "visibleTo": ["USER"],
                     "radius": 5,
                 },
                 "traits": ["ZONE"],
@@ -410,8 +410,8 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        appearance_visible = normalize_string_list(form_data.get("visible")) if "visible" in form_data else appearance.visible
-        appearance.visible = appearance_visible
+        appearance_visible = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else appearance.visible_to
+        appearance.visible_to = appearance_visible
 
         traits_component = esper.try_component(target_entity_id, ecs_geo_components.Traits)
         current_traits = traits_component.traits if traits_component is not None else []
@@ -442,7 +442,7 @@ class SessionState:
                 "properties/displayName": display_name_comp.display_name,
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
-                "properties/appearance/visible": appearance_visible,
+                "properties/appearance/visibleTo": appearance_visible,
                 "properties/traits": next_traits,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
@@ -467,7 +467,7 @@ class SessionState:
                 if isinstance(appr, dict):
                     appr["color"] = appearance.color
                     appr["radius"] = appearance.radius
-                    appr["visible"] = appearance_visible
+                    appr["visibleTo"] = appearance_visible
                 props["traits"] = next_traits
                 props["data"] = extra_data
                 if next_stats_payload:
@@ -530,7 +530,7 @@ class SessionState:
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
-        appearance.visible = normalize_string_list(appearance_data.get("visible", []))
+        appearance.visible_to = normalize_string_list(appearance_data.get("visibleTo", []))
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])

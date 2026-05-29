@@ -1350,7 +1350,7 @@ function bindUi() {
         appearance: {
           ...objectEntry.properties?.appearance,
           color: fieldColor.value,
-          visible: parseVisibleList(fieldVisible.value),
+          visibleTo: parseVisibleList(fieldVisible.value),
           radius: nextRadius,
         },
         traits: parseVisibleList(fieldTraits.value),
@@ -1663,7 +1663,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
   const formData = {
     name: fieldName.value.trim(),
     color: fieldColor.value,
-    visible: parseVisibleList(fieldVisible.value),
+    visibleTo: parseVisibleList(fieldVisible.value),
     traits: parseVisibleList(fieldTraits.value),
     latitude: coordDisplayLat.textContent.replace(/^Lat:\s*/i, "").trim(),
     longitude: coordDisplayLng.textContent.replace(/^Lng:\s*/i, "").trim(),
@@ -1808,7 +1808,7 @@ function parseVisibleList(value) {
 }
 
 function isVisibleToCurrentUser(feature) {
-  const visibleTo = feature.properties?.appearance?.visible;
+  const visibleTo = feature.properties?.appearance?.visibleTo;
   if (!Array.isArray(visibleTo) || visibleTo.length === 0) return false;
   const userTraits = state.objects[state.userId]?.properties?.traits || [];
   const userTraitSet = new Set(
@@ -1951,7 +1951,7 @@ function populateEditor(id) {
   editorEmptyState.textContent = `Editing ${displayName || id}`;
   fieldName.value = displayName;
   fieldColor.value = feature.properties?.appearance?.color || "#0b8f87";
-  const rawVisible = feature.properties?.appearance?.visible;
+  const rawVisible = feature.properties?.appearance?.visibleTo;
   fieldVisible.value = Array.isArray(rawVisible) ? rawVisible.join(", ") : "";
   const rawTraits = feature.properties?.traits;
   fieldTraits.value = Array.isArray(rawTraits) ? rawTraits.join(", ") : "";
