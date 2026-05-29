@@ -31,7 +31,7 @@ class CriteriaJustExited:
     tags: list
 
 @dataclass
-class CriteriaIsVisible:
+class CriteriaVisibleTo:
     is_visible: bool
 
 @dataclass

@@ -262,12 +262,8 @@ class CriteriaProcessor(esper.Processor):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_just_entered(geo_eid, c))
             if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaJustExited):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_just_exited(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaIsVisible):
+            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaVisibleTo):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_is_visible(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaIsNotVisible):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_not_visible(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaFirstEntered):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_first_entered(geo_eid, c))
 
             # passed_any: met at least one criterion; failed_any: failed at least one.
             # met_all = passed_any - failed_any
@@ -298,28 +294,27 @@ class CriteriaProcessor(esper.Processor):
         return any(tag in geo_tags for tag in component.tags)
 
     def _check_is_within(self, geo_eid: int, component: ecs_event_components.CriteriaIsWithin) -> bool:
-        # TODO: implement
-        return False
+        within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
+        if not within:
+            return False
+        return any(zone_id in within.zone_ids for zone_id in component.tags)
 
     def _check_just_entered(self, geo_eid: int, component: ecs_event_components.CriteriaJustEntered) -> bool:
-        # TODO: implement
-        return False
+        entered = esper.try_component(geo_eid, ecs_geo_components.EnteredZones)
+        if not entered:
+            return False
+        return any(zone_id in entered.zone_ids for zone_id in component.tags)
 
     def _check_just_exited(self, geo_eid: int, component: ecs_event_components.CriteriaJustExited) -> bool:
+        exited = esper.try_component(geo_eid, ecs_geo_components.ExitedZones)
+        if not exited:
+            return False
+        return any(zone_id in exited.zone_ids for zone_id in component.tags)
+
+    def _check_is_visible(self, geo_eid: int, component: ecs_event_components.CriteriaVisibleTo) -> bool:
         # TODO: implement
         return False
 
-    def _check_is_visible(self, geo_eid: int, component: ecs_event_components.CriteriaIsVisible) -> bool:
-        # TODO: implement
-        return False
-
-    def _check_is_not_visible(self, geo_eid: int, component: ecs_event_components.CriteriaIsNotVisible) -> bool:
-        # TODO: implement
-        return False
-
-    def _check_first_entered(self, geo_eid: int, component: ecs_event_components.CriteriaFirstEntered) -> bool:
-        # TODO: implement
-        return False
     
 
 class EventProcessor(esper.Processor):

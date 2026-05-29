@@ -13,7 +13,7 @@ const CRITERIA_COMPONENT_OPTIONS = [
   "CriteriaIsWithin",
   "CriteriaJustEntered",
   "CriteriaJustExited",
-  "CriteriaIsVisible",
+  "CriteriaVisibleTo",
   "CriteriaIsNotVisible",
   "CriteriaFirstEntered",
 ];
@@ -529,7 +529,7 @@ function extractCriteriaComponents(properties) {
   if (!properties || typeof properties !== "object") return {};
   const knownNames = new Set([
     "CriteriaHasTags", "CriteriaIsWithin", "CriteriaJustEntered",
-    "CriteriaJustExited", "CriteriaIsVisible", "CriteriaIsNotVisible", "CriteriaFirstEntered",
+    "CriteriaJustExited", "CriteriaVisibleTo", "CriteriaIsNotVisible", "CriteriaFirstEntered",
   ]);
   const components = {};
   for (const [key, value] of Object.entries(properties)) {

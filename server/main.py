@@ -46,7 +46,7 @@ _CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
 
 # Maps criteria component name → ECS component class (bool-based)
 _CRITERIA_BOOL_COMPONENT_MAP: dict[str, type] = {
-    "CriteriaIsVisible": ecs_event_components.CriteriaIsVisible,
+    "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
     "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
 }
 

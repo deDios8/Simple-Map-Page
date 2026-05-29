@@ -17,7 +17,7 @@ CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaIsWithin",
     "CriteriaJustEntered",
     "CriteriaJustExited",
-    "CriteriaIsVisible",
+    "CriteriaVisibleTo",
     "CriteriaIsNotVisible",
     "CriteriaFirstEntered",
 })

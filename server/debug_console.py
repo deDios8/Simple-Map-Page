@@ -197,7 +197,7 @@ class SessionDebugConsole:
             "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
             "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
             "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
-            "CriteriaIsVisible": ecs_event_components.CriteriaIsVisible,
+            "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
             "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
             "ObjectsThatMetAnyCriteria": ecs_event_components.ObjectsThatMetAnyCriteria,
             "ObjectsThatMetAllCriteria": ecs_event_components.ObjectsThatMetAllCriteria,
