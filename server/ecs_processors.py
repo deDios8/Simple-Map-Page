@@ -312,8 +312,10 @@ class CriteriaProcessor(esper.Processor):
         return any(zone_id in exited.zone_ids for zone_id in component.tags)
 
     def _check_is_visible(self, geo_eid: int, component: ecs_event_components.CriteriaVisibleTo) -> bool:
-        # TODO: implement
-        return False
+        appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
+        if not appearance:
+            return False
+        return any(tag in appearance.visible_to for tag in component.tags)
 
     
 

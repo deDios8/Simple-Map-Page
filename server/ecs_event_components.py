@@ -32,11 +32,11 @@ class CriteriaJustExited:
 
 @dataclass
 class CriteriaVisibleTo:
-    is_visible: bool
+    tags: list
 
 @dataclass
 class CriteriaIsNotVisible:
-    is_visible: bool
+    tags: list
 
 @dataclass
 class CriteriaFirstEntered:

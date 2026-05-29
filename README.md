@@ -3,8 +3,6 @@ Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS a
 Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
 
-Change Visible to Visible To in editor, db, and variables
-
 Cause the map to start over the users current location if available after the sign-in modal.
 
 # Dependencies
