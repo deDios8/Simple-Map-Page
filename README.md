@@ -3,6 +3,10 @@ Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS a
 Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
 
+wishlist: would like a way to move a user on laptop (overriding gps)
+Remove/disable ResultToggleVisibility and ResultToggleTraits for now
+
+
 # Dependencies
 ## macos
 brew install python@3.13

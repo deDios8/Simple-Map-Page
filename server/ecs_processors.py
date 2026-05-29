@@ -262,40 +262,71 @@ class CriteriaProcessor(esper.Processor):
             all_criteria = esper.try_component(criteria_entity_id, ecs_event_components.ObjectsThatMetAllCriteria)
             all_criteria.object_ids = list(passed_any - failed_any)
 
-    def _check_has_tags(self, geo_eid: int, component: ecs_event_components.CriteriaHasTags) -> bool:
-        geo_tags: set[str] = set()
-        if dn := esper.try_component(geo_eid, ecs_geo_components.DisplayName):
-            geo_tags.add(dn.display_name)
-        if traits := esper.try_component(geo_eid, ecs_geo_components.Traits):
-            geo_tags.update(traits.traits)
-        if stats := esper.try_component(geo_eid, ecs_geo_components.Stats):
+    def _get_entity_tags(self, eid: int) -> set[str]:
+        tags: set[str] = set()
+        if dn := esper.try_component(eid, ecs_geo_components.DisplayName):
+            tags.add(dn.display_name)
+        if traits := esper.try_component(eid, ecs_geo_components.Traits):
+            tags.update(traits.traits)
+        if stats := esper.try_component(eid, ecs_geo_components.Stats):
             if stats.items:
-                geo_tags.update(stats.items.keys())
-        return any(tag in geo_tags for tag in component.tags)
+                tags.update(stats.items.keys())
+        return tags
+
+    def _check_has_tags(self, geo_eid: int, component: ecs_event_components.CriteriaHasTags) -> bool:
+        return any(tag in self._get_entity_tags(geo_eid) for tag in component.tags)
 
     def _check_is_within(self, geo_eid: int, component: ecs_event_components.CriteriaIsWithin) -> bool:
         within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
         if not within:
             return False
-        return any(zone_id in within.zone_ids for zone_id in component.tags)
+        tag_set = set(component.tags)
+        for zone_id in within.zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is None:
+                continue
+            if self._get_entity_tags(zone_eid) & tag_set:
+                return True
+        return False
 
     def _check_is_not_within(self, geo_eid: int, component: ecs_event_components.CriteriaNotWithin) -> bool:
         within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
         if not within:
             return True  # If the entity has no WithinZones component, it is considered "not within" any zones.
-        return all(zone_id not in within.zone_ids for zone_id in component.tags)
+        tag_set = set(component.tags)
+        for zone_id in within.zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is None:
+                continue
+            if self._get_entity_tags(zone_eid) & tag_set:
+                return False
+        return True
 
     def _check_just_entered(self, geo_eid: int, component: ecs_event_components.CriteriaJustEntered) -> bool:
         entered = esper.try_component(geo_eid, ecs_geo_components.EnteredZones)
         if not entered:
             return False
-        return any(zone_id in entered.zone_ids for zone_id in component.tags)
+        tag_set = set(component.tags)
+        for zone_id in entered.zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is None:
+                continue
+            if self._get_entity_tags(zone_eid) & tag_set:
+                return True
+        return False
 
     def _check_just_exited(self, geo_eid: int, component: ecs_event_components.CriteriaJustExited) -> bool:
         exited = esper.try_component(geo_eid, ecs_geo_components.ExitedZones)
         if not exited:
             return False
-        return any(zone_id in exited.zone_ids for zone_id in component.tags)
+        tag_set = set(component.tags)
+        for zone_id in exited.zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is None:
+                continue
+            if self._get_entity_tags(zone_eid) & tag_set:
+                return True
+        return False
 
     def _check_is_visible(self, geo_eid: int, component: ecs_event_components.CriteriaVisibleTo) -> bool:
         appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)

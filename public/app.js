@@ -20,8 +20,8 @@ const CRITERIA_COMPONENT_OPTIONS = [
 ];
 
 const RESULT_COMPONENT_FIELD_CONFIG = {
-  ResultSetVisibility:         { fieldName: "visible",        fieldType: "bool",   label: "Visible" },
-  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "bool",   label: "Toggle" },
+  ResultSetVisibility:         { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
+  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "csv",   label: "Visible" },
   ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
   ResultChangeRadius:          { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
   ResultAddTraits:             { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
