@@ -4,7 +4,7 @@ import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
-from db_stream import GEO_OBJECTS_NODE, CLIENT_REQUESTS_NODE, patch_db_entry, multi_path_patch, normalize_string_list
+from db_stream import GEO_OBJECTS_NODE, multi_path_patch, normalize_string_list
 
 
 class ApplyClientRequests(esper.Processor):
