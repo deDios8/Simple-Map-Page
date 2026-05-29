@@ -39,10 +39,11 @@ from db_stream import (
 _CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
     "CriteriaHasTags": ecs_event_components.CriteriaHasTags,
     "CriteriaIsWithin": ecs_event_components.CriteriaIsWithin,
+    "CriteriaNotWithin": ecs_event_components.CriteriaNotWithin,
     "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
     "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
     "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
-    "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
+    "CriteriaNotVisibleTo": ecs_event_components.CriteriaNotVisibleTo,
     "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
 }
 

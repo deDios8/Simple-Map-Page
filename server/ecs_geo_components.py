@@ -79,10 +79,6 @@ class WithinZones:
     zone_ids: list
 
 @dataclass
-class NotWithinZones:
-    zone_ids: list
-
-@dataclass
 class EnteredZones:
     zone_ids: list
 

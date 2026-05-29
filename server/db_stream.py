@@ -15,10 +15,11 @@ from urllib.request import Request, urlopen
 CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaHasTags",
     "CriteriaIsWithin",
+    "CriteriaNotWithin",
     "CriteriaJustEntered",
     "CriteriaJustExited",
     "CriteriaVisibleTo",
-    "CriteriaIsNotVisible",
+    "CriteriaNotVisibleTo",
     "CriteriaFirstEntered",
 })
 

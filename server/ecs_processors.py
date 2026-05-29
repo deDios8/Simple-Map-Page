@@ -192,18 +192,6 @@ class RemoveZoneEntryExit(esper.Processor):
             if within_zones != before_zones:
                 esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
 
-            # NotWithinZones: remove entered zones
-            not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
-            if not_within is not None:
-                not_within_zones = set(not_within.zone_ids) - entered_set
-                if not_within_zones:
-                    esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
-                else:
-                    try:
-                        esper.remove_component(entity_id, ecs_geo_components.NotWithinZones)
-                    except KeyError:
-                        pass
-
             try:
                 esper.remove_component(entity_id, ecs_geo_components.EnteredZones)
             except KeyError:
@@ -229,12 +217,6 @@ class RemoveZoneEntryExit(esper.Processor):
                 if within_zones != before_zones:
                     esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
 
-            # NotWithinZones: add exited zones
-            not_within = esper.try_component(entity_id, ecs_geo_components.NotWithinZones)
-            not_within_zones = (set(not_within.zone_ids) if not_within else set()) | exited_set
-
-            esper.add_component(entity_id, ecs_geo_components.NotWithinZones(zone_ids=list(not_within_zones)))
-
             try:
                 esper.remove_component(entity_id, ecs_geo_components.ExitedZones)
             except KeyError:
@@ -258,12 +240,16 @@ class CriteriaProcessor(esper.Processor):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_has_tags(geo_eid, c))
             if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaIsWithin):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_is_within(geo_eid, c))
+            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaNotWithin):
+                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_not_within(geo_eid, c))
             if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaJustEntered):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_just_entered(geo_eid, c))
             if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaJustExited):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_just_exited(geo_eid, c))
             if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaVisibleTo):
                 criteria_checks.append(lambda geo_eid, c=comp: self._check_is_visible(geo_eid, c))
+            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaNotVisibleTo):
+                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_not_visible(geo_eid, c))
 
             # passed_any: met at least one criterion; failed_any: failed at least one.
             # met_all = passed_any - failed_any
@@ -299,6 +285,12 @@ class CriteriaProcessor(esper.Processor):
             return False
         return any(zone_id in within.zone_ids for zone_id in component.tags)
 
+    def _check_is_not_within(self, geo_eid: int, component: ecs_event_components.CriteriaNotWithin) -> bool:
+        within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
+        if not within:
+            return True  # If the entity has no WithinZones component, it is considered "not within" any zones.
+        return all(zone_id not in within.zone_ids for zone_id in component.tags)
+
     def _check_just_entered(self, geo_eid: int, component: ecs_event_components.CriteriaJustEntered) -> bool:
         entered = esper.try_component(geo_eid, ecs_geo_components.EnteredZones)
         if not entered:
@@ -317,7 +309,11 @@ class CriteriaProcessor(esper.Processor):
             return False
         return any(tag in appearance.visible_to for tag in component.tags)
 
-    
+    def _check_is_not_visible(self, geo_eid: int, component: ecs_event_components.CriteriaNotVisibleTo) -> bool:
+        appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
+        if not appearance:
+            return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
+        return all(tag not in appearance.visible_to for tag in component.tags)
 
 class EventProcessor(esper.Processor):
     def __init__(self, session_state) -> None:

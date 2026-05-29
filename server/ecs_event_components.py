@@ -23,6 +23,10 @@ class CriteriaIsWithin:
     tags: list
 
 @dataclass
+class CriteriaNotWithin:
+    tags: list
+
+@dataclass
 class CriteriaJustEntered:
     tags: list
 
@@ -35,7 +39,7 @@ class CriteriaVisibleTo:
     tags: list
 
 @dataclass
-class CriteriaIsNotVisible:
+class CriteriaNotVisibleTo:
     tags: list
 
 @dataclass
