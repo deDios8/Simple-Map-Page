@@ -1410,10 +1410,6 @@ function startCoordinateTracking() {
         },
       };
 
-      if (updated.properties && Object.prototype.hasOwnProperty.call(updated.properties, "zoneBorders")) {
-        delete updated.properties.zoneBorders;
-      }
-
       state.objects[state.userId] = updated;
       renderLayer();
     }

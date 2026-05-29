@@ -189,9 +189,6 @@ class RemoveZoneEntryExit(esper.Processor):
             within_zones = before_zones | entered_set
 
             esper.add_component(entity_id, ecs_geo_components.WithinZones(zone_ids=list(within_zones)))
-            if within_zones != before_zones:
-                esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
-
             try:
                 esper.remove_component(entity_id, ecs_geo_components.EnteredZones)
             except KeyError:
@@ -213,9 +210,6 @@ class RemoveZoneEntryExit(esper.Processor):
                         esper.remove_component(entity_id, ecs_geo_components.WithinZones)
                     except KeyError:
                         pass
-
-                if within_zones != before_zones:
-                    esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
 
             try:
                 esper.remove_component(entity_id, ecs_geo_components.ExitedZones)
@@ -314,6 +308,7 @@ class CriteriaProcessor(esper.Processor):
         if not appearance:
             return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
         return all(tag not in appearance.visible_to for tag in component.tags)
+
 
 class EventProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
@@ -525,25 +520,6 @@ class SyncGeoObjectsToDatabase(esper.Processor):
         if stats is not None and stats.items:
             payload["properties/stats"] = stats.items
 
-        payload["properties/zoneBorders"] = self._build_zone_borders(entity_id)
-
         return payload
-
-    def _build_zone_borders(self, entity_id: int) -> dict | None:
-        zone_borders: dict = {}
-
-        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
-        if within is not None:
-            zone_borders["withinZones"] = {"zone_ids": normalize_string_list(within.zone_ids)}
-
-        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
-        if entered is not None:
-            zone_borders["enteredZones"] = {"zone_ids": normalize_string_list(entered.zone_ids)}
-
-        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
-        if exited is not None:
-            zone_borders["exitedZones"] = {"zone_ids": normalize_string_list(exited.zone_ids)}
-
-        return zone_borders or None
 
 
