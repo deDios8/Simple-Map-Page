@@ -53,7 +53,6 @@ const firebaseEventCriteriaNode = "eventCriteria";
 const firebaseEventResultsNode = "eventResults";
 
 const state = {
-  version: "0.1.033",
   updateLocationInterval: 10000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
@@ -112,7 +111,6 @@ const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
 const editorFormToggle = document.querySelector("#editor-form-toggle");
 const statsSection = document.querySelector(".stats-section");
-const versionInfo = document.querySelector("#version-info");
 
 // Events drawer DOM references
 const eventsDrawer = document.querySelector("#events-drawer");
@@ -900,7 +898,6 @@ async function submitDeletedEventRequest(targetId) {
 }
 
 function init() {
-  if (versionInfo) versionInfo.textContent = `Version: ${state.version}`;
   loadCollapseState();
   applyCollapseState();
   initMap();
