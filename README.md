@@ -4,7 +4,7 @@ Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
 
 zoneborders doesn't need to be uploaded to firebase
-In #app.js can #extractCriteriaComponents use CRITERIA_COMPONENT_OPTIONS
+Remove version from front end
 
 # Dependencies
 ## macos

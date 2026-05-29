@@ -19,22 +19,6 @@ const CRITERIA_COMPONENT_OPTIONS = [
   "CriteriaFirstEntered",
 ];
 
-const RESULT_COMPONENT_OPTIONS = [
-  "ResultSetVisibility",
-  "ResultToggleVisibility",
-  "ResultChangeColor",
-  "ResultChangeRadius",
-  "ResultAddTraits",
-  "ResultRemoveTraits",
-  "ResultToggleTraits",
-  "ResultAddStats",
-  "ResultRemoveStats",
-  "ResultToggleStats",
-  "ResultSetStatsToValues",
-  "ResultIncreaseStatsByValues",
-  "ResultDecreaseStatsByValues",
-];
-
 const RESULT_COMPONENT_FIELD_CONFIG = {
   ResultSetVisibility:         { fieldName: "visible",        fieldType: "bool",   label: "Visible" },
   ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "bool",   label: "Toggle" },
@@ -50,6 +34,8 @@ const RESULT_COMPONENT_FIELD_CONFIG = {
   ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
   ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
 };
+
+const RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
