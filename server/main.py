@@ -41,13 +41,9 @@ _CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
     "CriteriaIsWithin": ecs_event_components.CriteriaIsWithin,
     "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
     "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
-    "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
-}
-
-# Maps criteria component name → ECS component class (bool-based)
-_CRITERIA_BOOL_COMPONENT_MAP: dict[str, type] = {
     "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
     "CriteriaIsNotVisible": ecs_event_components.CriteriaIsNotVisible,
+    "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
 }
 
 # Maps event result component name → ECS component class
@@ -681,7 +677,7 @@ class SessionState:
     ## Criteria management
     def _sync_criteria_components(self, entity_id: int, criteria_components: dict) -> None:
         """Remove all existing criteria ECS components and re-add from criteria_components dict."""
-        for comp_type in list(_CRITERIA_TAGS_COMPONENT_MAP.values()) + list(_CRITERIA_BOOL_COMPONENT_MAP.values()):
+        for comp_type in _CRITERIA_TAGS_COMPONENT_MAP.values():
             try:
                 esper.remove_component(entity_id, comp_type)
             except KeyError:
@@ -696,10 +692,6 @@ class SessionState:
                 if not isinstance(tags, list):
                     tags = []
                 esper.add_component(entity_id, comp_type(tags=tags))
-            elif comp_name in _CRITERIA_BOOL_COMPONENT_MAP:
-                comp_type = _CRITERIA_BOOL_COMPONENT_MAP[comp_name]
-                is_visible = bool(comp_data.get("is_visible", True))
-                esper.add_component(entity_id, comp_type(is_visible=is_visible))
 
     def _upsert_criteria_entity(self, key: str, entry: CriteriaEntry) -> int:
         existing_entity_id = self.EventCriteriaEntityIds.get(key)
