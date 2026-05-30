@@ -78,7 +78,7 @@ class EventTargetNames: # should maybe use ID's
 
 @dataclass
 class ResultSetVisibility:
-    visible: bool
+    visible: list
 
 @dataclass
 class ResultToggleVisibility:

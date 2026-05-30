@@ -53,7 +53,7 @@ const firebaseEventCriteriaNode = "eventCriteria";
 const firebaseEventResultsNode = "eventResults";
 
 const state = {
-  updateLocationInterval: 10000,
+  updateLocationInterval: 2000,
   // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   // mapLayerAttribution: "&copy; OpenStreetMap contributors",
   mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",

@@ -834,7 +834,7 @@ class SessionState:
             if comp_type is None:
                 continue
             if comp_name == "ResultSetVisibility":
-                esper.add_component(entity_id, comp_type(visible=bool(comp_data.get("visible", True))))
+                esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultToggleVisibility":
                 esper.add_component(entity_id, comp_type(toggle=bool(comp_data.get("toggle", False))))
             elif comp_name == "ResultChangeColor":
