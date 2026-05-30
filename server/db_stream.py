@@ -1321,44 +1321,24 @@ class SessionState:
             if not isinstance(comp_data, dict):
                 continue
             comp_type = ecs_event_components.EVENT_RESULT_COMPONENT_MAP.get(comp_name)
-            if comp_type is None:
+            meta = ecs_event_components.EVENT_RESULT_COMPONENT_CONFIG.get(comp_name)
+            if comp_type is None or meta is None:
                 continue
-            if comp_name in ("ResultGrantVisibility", "ResultRevokeVisibility", "ResultToggleVisibility"):
-                esper.add_component(entity_id, comp_type(tags=normalize_string_list(comp_data.get("tags", []))))
-            elif comp_name == "ResultSetColor":
-                esper.add_component(entity_id, comp_type(color=str(comp_data.get("color", ""))))
-            elif comp_name == "ResultChangeRadius":
+            field_name = meta["fieldName"]
+            field_type = meta["fieldType"]
+            raw = comp_data.get(field_name)
+            if field_type == "csv":
+                value = normalize_string_list(raw) if raw is not None else []
+            elif field_type == "number":
                 try:
-                    change = int(comp_data.get("change", 0))
+                    value = int(raw or 0)
                 except (TypeError, ValueError):
-                    change = 0
-                esper.add_component(entity_id, comp_type(change=change))
-            elif comp_name == "ResultSetRadius":
-                try:
-                    radius = int(comp_data.get("radius", 0))
-                except (TypeError, ValueError):
-                    radius = 0
-                esper.add_component(entity_id, comp_type(radius=radius))
-            elif comp_name in ("ResultGrantTraits", "ResultRevokeTraits", "ResultToggleTraits"):
-                tags = comp_data.get("tags", [])
-                if not isinstance(tags, list):
-                    tags = []
-                esper.add_component(entity_id, comp_type(tags=tags))
-            elif comp_name == "ResultRevokeStats":
-                tags = comp_data.get("tags", [])
-                if not isinstance(tags, list):
-                    tags = []
-                esper.add_component(entity_id, comp_type(tags=tags))
-            elif comp_name == "ResultToggleStats":
-                stats = comp_data.get("stats", [])
-                if not isinstance(stats, list):
-                    stats = []
-                esper.add_component(entity_id, comp_type(stats=stats))
-            elif comp_name in ("ResultSetStatsToValues", "ResultChangeStatsByValues"):
-                s2v = comp_data.get("stats_to_values", {})
-                if not isinstance(s2v, dict):
-                    s2v = {}
-                esper.add_component(entity_id, comp_type(stats_to_values=s2v))
+                    value = 0
+            elif field_type == "json":
+                value = raw if isinstance(raw, dict) else {}
+            else:  # "text"
+                value = str(raw or "")
+            esper.add_component(entity_id, comp_type(**{field_name: value}))
 
     def _upsert_event_entity(self, key: str, entry: EventResultEntry) -> int:
         existing_entity_id = self.EventResultEntityIds.get(key)

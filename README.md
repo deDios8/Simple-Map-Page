@@ -5,8 +5,9 @@ Entering and exiting zones doesn't seem to work consistently.
 
 debug console should display DisplayName rather than ID's
 wishlist: would like a way to move a user on laptop (overriding gps)
-Remove/disable ResultToggleVisibility and ResultToggleTraits for now
 _sync_event_result_components Needs cleanup
+Rename CRN to be at the end of the alphabet to make db console easier to follow
+
 
 # Dependencies
 ## macos

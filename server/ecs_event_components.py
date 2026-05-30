@@ -194,4 +194,5 @@ _result_json: dict = json.loads((_PUBLIC_DIR / "map_result_components.json").rea
 EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(_result_json.keys())
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in EVENT_RESULT_COMPONENT_NAMES}
 EVENT_RESULT_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _result_json.items()}
+EVENT_RESULT_COMPONENT_CONFIG: dict[str, dict] = dict(_result_json)
 
