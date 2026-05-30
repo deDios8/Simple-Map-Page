@@ -5,7 +5,7 @@ Entering and exiting zones doesn't seem to work consistently.
 
 wishlist: would like a way to move a user on laptop (overriding gps)
 Remove/disable ResultToggleVisibility and ResultToggleTraits for now
-Result Remove Visibility
+
 
 # Dependencies
 ## macos

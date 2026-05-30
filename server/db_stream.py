@@ -24,15 +24,15 @@ CRITERIA_COMPONENT_NAMES = frozenset({
 })
 
 EVENT_RESULT_COMPONENT_NAMES = frozenset({
-    "ResultSetVisibility",
+    "ResultGrantVisibility",
     "ResultToggleVisibility",
     "ResultChangeColor",
     "ResultChangeRadius",
-    "ResultAddTraits",
-    "ResultRemoveTraits",
+    "ResultGrantTraits",
+    "ResultRevokeTraits",
     "ResultToggleTraits",
-    "ResultAddStats",
-    "ResultRemoveStats",
+    "ResultGrantStats",
+    "ResultRevokeStats",
     "ResultToggleStats",
     "ResultSetStatsToValues",
     "ResultIncreaseStatsByValues",

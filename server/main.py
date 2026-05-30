@@ -49,15 +49,16 @@ _CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
 
 # Maps event result component name → ECS component class
 _EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
-    "ResultSetVisibility": ecs_event_components.ResultSetVisibility,
+    "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
+    "ResultRevokeVisibility": ecs_event_components.ResultRevokeVisibility,
     "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
     "ResultChangeColor": ecs_event_components.ResultChangeColor,
     "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
-    "ResultAddTraits": ecs_event_components.ResultAddTraits,
-    "ResultRemoveTraits": ecs_event_components.ResultRemoveTraits,
+    "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
+    "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,
     "ResultToggleTraits": ecs_event_components.ResultToggleTraits,
-    "ResultAddStats": ecs_event_components.ResultAddStats,
-    "ResultRemoveStats": ecs_event_components.ResultRemoveStats,
+    "ResultGrantStats": ecs_event_components.ResultGrantStats,
+    "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
     "ResultToggleStats": ecs_event_components.ResultToggleStats,
     "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
     "ResultIncreaseStatsByValues": ecs_event_components.ResultIncreaseStatsByValues,
@@ -833,7 +834,7 @@ class SessionState:
             comp_type = _EVENT_RESULT_COMPONENT_MAP.get(comp_name)
             if comp_type is None:
                 continue
-            if comp_name == "ResultSetVisibility":
+            if comp_name == "ResultGrantVisibility":
                 esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultToggleVisibility":
                 esper.add_component(entity_id, comp_type(toggle=bool(comp_data.get("toggle", False))))
@@ -845,12 +846,12 @@ class SessionState:
                 except (TypeError, ValueError):
                     radius = 0
                 esper.add_component(entity_id, comp_type(radius=radius))
-            elif comp_name in ("ResultAddTraits", "ResultRemoveTraits", "ResultToggleTraits"):
+            elif comp_name in ("ResultGrantTraits", "ResultRevokeTraits", "ResultToggleTraits"):
                 traits = comp_data.get("traits", [])
                 if not isinstance(traits, list):
                     traits = []
                 esper.add_component(entity_id, comp_type(traits=traits))
-            elif comp_name in ("ResultAddStats", "ResultRemoveStats", "ResultToggleStats"):
+            elif comp_name in ("ResultGrantStats", "ResultRevokeStats", "ResultToggleStats"):
                 stats = comp_data.get("stats", [])
                 if not isinstance(stats, list):
                     stats = []

@@ -224,15 +224,15 @@ class SessionDebugConsole:
         target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
         active_results: dict[str, object] = {}
         for comp_name, comp_type in {
-            "ResultSetVisibility": ecs_event_components.ResultSetVisibility,
+            "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
             "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
             "ResultChangeColor": ecs_event_components.ResultChangeColor,
             "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
-            "ResultAddTraits": ecs_event_components.ResultAddTraits,
-            "ResultRemoveTraits": ecs_event_components.ResultRemoveTraits,
+            "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
+            "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,
             "ResultToggleTraits": ecs_event_components.ResultToggleTraits,
-            "ResultAddStats": ecs_event_components.ResultAddStats,
-            "ResultRemoveStats": ecs_event_components.ResultRemoveStats,
+            "ResultGrantStats": ecs_event_components.ResultGrantStats,
+            "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
             "ResultToggleStats": ecs_event_components.ResultToggleStats,
             "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
             "ResultIncreaseStatsByValues": ecs_event_components.ResultIncreaseStatsByValues,

@@ -77,7 +77,11 @@ class EventTargetNames: # should maybe use ID's
     criteria_ids: list
 
 @dataclass
-class ResultSetVisibility:
+class ResultGrantVisibility:
+    visible: list
+
+@dataclass
+class ResultRevokeVisibility:
     visible: list
 
 @dataclass
@@ -93,11 +97,11 @@ class ResultChangeRadius:
     radius: int
 
 @dataclass
-class ResultAddTraits:
+class ResultGrantTraits:
     traits: list
 
 @dataclass
-class ResultRemoveTraits:
+class ResultRevokeTraits:
     traits: list
 
 @dataclass
@@ -105,11 +109,11 @@ class ResultToggleTraits:
     traits: list
 
 @dataclass
-class ResultAddStats:
+class ResultGrantStats:
     stats: list
 
 @dataclass
-class ResultRemoveStats:
+class ResultRevokeStats:
     stats: list
 
 @dataclass

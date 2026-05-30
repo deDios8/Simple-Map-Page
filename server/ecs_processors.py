@@ -374,31 +374,32 @@ class EventProcessor(esper.Processor):
                         if target_comp := esper.try_component(target_entity_id, ecs_event_components.ObjectsThatMetAllCriteria):
                             target_objects_sets.append(set(target_comp.object_ids))
 
-
                 # If a trigger has met all criteria, apply the event's result to targets that have met all criteria
                 for target_objects in target_objects_sets:
                     for target_entity_id in target_objects:
 
                         results_to_apply = []
 
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetVisibility):
-                            results_to_apply.append(lambda eid, c=comp: self._set_visibility(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantVisibility):
+                            results_to_apply.append(lambda eid, c=comp: self._grant_visibility(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeVisibility):
+                            results_to_apply.append(lambda eid, c=comp: self._revoke_visibility(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleVisibility):
                             results_to_apply.append(lambda eid, c=comp: self._toggle_visibility(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeColor):
                             results_to_apply.append(lambda eid, c=comp: self._change_color(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeRadius):
                             results_to_apply.append(lambda eid, c=comp: self._change_radius(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultAddTraits):
-                            results_to_apply.append(lambda eid, c=comp: self._add_traits(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRemoveTraits):
-                            results_to_apply.append(lambda eid, c=comp: self._remove_traits(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantTraits):
+                            results_to_apply.append(lambda eid, c=comp: self._grant_traits(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeTraits):
+                            results_to_apply.append(lambda eid, c=comp: self._revoke_traits(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleTraits):
                             results_to_apply.append(lambda eid, c=comp: self._toggle_traits(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultAddStats):
-                            results_to_apply.append(lambda eid, c=comp: self._add_stats(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRemoveStats):
-                            results_to_apply.append(lambda eid, c=comp: self._remove_stats(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantStats):
+                            results_to_apply.append(lambda eid, c=comp: self._grant_stats(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeStats):
+                            results_to_apply.append(lambda eid, c=comp: self._revoke_stats(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleStats):
                             results_to_apply.append(lambda eid, c=comp: self._toggle_stats(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetStatsToValues):
@@ -414,9 +415,17 @@ class EventProcessor(esper.Processor):
                         if results_to_apply:
                             esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
 
-    def _set_visibility(self, target_entity_id: int, component: ecs_event_components.ResultSetVisibility) -> None:
+    def _grant_visibility(self, target_entity_id: int, component: ecs_event_components.ResultGrantVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
-            appearance.visible_to = component.visible
+            for tag in component.visible:
+                if tag not in appearance.visible_to:
+                    appearance.visible_to.append(tag)
+
+    def _revoke_visibility(self, target_entity_id: int, component: ecs_event_components.ResultRevokeVisibility) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            for tag in component.visible:
+                if tag in appearance.visible_to:
+                    appearance.visible_to.remove(tag)
 
     def _toggle_visibility(self, target_entity_id: int, component: ecs_event_components.ResultToggleVisibility) -> None:
         # TODO: implement — Appearance.visible is a list; define toggle semantics
@@ -430,22 +439,20 @@ class EventProcessor(esper.Processor):
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
             appearance.radius = component.radius
 
-    def _add_traits(self, target_entity_id: int, component: ecs_event_components.ResultAddTraits) -> None:
+    def _grant_traits(self, target_entity_id: int, component: ecs_event_components.ResultGrantTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
         if traits is None:
             esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.traits)))
         else:
-            for trait in component.traits:
+            for trait in component.traits: #preserves order and avoids duplicates
                 if trait not in traits.traits:
                     traits.traits.append(trait)
 
-    def _remove_traits(self, target_entity_id: int, component: ecs_event_components.ResultRemoveTraits) -> None:
+    def _revoke_traits(self, target_entity_id: int, component: ecs_event_components.ResultRevokeTraits) -> None:
         if traits := esper.try_component(target_entity_id, ecs_geo_components.Traits):
             for trait in component.traits:
-                try:
+                if trait in traits.traits:
                     traits.traits.remove(trait)
-                except ValueError:
-                    pass
 
     def _toggle_traits(self, target_entity_id: int, component: ecs_event_components.ResultToggleTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
@@ -458,12 +465,12 @@ class EventProcessor(esper.Processor):
                 else:
                     traits.traits.append(trait)
 
-    def _add_stats(self, target_entity_id: int, component: ecs_event_components.ResultAddStats) -> None:
-        # TODO: implement — define the item format in ResultAddStats.stats
+    def _grant_stats(self, target_entity_id: int, component: ecs_event_components.ResultGrantStats) -> None:
+        # TODO: implement — define the item format in ResultGrantStats.stats
         pass
 
-    def _remove_stats(self, target_entity_id: int, component: ecs_event_components.ResultRemoveStats) -> None:
-        # TODO: implement — define the item format in ResultRemoveStats.stats
+    def _revoke_stats(self, target_entity_id: int, component: ecs_event_components.ResultRevokeStats) -> None:
+        # TODO: implement — define the item format in ResultRevokeStats.stats
         pass
 
     def _toggle_stats(self, target_entity_id: int, component: ecs_event_components.ResultToggleStats) -> None:

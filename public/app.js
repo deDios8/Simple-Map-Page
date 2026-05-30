@@ -20,15 +20,16 @@ const CRITERIA_COMPONENT_OPTIONS = [
 ];
 
 const RESULT_COMPONENT_FIELD_CONFIG = {
-  ResultSetVisibility:         { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
+  ResultGrantVisibility:       { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
+  ResultRevokeVisibility:      { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
   ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "csv",   label: "Visible" },
   ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
   ResultChangeRadius:          { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
-  ResultAddTraits:             { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultRemoveTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultGrantTraits:           { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
+  ResultRevokeTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
   ResultToggleTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultAddStats:              { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultRemoveStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultGrantStats:            { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
+  ResultRevokeStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
   ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
   ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
   ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
