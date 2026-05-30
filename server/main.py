@@ -6,7 +6,7 @@ import random
 import string
 import ecs_event_components
 import ecs_geo_components
-from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
+from ecs_event_components import EVENT_RESULT_COMPONENT_MAP, CRITERIA_COMPONENT_MAP
 import ecs_processors
 import esper
 import queue
@@ -35,18 +35,6 @@ from db_stream import (
     normalize_stats,
     to_float, )
 
-
-# Maps criteria component name → ECS component class (tags-based)
-_CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
-    "CriteriaHasTags": ecs_event_components.CriteriaHasTags,
-    "CriteriaIsWithin": ecs_event_components.CriteriaIsWithin,
-    "CriteriaNotWithin": ecs_event_components.CriteriaNotWithin,
-    "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
-    "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
-    "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
-    "CriteriaNotVisibleTo": ecs_event_components.CriteriaNotVisibleTo,
-    "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
-}
 
 
 class SessionState:
@@ -662,7 +650,7 @@ class SessionState:
     ## Criteria management
     def _sync_criteria_components(self, entity_id: int, criteria_components: dict) -> None:
         """Remove all existing criteria ECS components and re-add from criteria_components dict."""
-        for comp_type in _CRITERIA_TAGS_COMPONENT_MAP.values():
+        for comp_type in CRITERIA_COMPONENT_MAP.values():
             try:
                 esper.remove_component(entity_id, comp_type)
             except KeyError:
@@ -671,8 +659,8 @@ class SessionState:
         for comp_name, comp_data in criteria_components.items():
             if not isinstance(comp_data, dict):
                 continue
-            if comp_name in _CRITERIA_TAGS_COMPONENT_MAP:
-                comp_type = _CRITERIA_TAGS_COMPONENT_MAP[comp_name]
+            if comp_name in CRITERIA_COMPONENT_MAP:
+                comp_type = CRITERIA_COMPONENT_MAP[comp_name]
                 tags = comp_data.get("tags", [])
                 if not isinstance(tags, list):
                     tags = []

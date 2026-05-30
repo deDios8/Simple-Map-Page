@@ -8,16 +8,8 @@ import {
   update,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-const CRITERIA_COMPONENT_OPTIONS = [
-  "CriteriaHasTags",
-  "CriteriaIsWithin",
-  "CriteriaNotWithin",
-  "CriteriaJustEntered",
-  "CriteriaJustExited",
-  "CriteriaVisibleTo",
-  "CriteriaNotVisibleTo",
-  "CriteriaFirstEntered",
-];
+// Populated at startup by init() from criteria_components.json
+let CRITERIA_COMPONENT_OPTIONS = [];
 
 // Populated at startup by init() from event_result_components.json
 let RESULT_COMPONENT_FIELD_CONFIG = {};
@@ -874,8 +866,12 @@ async function submitDeletedEventRequest(targetId) {
 }
 
 async function init() {
-  const response = await fetch("event_result_components.json");
-  RESULT_COMPONENT_FIELD_CONFIG = await response.json();
+  const [criteriaRes, resultRes] = await Promise.all([
+    fetch("criteria_components.json"),
+    fetch("event_result_components.json"),
+  ]);
+  CRITERIA_COMPONENT_OPTIONS = await criteriaRes.json();
+  RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
   loadCollapseState();
   applyCollapseState();

@@ -174,9 +174,28 @@ class DeletedEvent:
 
 
 # ---------------------------------------------------------------------------
-# Single-source registry: maps component name → class
-# Import this instead of repeating the list in db_stream, main, or debug_console.
+# Single-source registries: maps component name → class
+# Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
+
+CRITERIA_COMPONENT_MAP: dict[str, type] = {
+    "CriteriaHasTags":      CriteriaHasTags,
+    "CriteriaIsWithin":     CriteriaIsWithin,
+    "CriteriaNotWithin":    CriteriaNotWithin,
+    "CriteriaJustEntered":  CriteriaJustEntered,
+    "CriteriaJustExited":   CriteriaJustExited,
+    "CriteriaVisibleTo":    CriteriaVisibleTo,
+    "CriteriaNotVisibleTo": CriteriaNotVisibleTo,
+    "CriteriaFirstEntered": CriteriaFirstEntered,
+}
+
+CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(CRITERIA_COMPONENT_MAP)
+
+# Separate tracking components added to every criteria entity (not filter criteria).
+CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
+    "ObjectsThatMetAnyCriteria": ObjectsThatMetAnyCriteria,
+    "ObjectsThatMetAllCriteria": ObjectsThatMetAllCriteria,
+}
 
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
     "ResultGrantVisibility":     ResultGrantVisibility,

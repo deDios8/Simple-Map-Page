@@ -1,0 +1,10 @@
+[
+  "CriteriaHasTags",
+  "CriteriaIsWithin",
+  "CriteriaNotWithin",
+  "CriteriaJustEntered",
+  "CriteriaJustExited",
+  "CriteriaVisibleTo",
+  "CriteriaNotVisibleTo",
+  "CriteriaFirstEntered"
+]

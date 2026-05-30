@@ -11,7 +11,7 @@ from typing import Protocol
 import ecs_event_components
 import ecs_geo_components
 import esper
-from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
+from ecs_event_components import EVENT_RESULT_COMPONENT_MAP, CRITERIA_COMPONENT_MAP, CRITERIA_TRACKING_COMPONENT_MAP
 
 
 class DebugState(Protocol):
@@ -192,18 +192,7 @@ class SessionDebugConsole:
         id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
         display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
         active_components: dict[str, object] = {}
-        for comp_name, comp_type in {
-            "CriteriaHasTags": ecs_event_components.CriteriaHasTags,
-            "CriteriaIsWithin": ecs_event_components.CriteriaIsWithin,
-            "CriteriaNotWithin": ecs_event_components.CriteriaNotWithin,
-            "CriteriaJustEntered": ecs_event_components.CriteriaJustEntered,
-            "CriteriaJustExited": ecs_event_components.CriteriaJustExited,
-            "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
-            "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
-            "CriteriaNotVisibleTo": ecs_event_components.CriteriaNotVisibleTo,
-            "ObjectsThatMetAnyCriteria": ecs_event_components.ObjectsThatMetAnyCriteria,
-            "ObjectsThatMetAllCriteria": ecs_event_components.ObjectsThatMetAllCriteria,
-        }.items():
+        for comp_name, comp_type in {**CRITERIA_COMPONENT_MAP, **CRITERIA_TRACKING_COMPONENT_MAP}.items():
             comp = esper.try_component(entity_id, comp_type)
             if comp is not None:
                 active_components[comp_name] = comp
