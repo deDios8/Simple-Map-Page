@@ -82,15 +82,15 @@ class EventTargetNames: # should maybe use ID's
 
 @dataclass
 class ResultGrantVisibility:
-    visible: list
+    tags: list
 
 @dataclass
 class ResultRevokeVisibility:
-    visible: list
+    tags: list
 
 @dataclass
 class ResultToggleVisibility:
-    visible: list
+    tags: list
 
 @dataclass
 class ResultSetColor:
@@ -106,23 +106,19 @@ class ResultChangeRadius:
 
 @dataclass
 class ResultGrantTraits:
-    traits: list
+    tags: list
 
 @dataclass
 class ResultRevokeTraits:
-    traits: list
+    tags: list
 
 @dataclass
 class ResultToggleTraits:
-    traits: list
-
-@dataclass
-class ResultGrantStats:
-    stats: list
+    tags: list
 
 @dataclass
 class ResultRevokeStats:
-    stats: list
+    tags: list
 
 @dataclass
 class ResultToggleStats:
@@ -130,6 +126,7 @@ class ResultToggleStats:
 
 @dataclass
 class ResultSetStatsToValues:
+    '''This is also used to grant a stat if it doesn't exist yet.'''
     stats_to_values: dict
 
 @dataclass

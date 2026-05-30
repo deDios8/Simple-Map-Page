@@ -1323,10 +1323,8 @@ class SessionState:
             comp_type = ecs_event_components.EVENT_RESULT_COMPONENT_MAP.get(comp_name)
             if comp_type is None:
                 continue
-            if comp_name == "ResultGrantVisibility":
-                esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
-            elif comp_name == "ResultToggleVisibility":
-                esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
+            if comp_name in ("ResultGrantVisibility", "ResultRevokeVisibility", "ResultToggleVisibility"):
+                esper.add_component(entity_id, comp_type(tags=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultSetColor":
                 esper.add_component(entity_id, comp_type(color=str(comp_data.get("color", ""))))
             elif comp_name == "ResultChangeRadius":
@@ -1346,7 +1344,7 @@ class SessionState:
                 if not isinstance(traits, list):
                     traits = []
                 esper.add_component(entity_id, comp_type(traits=traits))
-            elif comp_name in ("ResultGrantStats", "ResultRevokeStats", "ResultToggleStats"):
+            elif comp_name in ("ResultRevokeStats", "ResultToggleStats"):
                 stats = comp_data.get("stats", [])
                 if not isinstance(stats, list):
                     stats = []

@@ -392,13 +392,13 @@ class EventProcessor(esper.Processor):
 
     def _grant_visibility(self, target_entity_id: int, component: ecs_event_components.ResultGrantVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
-            for tag in component.visible:
+            for tag in component.tags:
                 if tag not in appearance.visible_to:
                     appearance.visible_to.append(tag)
 
     def _revoke_visibility(self, target_entity_id: int, component: ecs_event_components.ResultRevokeVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
-            for tag in component.visible:
+            for tag in component.tags:
                 if tag in appearance.visible_to:
                     appearance.visible_to.remove(tag)
 
@@ -421,32 +421,28 @@ class EventProcessor(esper.Processor):
     def _grant_traits(self, target_entity_id: int, component: ecs_event_components.ResultGrantTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
         if traits is None:
-            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.traits)))
+            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.tags)))
         else:
-            for trait in component.traits: #preserves order and avoids duplicates
+            for trait in component.tags: #preserves order and avoids duplicates
                 if trait not in traits.traits:
                     traits.traits.append(trait)
 
     def _revoke_traits(self, target_entity_id: int, component: ecs_event_components.ResultRevokeTraits) -> None:
         if traits := esper.try_component(target_entity_id, ecs_geo_components.Traits):
-            for trait in component.traits:
+            for trait in component.tags:
                 if trait in traits.traits:
                     traits.traits.remove(trait)
 
     def _toggle_traits(self, target_entity_id: int, component: ecs_event_components.ResultToggleTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
         if traits is None:
-            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.traits)))
+            esper.add_component(target_entity_id, ecs_geo_components.Traits(traits=list(component.tags)))
         else:
-            for trait in component.traits:
+            for trait in component.tags:
                 if trait in traits.traits:
                     traits.traits.remove(trait)
                 else:
                     traits.traits.append(trait)
-
-    def _grant_stats(self, target_entity_id: int, component: ecs_event_components.ResultGrantStats) -> None:
-        # TODO: implement — define the item format in ResultGrantStats.stats
-        pass
 
     def _revoke_stats(self, target_entity_id: int, component: ecs_event_components.ResultRevokeStats) -> None:
         # TODO: implement — define the item format in ResultRevokeStats.stats
