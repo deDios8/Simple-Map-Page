@@ -53,6 +53,7 @@ _EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
     "ResultRevokeVisibility": ecs_event_components.ResultRevokeVisibility,
     "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
     "ResultChangeColor": ecs_event_components.ResultChangeColor,
+    "ResultSetRadius": ecs_event_components.ResultSetRadius,
     "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
     "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
     "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,

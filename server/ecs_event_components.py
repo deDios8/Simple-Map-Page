@@ -93,8 +93,12 @@ class ResultChangeColor:
     color: str
 
 @dataclass
-class ResultChangeRadius:
+class ResultSetRadius:
     radius: int
+
+@dataclass
+class ResultChangeRadius:
+    change: int
 
 @dataclass
 class ResultGrantTraits:

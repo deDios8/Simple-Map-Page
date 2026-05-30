@@ -435,9 +435,13 @@ class EventProcessor(esper.Processor):
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
             appearance.color = component.color
 
-    def _change_radius(self, target_entity_id: int, component: ecs_event_components.ResultChangeRadius) -> None:
+    def _set_radius(self, target_entity_id: int, component: ecs_event_components.ResultSetRadius) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
             appearance.radius = component.radius
+
+    def _change_radius(self, target_entity_id: int, component: ecs_event_components.ResultChangeRadius) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            appearance.radius += component.change
 
     def _grant_traits(self, target_entity_id: int, component: ecs_event_components.ResultGrantTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_geo_components.Traits)
