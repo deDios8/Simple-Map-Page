@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+import json
+import pathlib
 import esper
 from ecs_geo_components import ID, DisplayName
+
+_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
@@ -179,14 +183,8 @@ class DeletedEvent:
 # ---------------------------------------------------------------------------
 
 CRITERIA_COMPONENT_MAP: dict[str, type] = {
-    "CriteriaHasTags":      CriteriaHasTags,
-    "CriteriaIsWithin":     CriteriaIsWithin,
-    "CriteriaNotWithin":    CriteriaNotWithin,
-    "CriteriaJustEntered":  CriteriaJustEntered,
-    "CriteriaJustExited":   CriteriaJustExited,
-    "CriteriaVisibleTo":    CriteriaVisibleTo,
-    "CriteriaNotVisibleTo": CriteriaNotVisibleTo,
-    "CriteriaFirstEntered": CriteriaFirstEntered,
+    name: globals()[name]
+    for name in json.loads((_PUBLIC_DIR / "criteria_components.json").read_text())
 }
 
 CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(CRITERIA_COMPONENT_MAP)
@@ -198,20 +196,8 @@ CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
 }
 
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
-    "ResultGrantVisibility":     ResultGrantVisibility,
-    "ResultRevokeVisibility":    ResultRevokeVisibility,
-    "ResultToggleVisibility":    ResultToggleVisibility,
-    "ResultSetColor":            ResultSetColor,
-    "ResultSetRadius":           ResultSetRadius,
-    "ResultChangeRadius":        ResultChangeRadius,
-    "ResultGrantTraits":         ResultGrantTraits,
-    "ResultRevokeTraits":        ResultRevokeTraits,
-    "ResultToggleTraits":        ResultToggleTraits,
-    "ResultGrantStats":          ResultGrantStats,
-    "ResultRevokeStats":         ResultRevokeStats,
-    "ResultToggleStats":         ResultToggleStats,
-    "ResultSetStatsToValues":    ResultSetStatsToValues,
-    "ResultChangeStatsByValues": ResultChangeStatsByValues,
+    name: globals()[name]
+    for name in json.loads((_PUBLIC_DIR / "event_result_components.json").read_text())
 }
 
 EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(EVENT_RESULT_COMPONENT_MAP)
