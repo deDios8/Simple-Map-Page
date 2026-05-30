@@ -16,20 +16,11 @@ let RESULT_COMPONENT_FIELD_CONFIG = {};
 let RESULT_COMPONENT_OPTIONS = [];
 
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
-  authDomain: "geogm-simple-map.firebaseapp.com",
-  databaseURL: "https://geogm-simple-map-default-rtdb.firebaseio.com",
-  projectId: "geogm-simple-map",
-  storageBucket: "geogm-simple-map.firebasestorage.app",
-  messagingSenderId: "554186481304",
-  appId: "1:554186481304:web:35df4f22e9539a991b3aed"
-};
-
-const firebaseGeoObjectsNode = "geoObjects";
-const firebaseClientRequestNode = "clientRequests";
-const firebaseEventCriteriaNode = "eventCriteria";
-const firebaseEventResultsNode = "eventResults";
+let firebaseConfig = {};
+let firebaseGeoObjectsNode = "";
+let firebaseClientRequestNode = "";
+let firebaseEventCriteriaNode = "";
+let firebaseEventResultsNode = "";
 
 const state = {
   updateLocationInterval: 2000,
@@ -866,13 +857,20 @@ async function submitDeletedEventRequest(targetId) {
 }
 
 async function init() {
-  const [criteriaRes, resultRes] = await Promise.all([
+  const [criteriaRes, resultRes, fbConfigRes] = await Promise.all([
     fetch("map_criteria_components.json"),
     fetch("map_result_components.json"),
+    fetch("firebase_config.json"),
   ]);
   CRITERIA_COMPONENT_OPTIONS = Object.keys(await criteriaRes.json());
   RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
+  const { nodes, ...fbSdkConfig } = await fbConfigRes.json();
+  firebaseConfig = fbSdkConfig;
+  firebaseGeoObjectsNode = nodes.geoObjects;
+  firebaseClientRequestNode = nodes.clientRequests;
+  firebaseEventCriteriaNode = nodes.eventCriteria;
+  firebaseEventResultsNode = nodes.eventResults;
   loadCollapseState();
   applyCollapseState();
   initMap();

@@ -3,6 +3,7 @@ Firebase RTDB stream initialization and local-dict synchronization.
 """
 
 import json
+import pathlib
 import queue
 import threading
 import time
@@ -19,12 +20,16 @@ from urllib.request import Request, urlopen
 from debug_console import SessionDebugConsole
 
 
-DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
-GEO_OBJECTS_NODE = "geoObjects"
-CLIENT_REQUESTS_NODE = "clientRequests"
-CLIENT_REQUESTS_PROCESSED_NODE = "clientRequests_processed"
-EVENT_CRITERIA_NODE = "eventCriteria"
-EVENT_RESULTS_NODE = "eventResults"
+_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
+_firebase_config: dict = json.loads((_PUBLIC_DIR / "firebase_config.json").read_text())
+_nodes: dict = _firebase_config["nodes"]
+
+DEFAULT_DATABASE_URL = _firebase_config["databaseURL"]
+GEO_OBJECTS_NODE = _nodes["geoObjects"]
+CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
+CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
+EVENT_CRITERIA_NODE = _nodes["eventCriteria"]
+EVENT_RESULTS_NODE = _nodes["eventResults"]
 
 
 def build_node_url(database_url: str, *path_segments: str) -> str:
