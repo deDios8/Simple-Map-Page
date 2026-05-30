@@ -226,7 +226,8 @@ class SessionDebugConsole:
         for comp_name, comp_type in {
             "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
             "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
-            "ResultChangeColor": ecs_event_components.ResultChangeColor,
+            "ResultSetColor": ecs_event_components.ResultSetColor,
+            "ResultSetRadius": ecs_event_components.ResultSetRadius,
             "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
             "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
             "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,
@@ -235,8 +236,7 @@ class SessionDebugConsole:
             "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
             "ResultToggleStats": ecs_event_components.ResultToggleStats,
             "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
-            "ResultIncreaseStatsByValues": ecs_event_components.ResultIncreaseStatsByValues,
-            "ResultDecreaseStatsByValues": ecs_event_components.ResultDecreaseStatsByValues,
+            "ResultChangeStatsByValues": ecs_event_components.ResultChangeStatsByValues,
         }.items():
             comp = esper.try_component(entity_id, comp_type)
             if comp is not None:

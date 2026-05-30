@@ -23,7 +23,7 @@ const RESULT_COMPONENT_FIELD_CONFIG = {
   ResultGrantVisibility:       { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
   ResultRevokeVisibility:      { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
   ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "csv",   label: "Visible" },
-  ResultChangeColor:           { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
+  ResultSetColor:              { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
   ResultSetRadius:             { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
   ResultChangeRadius:          { fieldName: "change",         fieldType: "number", label: "Change",          placeholder: "-1" },
   ResultGrantTraits:           { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
@@ -33,8 +33,7 @@ const RESULT_COMPONENT_FIELD_CONFIG = {
   ResultRevokeStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
   ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
   ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
-  ResultIncreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
-  ResultDecreaseStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
+  ResultChangeStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
 };
 
 const RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);

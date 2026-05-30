@@ -26,7 +26,8 @@ CRITERIA_COMPONENT_NAMES = frozenset({
 EVENT_RESULT_COMPONENT_NAMES = frozenset({
     "ResultGrantVisibility",
     "ResultToggleVisibility",
-    "ResultChangeColor",
+    "ResultSetColor",
+    "ResultSetRadius",
     "ResultChangeRadius",
     "ResultGrantTraits",
     "ResultRevokeTraits",
@@ -35,8 +36,7 @@ EVENT_RESULT_COMPONENT_NAMES = frozenset({
     "ResultRevokeStats",
     "ResultToggleStats",
     "ResultSetStatsToValues",
-    "ResultIncreaseStatsByValues",
-    "ResultDecreaseStatsByValues",
+    "ResultChangeStatsByValues",
 })
 
 DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"

@@ -52,7 +52,7 @@ _EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
     "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
     "ResultRevokeVisibility": ecs_event_components.ResultRevokeVisibility,
     "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
-    "ResultChangeColor": ecs_event_components.ResultChangeColor,
+    "ResultSetColor": ecs_event_components.ResultSetColor,
     "ResultSetRadius": ecs_event_components.ResultSetRadius,
     "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
     "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
@@ -62,8 +62,7 @@ _EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
     "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
     "ResultToggleStats": ecs_event_components.ResultToggleStats,
     "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
-    "ResultIncreaseStatsByValues": ecs_event_components.ResultIncreaseStatsByValues,
-    "ResultDecreaseStatsByValues": ecs_event_components.ResultDecreaseStatsByValues,
+    "ResultChangeStatsByValues": ecs_event_components.ResultChangeStatsByValues,
 }
 
 
@@ -839,9 +838,15 @@ class SessionState:
                 esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultToggleVisibility":
                 esper.add_component(entity_id, comp_type(toggle=bool(comp_data.get("toggle", False))))
-            elif comp_name == "ResultChangeColor":
+            elif comp_name == "ResultSetColor":
                 esper.add_component(entity_id, comp_type(color=str(comp_data.get("color", ""))))
             elif comp_name == "ResultChangeRadius":
+                try:
+                    change = int(comp_data.get("change", 0))
+                except (TypeError, ValueError):
+                    change = 0
+                esper.add_component(entity_id, comp_type(change=change))
+            elif comp_name == "ResultSetRadius":
                 try:
                     radius = int(comp_data.get("radius", 0))
                 except (TypeError, ValueError):
@@ -857,7 +862,7 @@ class SessionState:
                 if not isinstance(stats, list):
                     stats = []
                 esper.add_component(entity_id, comp_type(stats=stats))
-            elif comp_name in ("ResultSetStatsToValues", "ResultIncreaseStatsByValues", "ResultDecreaseStatsByValues"):
+            elif comp_name in ("ResultSetStatsToValues", "ResultChangeStatsByValues"):
                 s2v = comp_data.get("stats_to_values", {})
                 if not isinstance(s2v, dict):
                     s2v = {}

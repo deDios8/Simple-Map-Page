@@ -386,8 +386,10 @@ class EventProcessor(esper.Processor):
                             results_to_apply.append(lambda eid, c=comp: self._revoke_visibility(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleVisibility):
                             results_to_apply.append(lambda eid, c=comp: self._toggle_visibility(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeColor):
-                            results_to_apply.append(lambda eid, c=comp: self._change_color(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetColor):
+                            results_to_apply.append(lambda eid, c=comp: self._set_color(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetRadius):
+                            results_to_apply.append(lambda eid, c=comp: self._set_radius(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeRadius):
                             results_to_apply.append(lambda eid, c=comp: self._change_radius(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantTraits):
@@ -404,10 +406,8 @@ class EventProcessor(esper.Processor):
                             results_to_apply.append(lambda eid, c=comp: self._toggle_stats(eid, c))
                         if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetStatsToValues):
                             results_to_apply.append(lambda eid, c=comp: self._set_stats_to_values(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultIncreaseStatsByValues):
-                            results_to_apply.append(lambda eid, c=comp: self._increase_stats_by_values(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultDecreaseStatsByValues):
-                            results_to_apply.append(lambda eid, c=comp: self._decrease_stats_by_values(eid, c))
+                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeStatsByValues):
+                            results_to_apply.append(lambda eid, c=comp: self._change_stats_by_values(eid, c))
 
                         for result in results_to_apply:
                             result(target_entity_id)
@@ -431,7 +431,7 @@ class EventProcessor(esper.Processor):
         # TODO: implement — Appearance.visible is a list; define toggle semantics
         pass
 
-    def _change_color(self, target_entity_id: int, component: ecs_event_components.ResultChangeColor) -> None:
+    def _set_color(self, target_entity_id: int, component: ecs_event_components.ResultSetColor) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
             appearance.color = component.color
 
@@ -490,19 +490,12 @@ class EventProcessor(esper.Processor):
                 stats.items = {}
             stats.items.update(component.stats_to_values)
 
-    def _increase_stats_by_values(self, target_entity_id: int, component: ecs_event_components.ResultIncreaseStatsByValues) -> None:
+    def _change_stats_by_values(self, target_entity_id: int, component: ecs_event_components.ResultChangeStatsByValues) -> None:
         if stats := esper.try_component(target_entity_id, ecs_geo_components.Stats):
             if stats.items:
                 for key, delta in component.stats_to_values.items():
                     if key in stats.items:
                         stats.items[key] += delta
-
-    def _decrease_stats_by_values(self, target_entity_id: int, component: ecs_event_components.ResultDecreaseStatsByValues) -> None:
-        if stats := esper.try_component(target_entity_id, ecs_geo_components.Stats):
-            if stats.items:
-                for key, delta in component.stats_to_values.items():
-                    if key in stats.items:
-                        stats.items[key] -= delta
 
 
 class SyncGeoObjectsToDatabase(esper.Processor):

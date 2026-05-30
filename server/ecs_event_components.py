@@ -89,7 +89,7 @@ class ResultToggleVisibility:
     toggle: bool
 
 @dataclass
-class ResultChangeColor:
+class ResultSetColor:
     color: str
 
 @dataclass
@@ -129,11 +129,7 @@ class ResultSetStatsToValues:
     stats_to_values: dict
 
 @dataclass
-class ResultIncreaseStatsByValues:
-    stats_to_values: dict
-
-@dataclass
-class ResultDecreaseStatsByValues:
+class ResultChangeStatsByValues:
     stats_to_values: dict
 
 
