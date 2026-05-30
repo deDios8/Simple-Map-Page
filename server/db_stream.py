@@ -12,6 +12,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from ecs_event_components import EVENT_RESULT_COMPONENT_NAMES
+
 CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaHasTags",
     "CriteriaIsWithin",
@@ -23,21 +25,6 @@ CRITERIA_COMPONENT_NAMES = frozenset({
     "CriteriaFirstEntered",
 })
 
-EVENT_RESULT_COMPONENT_NAMES = frozenset({
-    "ResultGrantVisibility",
-    "ResultToggleVisibility",
-    "ResultSetColor",
-    "ResultSetRadius",
-    "ResultChangeRadius",
-    "ResultGrantTraits",
-    "ResultRevokeTraits",
-    "ResultToggleTraits",
-    "ResultGrantStats",
-    "ResultRevokeStats",
-    "ResultToggleStats",
-    "ResultSetStatsToValues",
-    "ResultChangeStatsByValues",
-})
 
 DEFAULT_DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
 GEO_OBJECTS_NODE = "geoObjects"

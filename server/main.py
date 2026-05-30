@@ -6,6 +6,7 @@ import random
 import string
 import ecs_event_components
 import ecs_geo_components
+from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
 import ecs_processors
 import esper
 import queue
@@ -45,24 +46,6 @@ _CRITERIA_TAGS_COMPONENT_MAP: dict[str, type] = {
     "CriteriaVisibleTo": ecs_event_components.CriteriaVisibleTo,
     "CriteriaNotVisibleTo": ecs_event_components.CriteriaNotVisibleTo,
     "CriteriaFirstEntered": ecs_event_components.CriteriaFirstEntered,
-}
-
-# Maps event result component name → ECS component class
-_EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
-    "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
-    "ResultRevokeVisibility": ecs_event_components.ResultRevokeVisibility,
-    "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
-    "ResultSetColor": ecs_event_components.ResultSetColor,
-    "ResultSetRadius": ecs_event_components.ResultSetRadius,
-    "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
-    "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
-    "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,
-    "ResultToggleTraits": ecs_event_components.ResultToggleTraits,
-    "ResultGrantStats": ecs_event_components.ResultGrantStats,
-    "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
-    "ResultToggleStats": ecs_event_components.ResultToggleStats,
-    "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
-    "ResultChangeStatsByValues": ecs_event_components.ResultChangeStatsByValues,
 }
 
 
@@ -822,7 +805,7 @@ class SessionState:
     ## Event management
     def _sync_event_result_components(self, entity_id: int, result_components: dict) -> None:
         """Remove all existing result ECS components and re-add from result_components dict."""
-        for comp_type in _EVENT_RESULT_COMPONENT_MAP.values():
+        for comp_type in EVENT_RESULT_COMPONENT_MAP.values():
             try:
                 esper.remove_component(entity_id, comp_type)
             except KeyError:
@@ -831,7 +814,7 @@ class SessionState:
         for comp_name, comp_data in result_components.items():
             if not isinstance(comp_data, dict):
                 continue
-            comp_type = _EVENT_RESULT_COMPONENT_MAP.get(comp_name)
+            comp_type = EVENT_RESULT_COMPONENT_MAP.get(comp_name)
             if comp_type is None:
                 continue
             if comp_name == "ResultGrantVisibility":

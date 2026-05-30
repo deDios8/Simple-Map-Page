@@ -11,6 +11,7 @@ from typing import Protocol
 import ecs_event_components
 import ecs_geo_components
 import esper
+from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
 
 
 class DebugState(Protocol):
@@ -223,21 +224,7 @@ class SessionDebugConsole:
         trigger = esper.try_component(entity_id, ecs_event_components.EventTriggerNames)
         target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
         active_results: dict[str, object] = {}
-        for comp_name, comp_type in {
-            "ResultGrantVisibility": ecs_event_components.ResultGrantVisibility,
-            "ResultToggleVisibility": ecs_event_components.ResultToggleVisibility,
-            "ResultSetColor": ecs_event_components.ResultSetColor,
-            "ResultSetRadius": ecs_event_components.ResultSetRadius,
-            "ResultChangeRadius": ecs_event_components.ResultChangeRadius,
-            "ResultGrantTraits": ecs_event_components.ResultGrantTraits,
-            "ResultRevokeTraits": ecs_event_components.ResultRevokeTraits,
-            "ResultToggleTraits": ecs_event_components.ResultToggleTraits,
-            "ResultGrantStats": ecs_event_components.ResultGrantStats,
-            "ResultRevokeStats": ecs_event_components.ResultRevokeStats,
-            "ResultToggleStats": ecs_event_components.ResultToggleStats,
-            "ResultSetStatsToValues": ecs_event_components.ResultSetStatsToValues,
-            "ResultChangeStatsByValues": ecs_event_components.ResultChangeStatsByValues,
-        }.items():
+        for comp_name, comp_type in EVENT_RESULT_COMPONENT_MAP.items():
             comp = esper.try_component(entity_id, comp_type)
             if comp is not None:
                 active_results[comp_name] = comp

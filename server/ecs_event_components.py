@@ -172,3 +172,28 @@ class EditedEvent:
 class DeletedEvent:
     target_id: str
 
+
+# ---------------------------------------------------------------------------
+# Single-source registry: maps component name → class
+# Import this instead of repeating the list in db_stream, main, or debug_console.
+# ---------------------------------------------------------------------------
+
+EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
+    "ResultGrantVisibility":     ResultGrantVisibility,
+    "ResultRevokeVisibility":    ResultRevokeVisibility,
+    "ResultToggleVisibility":    ResultToggleVisibility,
+    "ResultSetColor":            ResultSetColor,
+    "ResultSetRadius":           ResultSetRadius,
+    "ResultChangeRadius":        ResultChangeRadius,
+    "ResultGrantTraits":         ResultGrantTraits,
+    "ResultRevokeTraits":        ResultRevokeTraits,
+    "ResultToggleTraits":        ResultToggleTraits,
+    "ResultGrantStats":          ResultGrantStats,
+    "ResultRevokeStats":         ResultRevokeStats,
+    "ResultToggleStats":         ResultToggleStats,
+    "ResultSetStatsToValues":    ResultSetStatsToValues,
+    "ResultChangeStatsByValues": ResultChangeStatsByValues,
+}
+
+EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(EVENT_RESULT_COMPONENT_MAP)
+

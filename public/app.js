@@ -19,24 +19,10 @@ const CRITERIA_COMPONENT_OPTIONS = [
   "CriteriaFirstEntered",
 ];
 
-const RESULT_COMPONENT_FIELD_CONFIG = {
-  ResultGrantVisibility:       { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
-  ResultRevokeVisibility:      { fieldName: "visible",        fieldType: "csv",   label: "Visible" },
-  ResultToggleVisibility:      { fieldName: "toggle",         fieldType: "csv",   label: "Visible" },
-  ResultSetColor:              { fieldName: "color",          fieldType: "text",   label: "Color",           placeholder: "#ff0000" },
-  ResultSetRadius:             { fieldName: "radius",         fieldType: "number", label: "Radius",          placeholder: "5" },
-  ResultChangeRadius:          { fieldName: "change",         fieldType: "number", label: "Change",          placeholder: "-1" },
-  ResultGrantTraits:           { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultRevokeTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultToggleTraits:          { fieldName: "traits",         fieldType: "csv",    label: "Traits",          placeholder: "trait1, trait2" },
-  ResultGrantStats:            { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultRevokeStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultToggleStats:           { fieldName: "stats",          fieldType: "csv",    label: "Stats",           placeholder: "stat1, stat2" },
-  ResultSetStatsToValues:      { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 100}' },
-  ResultChangeStatsByValues: { fieldName: "stats_to_values", fieldType: "json",  label: "Stats\u2192Values", placeholder: '{"health": 10}' },
-};
+// Populated at startup by init() from event_result_components.json
+let RESULT_COMPONENT_FIELD_CONFIG = {};
+let RESULT_COMPONENT_OPTIONS = [];
 
-const RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6CGFSfXNnpRwM2TxlTK9imx4wMb9S5Fw",
@@ -887,7 +873,10 @@ async function submitDeletedEventRequest(targetId) {
   });
 }
 
-function init() {
+async function init() {
+  const response = await fetch("event_result_components.json");
+  RESULT_COMPONENT_FIELD_CONFIG = await response.json();
+  RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
   loadCollapseState();
   applyCollapseState();
   initMap();
