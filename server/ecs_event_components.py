@@ -6,8 +6,8 @@ from ecs_geo_components import ID, DisplayName
 # Components for constructing events
 # ---------------------------------------------------------------------------
 '''
-One entity is the trigger. It has name, criteria, which geo objects meet criteria, and matching objects.
-One entity is the target. It has name, criteria, which geo objects meet criteria, and matching objects.
+One entity is the trigger. It has name, criteria, which geo objects meet criteria.
+One entity is the target. It has name, criteria, which geo objects meet criteria.
 One entity is the event result. It specifies, by name, which trigger and target entities it is associated with, and what to do to the target when the trigger conditions are met.
 '''
 

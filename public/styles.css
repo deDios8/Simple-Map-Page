@@ -214,20 +214,27 @@ body {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .object-list button {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.72);
   text-align: left;
+}
+
+.list-color-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
 }
 
 .object-list button.is-selected {
