@@ -110,7 +110,6 @@ const coordPickButton = document.querySelector("#coord-pick-button");
 const fieldRadius = document.querySelector("#field-radius");
 const statsList = document.querySelector("#stats-list");
 const addStatButton = document.querySelector("#add-stat-button");
-const editorFormToggle = document.querySelector("#editor-form-toggle");
 const statsSection = document.querySelector(".stats-section");
 
 // Events drawer DOM references
@@ -191,10 +190,6 @@ function applyCollapseState() {
 function setEditorFormCollapsed(isCollapsed) {
   editorCollapseState.editorForm = Boolean(isCollapsed);
   editorForm.classList.toggle("is-collapsed", editorCollapseState.editorForm);
-  if (editorFormToggle) {
-    editorFormToggle.textContent = editorCollapseState.editorForm ? "Expand editor" : "Collapse editor";
-    editorFormToggle.setAttribute("aria-expanded", String(!editorCollapseState.editorForm));
-  }
   saveCollapseState();
 }
 
@@ -976,9 +971,6 @@ function bindUi() {
     }
   });
 
-  editorFormToggle?.addEventListener("click", () => {
-    setEditorFormCollapsed(!editorCollapseState.editorForm);
-  });
   statsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-stat"]');
     if (!button) {
@@ -1858,9 +1850,6 @@ function applyEditorPermissions() {
     saveButton.disabled = !isEditable || !isFormVisible;
   }
 
-  if (editorFormToggle) {
-    editorFormToggle.disabled = !isFormVisible;
-  }
   addStatButton.disabled = !isEditable || !isFormVisible;
   statsList.querySelectorAll("input, button").forEach((element) => {
     element.disabled = !isEditable || !isFormVisible;
