@@ -1324,7 +1324,7 @@ class SessionState:
             if comp_type is None:
                 continue
             if comp_name in ("ResultGrantVisibility", "ResultRevokeVisibility", "ResultToggleVisibility"):
-                esper.add_component(entity_id, comp_type(tags=normalize_string_list(comp_data.get("visible", []))))
+                esper.add_component(entity_id, comp_type(tags=normalize_string_list(comp_data.get("tags", []))))
             elif comp_name == "ResultSetColor":
                 esper.add_component(entity_id, comp_type(color=str(comp_data.get("color", ""))))
             elif comp_name == "ResultChangeRadius":
@@ -1340,11 +1340,16 @@ class SessionState:
                     radius = 0
                 esper.add_component(entity_id, comp_type(radius=radius))
             elif comp_name in ("ResultGrantTraits", "ResultRevokeTraits", "ResultToggleTraits"):
-                traits = comp_data.get("traits", [])
-                if not isinstance(traits, list):
-                    traits = []
-                esper.add_component(entity_id, comp_type(traits=traits))
-            elif comp_name in ("ResultRevokeStats", "ResultToggleStats"):
+                tags = comp_data.get("tags", [])
+                if not isinstance(tags, list):
+                    tags = []
+                esper.add_component(entity_id, comp_type(tags=tags))
+            elif comp_name == "ResultRevokeStats":
+                tags = comp_data.get("tags", [])
+                if not isinstance(tags, list):
+                    tags = []
+                esper.add_component(entity_id, comp_type(tags=tags))
+            elif comp_name == "ResultToggleStats":
                 stats = comp_data.get("stats", [])
                 if not isinstance(stats, list):
                     stats = []
