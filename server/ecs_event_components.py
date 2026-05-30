@@ -182,7 +182,7 @@ class DeletedEvent:
 # Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
 
-_criteria_json: dict = json.loads((_PUBLIC_DIR / "criteria_components.json").read_text())
+_criteria_json: dict = json.loads((_PUBLIC_DIR / "map_criteria_components.json").read_text())
 CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(_criteria_json.keys())
 CRITERIA_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in CRITERIA_COMPONENT_NAMES}
 CRITERIA_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _criteria_json.items()}
@@ -193,7 +193,7 @@ CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
     "ObjectsThatMetAllCriteria": ObjectsThatMetAllCriteria,
 }
 
-_result_json: dict = json.loads((_PUBLIC_DIR / "event_result_components.json").read_text())
+_result_json: dict = json.loads((_PUBLIC_DIR / "map_result_components.json").read_text())
 EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(_result_json.keys())
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in EVENT_RESULT_COMPONENT_NAMES}
 EVENT_RESULT_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _result_json.items()}

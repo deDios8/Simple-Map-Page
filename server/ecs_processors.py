@@ -1,7 +1,7 @@
 import esper
+import math
 import ecs_geo_components
 import ecs_event_components
-import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
 from db_stream import GEO_OBJECTS_NODE, multi_path_patch
@@ -13,34 +13,34 @@ class ApplyClientRequests(esper.Processor):
         self.session_state = session_state
 
     def process(self) -> None:
-        for entity_id, _marker in list(esper.get_component(ecs_geo_components.NewLocation)):
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.NewLocation)):
             self.session_state.apply_new_location_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_geo_components.AddObject)):
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.AddObject)):
             self.session_state.apply_add_object_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_geo_components.EditedObject)):
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.EditedObject)):
             self.session_state.apply_edited_object_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_geo_components.DeletedObject)):
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.DeletedObject)):
             self.session_state.apply_deleted_object_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.AddCriteria)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.AddCriteria)):
             self.session_state.apply_add_criteria_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.EditedCriteria)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.EditedCriteria)):
             self.session_state.apply_edited_criteria_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedCriteria)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.DeletedCriteria)):
             self.session_state.apply_deleted_criteria_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.AddEvent)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.AddEvent)):
             self.session_state.apply_add_event_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.EditedEvent)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.EditedEvent)):
             self.session_state.apply_edited_event_request(entity_id)
 
-        for entity_id, _marker in list(esper.get_component(ecs_event_components.DeletedEvent)):
+        for entity_id, _ in list(esper.get_component(ecs_event_components.DeletedEvent)):
             self.session_state.apply_deleted_event_request(entity_id)
 
 

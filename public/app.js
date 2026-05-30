@@ -8,10 +8,10 @@ import {
   update,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-// Populated at startup by init() from criteria_components.json
+// Populated at startup by init() from map_criteria_components.json
 let CRITERIA_COMPONENT_OPTIONS = [];
 
-// Populated at startup by init() from event_result_components.json
+// Populated at startup by init() from map_result_components.json
 let RESULT_COMPONENT_FIELD_CONFIG = {};
 let RESULT_COMPONENT_OPTIONS = [];
 
@@ -867,8 +867,8 @@ async function submitDeletedEventRequest(targetId) {
 
 async function init() {
   const [criteriaRes, resultRes] = await Promise.all([
-    fetch("criteria_components.json"),
-    fetch("event_result_components.json"),
+    fetch("map_criteria_components.json"),
+    fetch("map_result_components.json"),
   ]);
   CRITERIA_COMPONENT_OPTIONS = Object.keys(await criteriaRes.json());
   RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();

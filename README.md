@@ -4,7 +4,6 @@ Allow triggers to assign targets reflexively targeting the object the triggered
 Entering and exiting zones doesn't seem to work consistently.
 
 simplify the attributes in the event_result_components to reduce difficulty in app
-Move SessionState to same file as db_stream
 debug console should display DisplayName rather than ID's
 wishlist: would like a way to move a user on laptop (overriding gps)
 Remove/disable ResultToggleVisibility and ResultToggleTraits for now
