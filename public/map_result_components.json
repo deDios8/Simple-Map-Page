@@ -9,7 +9,7 @@
   "ResultRevokeTraits":        { "handler": "_revoke_traits",          "fieldName": "tags",             "fieldType": "csv",    "label": "Traits",          "placeholder": "trait1, trait2" },
   "ResultToggleTraits":        { "handler": "_toggle_traits",          "fieldName": "tags",             "fieldType": "csv",    "label": "Traits",          "placeholder": "trait1, trait2" },
   "ResultRevokeStats":         { "handler": "_revoke_stats",           "fieldName": "tags",             "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
-  "ResultToggleStats":         { "handler": "_toggle_stats",           "fieldName": "stats",            "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
+  "ResultToggleStats":         { "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" },
   "ResultSetStatsToValues":    { "handler": "_set_stats_to_values",    "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" },
   "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 10}" }
 }

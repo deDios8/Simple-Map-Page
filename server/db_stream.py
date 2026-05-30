@@ -12,8 +12,8 @@ import string
 import esper
 import ecs_geo_components
 import ecs_event_components
-from dataclasses import dataclass
 from typing import Any, Callable
+from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen

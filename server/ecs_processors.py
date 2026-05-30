@@ -448,7 +448,7 @@ class EventProcessor(esper.Processor):
         # TODO: implement — define the item format in ResultRevokeStats.stats
         pass
 
-    def _toggle_stats(self, target_entity_id: int, component: ecs_event_components.ResultToggleStats) -> None:
+    def _toggle_stats_to_values(self, target_entity_id: int, component: ecs_event_components.ResultToggleStats) -> None:
         # TODO: implement — define the item format in ResultToggleStats.stats
         pass
 
