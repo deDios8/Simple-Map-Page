@@ -1326,7 +1326,7 @@ class SessionState:
             if comp_name == "ResultGrantVisibility":
                 esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultToggleVisibility":
-                esper.add_component(entity_id, comp_type(toggle=bool(comp_data.get("toggle", False))))
+                esper.add_component(entity_id, comp_type(visible=normalize_string_list(comp_data.get("visible", []))))
             elif comp_name == "ResultSetColor":
                 esper.add_component(entity_id, comp_type(color=str(comp_data.get("color", ""))))
             elif comp_name == "ResultChangeRadius":

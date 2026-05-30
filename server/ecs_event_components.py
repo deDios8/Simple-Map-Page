@@ -90,7 +90,7 @@ class ResultRevokeVisibility:
 
 @dataclass
 class ResultToggleVisibility:
-    toggle: bool
+    visible: list
 
 @dataclass
 class ResultSetColor:
