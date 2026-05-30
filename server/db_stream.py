@@ -21,10 +21,10 @@ from debug_console import SessionDebugConsole
 
 
 _PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
-_firebase_config: dict = json.loads((_PUBLIC_DIR / "firebase_config.json").read_text())
-_nodes: dict = _firebase_config["nodes"]
+_online_config: dict = json.loads((_PUBLIC_DIR / "online_config.json").read_text())
+_nodes: dict = _online_config["nodes"]
 
-DEFAULT_DATABASE_URL = _firebase_config["databaseURL"]
+DEFAULT_DATABASE_URL = _online_config["databaseURL"]
 GEO_OBJECTS_NODE = _nodes["geoObjects"]
 CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]

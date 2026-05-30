@@ -23,11 +23,9 @@ let firebaseEventCriteriaNode = "";
 let firebaseEventResultsNode = "";
 
 const state = {
-  updateLocationInterval: 2000,
-  // mapLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  // mapLayerAttribution: "&copy; OpenStreetMap contributors",
-  mapLayer: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  mapLayerAttribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+  updateLocationInterval: 0,
+  mapLayer: "",
+  mapLayerAttribution: "",
   map: null,
   userMarker: null,
   geoJsonLayer: null,
@@ -38,7 +36,7 @@ const state = {
   userLocation: null,
   userId: null,
   userPass: null,
-  sessionName: "testBed",
+  sessionName: "",
   trackingInterval: null,
   listenerActive: true,
   listenerUnsubscribe: null,
@@ -860,17 +858,21 @@ async function init() {
   const [criteriaRes, resultRes, fbConfigRes] = await Promise.all([
     fetch("map_criteria_components.json"),
     fetch("map_result_components.json"),
-    fetch("firebase_config.json"),
+    fetch("online_config.json"),
   ]);
   CRITERIA_COMPONENT_OPTIONS = Object.keys(await criteriaRes.json());
   RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
-  const { nodes, ...fbSdkConfig } = await fbConfigRes.json();
+  const { nodes, defaultSessionName, updateLocationInterval, mapLayer, ...fbSdkConfig } = await fbConfigRes.json();
   firebaseConfig = fbSdkConfig;
   firebaseGeoObjectsNode = nodes.geoObjects;
   firebaseClientRequestNode = nodes.clientRequests;
   firebaseEventCriteriaNode = nodes.eventCriteria;
   firebaseEventResultsNode = nodes.eventResults;
+  state.sessionName = defaultSessionName || "testBed";
+  state.updateLocationInterval = updateLocationInterval || 2000;
+  state.mapLayer = mapLayer?.default?.url || "";
+  state.mapLayerAttribution = mapLayer?.default?.attribution || "";
   loadCollapseState();
   applyCollapseState();
   initMap();
