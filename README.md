@@ -5,9 +5,10 @@ Entering and exiting zones doesn't seem to work consistently.
 
 debug console should display DisplayName rather than ID's
 wishlist: would like a way to move a user on laptop (overriding gps)
-start editor for drop-down stat edition
-A new driver he look good starting his stuff he started to catch up to his body a little bit Jesse Jesse ran through the ringer, pretty good and even did one of people like started a move on on Toby is a Toby like he hesitated for a second. it's not a combative move what I expect that would work. Do we need to keep Wolf in who's driving Carr's not even stopped totally they're invading. Stick around Winston around his belt this morning pretty much Winston. Let's go come on come on Winston. Let's go. Let's go eyeball. Not done the oil filter stuff last night, but I didn't this morning. I gotta run out. I wrote down all the filters.
-
+stat editor for drop-down stat addition.
+anchor point for session
+reformat event editor
+popup generator
 
 # Dependencies
 ## macos
