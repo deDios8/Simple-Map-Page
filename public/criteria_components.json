@@ -1,10 +1,10 @@
-[
-  "CriteriaHasTags",
-  "CriteriaIsWithin",
-  "CriteriaNotWithin",
-  "CriteriaJustEntered",
-  "CriteriaJustExited",
-  "CriteriaVisibleTo",
-  "CriteriaNotVisibleTo",
-  "CriteriaFirstEntered"
-]
+{
+  "CriteriaHasTags":      { "handler": "_check_has_tags" },
+  "CriteriaIsWithin":     { "handler": "_check_is_within" },
+  "CriteriaNotWithin":    { "handler": "_check_is_not_within" },
+  "CriteriaJustEntered":  { "handler": "_check_just_entered" },
+  "CriteriaJustExited":   { "handler": "_check_just_exited" },
+  "CriteriaVisibleTo":    { "handler": "_check_is_visible" },
+  "CriteriaNotVisibleTo": { "handler": "_check_is_not_visible" },
+  "CriteriaFirstEntered": { "handler": "_check_first_entered" }
+}

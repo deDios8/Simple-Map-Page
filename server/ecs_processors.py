@@ -4,7 +4,7 @@ import ecs_event_components
 import math
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
-from db_stream import GEO_OBJECTS_NODE, multi_path_patch, normalize_string_list
+from db_stream import GEO_OBJECTS_NODE, multi_path_patch
 
 
 class ApplyClientRequests(esper.Processor):
@@ -221,6 +221,10 @@ class CriteriaProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
+        self._criteria_dispatch: dict = {
+            comp_type: getattr(self, ecs_event_components.CRITERIA_COMPONENT_HANDLER_NAMES[name])
+            for name, comp_type in ecs_event_components.CRITERIA_COMPONENT_MAP.items()
+        }
 
     def process(self) -> None:
         geo_entity_ids = list(self.session_state.GeoObjectEntityIds.values())
@@ -230,20 +234,9 @@ class CriteriaProcessor(esper.Processor):
 
             # Collect active criterion for this criteria entity
             criteria_checks = []
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaHasTags):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_has_tags(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaIsWithin):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_within(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaNotWithin):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_not_within(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaJustEntered):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_just_entered(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaJustExited):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_just_exited(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaVisibleTo):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_visible(geo_eid, c))
-            if comp := esper.try_component(criteria_entity_id, ecs_event_components.CriteriaNotVisibleTo):
-                criteria_checks.append(lambda geo_eid, c=comp: self._check_is_not_visible(geo_eid, c))
+            for comp_type, handler in self._criteria_dispatch.items():
+                if comp := esper.try_component(criteria_entity_id, comp_type):
+                    criteria_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
 
             # passed_any: met at least one criterion; failed_any: failed at least one.
             # met_all = passed_any - failed_any
@@ -340,11 +333,19 @@ class CriteriaProcessor(esper.Processor):
             return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
         return all(tag not in appearance.visible_to for tag in component.tags)
 
+    def _check_first_entered(self, geo_eid: int, component: ecs_event_components.CriteriaFirstEntered) -> bool:
+        # TODO: implement — CriteriaFirstEntered check
+        return False
+
 
 class EventProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
+        self._result_dispatch: dict = {
+            comp_type: getattr(self, ecs_event_components.EVENT_RESULT_COMPONENT_HANDLER_NAMES[name])
+            for name, comp_type in ecs_event_components.EVENT_RESULT_COMPONENT_MAP.items()
+        }
 
     def process(self) -> None:
         event_entity_ids = list(self.session_state.EventResultEntityIds.values())
@@ -379,35 +380,9 @@ class EventProcessor(esper.Processor):
                     for target_entity_id in target_objects:
 
                         results_to_apply = []
-
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantVisibility):
-                            results_to_apply.append(lambda eid, c=comp: self._grant_visibility(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeVisibility):
-                            results_to_apply.append(lambda eid, c=comp: self._revoke_visibility(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleVisibility):
-                            results_to_apply.append(lambda eid, c=comp: self._toggle_visibility(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetColor):
-                            results_to_apply.append(lambda eid, c=comp: self._set_color(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetRadius):
-                            results_to_apply.append(lambda eid, c=comp: self._set_radius(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeRadius):
-                            results_to_apply.append(lambda eid, c=comp: self._change_radius(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantTraits):
-                            results_to_apply.append(lambda eid, c=comp: self._grant_traits(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeTraits):
-                            results_to_apply.append(lambda eid, c=comp: self._revoke_traits(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleTraits):
-                            results_to_apply.append(lambda eid, c=comp: self._toggle_traits(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultGrantStats):
-                            results_to_apply.append(lambda eid, c=comp: self._grant_stats(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultRevokeStats):
-                            results_to_apply.append(lambda eid, c=comp: self._revoke_stats(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultToggleStats):
-                            results_to_apply.append(lambda eid, c=comp: self._toggle_stats(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultSetStatsToValues):
-                            results_to_apply.append(lambda eid, c=comp: self._set_stats_to_values(eid, c))
-                        if comp := esper.try_component(event_entity_id, ecs_event_components.ResultChangeStatsByValues):
-                            results_to_apply.append(lambda eid, c=comp: self._change_stats_by_values(eid, c))
+                        for comp_type, handler in self._result_dispatch.items():
+                            if comp := esper.try_component(event_entity_id, comp_type):
+                                results_to_apply.append(lambda eid, c=comp, h=handler: h(eid, c))
 
                         for result in results_to_apply:
                             result(target_entity_id)

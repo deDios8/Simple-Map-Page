@@ -870,7 +870,7 @@ async function init() {
     fetch("criteria_components.json"),
     fetch("event_result_components.json"),
   ]);
-  CRITERIA_COMPONENT_OPTIONS = await criteriaRes.json();
+  CRITERIA_COMPONENT_OPTIONS = Object.keys(await criteriaRes.json());
   RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
   loadCollapseState();
