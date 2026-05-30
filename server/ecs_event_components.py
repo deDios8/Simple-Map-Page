@@ -182,12 +182,11 @@ class DeletedEvent:
 # Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
 
+CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(
+    json.loads((_PUBLIC_DIR / "criteria_components.json").read_text())
+)
 CRITERIA_COMPONENT_MAP: dict[str, type] = {
-    name: globals()[name]
-    for name in json.loads((_PUBLIC_DIR / "criteria_components.json").read_text())
-}
-
-CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(CRITERIA_COMPONENT_MAP)
+    name: globals()[name] for name in CRITERIA_COMPONENT_NAMES}
 
 # Separate tracking components added to every criteria entity (not filter criteria).
 CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
@@ -195,10 +194,9 @@ CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
     "ObjectsThatMetAllCriteria": ObjectsThatMetAllCriteria,
 }
 
+EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(
+    json.loads((_PUBLIC_DIR / "event_result_components.json").read_text())
+)
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {
-    name: globals()[name]
-    for name in json.loads((_PUBLIC_DIR / "event_result_components.json").read_text())
-}
-
-EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(EVENT_RESULT_COMPONENT_MAP)
+    name: globals()[name] for name in EVENT_RESULT_COMPONENT_NAMES}
 
