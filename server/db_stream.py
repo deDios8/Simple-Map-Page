@@ -14,8 +14,8 @@ import ecs_geo_components
 import ecs_event_components
 from typing import Any, Callable
 from dataclasses import dataclass
-from urllib.error import HTTPError, URLError
 from urllib.parse import quote
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from debug_console import SessionDebugConsole
 
@@ -85,6 +85,8 @@ class GeoObjectEntry(DBEntry):
         self.stats = normalize_stats(self.properties)
 
         self.traits = normalize_string_list(self.properties.get("traits", []))
+
+        self.messages = normalize_messages(self.properties)
 
         self.data = self.properties.get("data", {})
 
@@ -169,6 +171,16 @@ def normalize_string_list(value: object) -> list[str]:
         return [str(s) for s in value if isinstance(s, str) and s.strip()]
     if isinstance(value, str) and value.strip():
         return [s.strip() for s in value.split(",") if s.strip()]
+    return []
+
+
+def normalize_messages(properties: Any) -> list[str]:
+    """Return the messages list from a properties dict, filtering to non-empty strings."""
+    if not isinstance(properties, dict):
+        return []
+    value = properties.get("messages", [])
+    if isinstance(value, list):
+        return [str(m) for m in value if isinstance(m, str) and m]
     return []
 
 
@@ -634,6 +646,21 @@ class SessionState:
 
         return normalized_stats
 
+    def _sync_messages_component(self, entity_id: int, props: object) -> list[str]:
+        normalized_messages = normalize_messages(props)
+        messages_component = esper.try_component(entity_id, ecs_geo_components.Messages)
+        if normalized_messages:
+            if messages_component is None:
+                esper.add_component(entity_id, ecs_geo_components.Messages(messages=normalized_messages))
+            else:
+                messages_component.messages = normalized_messages
+        elif messages_component is not None:
+            try:
+                esper.remove_component(entity_id, ecs_geo_components.Messages)
+            except KeyError:
+                pass
+        return normalized_messages
+
     def _sync_traits_component(self, entity_id: int, props: object) -> list[str]:
         traits_value = props.get("traits", []) if isinstance(props, dict) else []
         normalized_traits = normalize_string_list(traits_value)
@@ -992,6 +1019,29 @@ class SessionState:
         )
         self._consume_client_request(request_entity_id)
 
+    def apply_dismiss_message_request(self, request_entity_id: int) -> None:
+        dismiss = esper.try_component(request_entity_id, ecs_geo_components.DismissMessage)
+        if dismiss is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_key = self._find_key_by_identifier(self.GeoObjectEntityIds, dismiss.target_id)
+        if target_key is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_entity_id = self.GeoObjectEntityIds.get(target_key)
+        if target_entity_id is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        messages = esper.try_component(target_entity_id, ecs_geo_components.Messages)
+        if messages is not None and dismiss.message in messages.messages:
+            messages.messages.remove(dismiss.message)
+            esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
+
+        self._consume_client_request(request_entity_id)
+
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
@@ -1005,8 +1055,9 @@ class SessionState:
             self._apply_zone_borders_from_properties(geo.entity_id, geo_object.properties)
             self._sync_stats_component(geo.entity_id, geo_object.properties)
             self._sync_traits_component(geo.entity_id, geo_object.properties)
+            self._sync_messages_component(geo.entity_id, geo_object.properties)
             self._sync_is_user_component(geo.entity_id)
-            
+
             return geo.entity_id
 
         props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
@@ -1028,6 +1079,7 @@ class SessionState:
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._sync_stats_component(existing_entity_id, props)
         self._sync_traits_component(existing_entity_id, props)
+        self._sync_messages_component(existing_entity_id, props)
         self._sync_is_user_component(existing_entity_id)
         
         return existing_entity_id
@@ -1062,6 +1114,11 @@ class SessionState:
             esper.add_component(entity_id, ecs_event_components.EditedEvent(target_id=target_id, form_data=form_data))
         elif request_type == "deleted_event":
             esper.add_component(entity_id, ecs_event_components.DeletedEvent(target_id=target_id))
+        elif request_type == "dismiss_message":
+            esper.add_component(entity_id, ecs_geo_components.DismissMessage(
+                target_id=target_id,
+                message=form_data.get("message", ""),
+            ))
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
@@ -1111,6 +1168,7 @@ class SessionState:
             ecs_event_components.AddEvent,
             ecs_event_components.EditedEvent,
             ecs_event_components.DeletedEvent,
+            ecs_geo_components.DismissMessage,
         ):
             try:
                 esper.remove_component(existing_entity_id, marker_component)

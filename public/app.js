@@ -48,6 +48,7 @@ const state = {
   events: {},
   selectedEventId: null,
   eventListenerUnsubscribe: null,
+  dismissedMessages: new Set(),
 };
 
 
@@ -108,6 +109,11 @@ const eventFieldTargetNames = document.querySelector("#event-field-target-names"
 const eventResultsList = document.querySelector("#event-results-list");
 const addResultButton = document.querySelector("#add-result-button");
 const addEventButton = document.querySelector("#add-event-button");
+
+// Message modal DOM references
+const messageModal = document.querySelector("#message-modal");
+const messageModalText = document.querySelector("#message-modal-text");
+const messageModalOk = document.querySelector("#message-modal-ok");
 
 const criteriaEditableFields = [
   criteriaFieldName,
@@ -323,6 +329,68 @@ function collectStatsFromEditor(options = {}) {
 }
 
 init();
+
+// ---------------------------------------------------------------------------
+// Message modal functions
+// ---------------------------------------------------------------------------
+
+function checkForUserMessages() {
+  if (!state.userId || !messageModal) return;
+  const userObj = state.objects[state.userId];
+  const messages = userObj?.properties?.messages;
+  if (!Array.isArray(messages) || messages.length === 0) return;
+
+  // Find the first message not already pending dismissal
+  const pending = messages.find((m) => !state.dismissedMessages.has(m));
+  if (pending !== undefined) {
+    showMessageModal(pending);
+  }
+}
+
+function showMessageModal(message) {
+  if (!messageModal || !messageModalText) return;
+  messageModalText.textContent = message;
+  messageModal.showModal();
+}
+
+async function submitDismissMessageRequest(message) {
+  if (!state.userId) return;
+  await submitRequest({
+    requestId: `dismiss-msg-${state.userId}`,
+    requestType: "dismiss_message",
+    clientRequestPayload: {
+      targetId: state.userId,
+    },
+    properties: {
+      formData: { message },
+    },
+    quiet: true,
+  });
+}
+
+// Wire up the OK button once
+if (messageModalOk) {
+  messageModalOk.addEventListener("click", async () => {
+    const message = messageModalText?.textContent ?? "";
+    messageModal.close();
+
+    // Optimistically remove from local state so the next check won't re-show it
+    // before the DB update echoes back.
+    state.dismissedMessages.add(message);
+    const userObj = state.objects[state.userId];
+    if (userObj?.properties?.messages) {
+      const idx = userObj.properties.messages.indexOf(message);
+      if (idx !== -1) {
+        userObj.properties.messages.splice(idx, 1);
+      }
+    }
+
+    await submitDismissMessageRequest(message);
+
+    // Show next pending message, if any
+    checkForUserMessages();
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Criteria editor functions
@@ -1572,6 +1640,18 @@ function handleObjectSnapshot(nextObjects) {
 
   // Reapply collapse state after editor updates
   applyCollapseState();
+
+  // Clear dismissed-message tracking for messages that were removed from the DB,
+  // then check whether any new messages arrived for the current user.
+  if (state.userId) {
+    const currentMessages = new Set(state.objects[state.userId]?.properties?.messages ?? []);
+    for (const msg of state.dismissedMessages) {
+      if (!currentMessages.has(msg)) {
+        state.dismissedMessages.delete(msg);
+      }
+    }
+    checkForUserMessages();
+  }
 }
 
 function inferGeometryType(coordinates) {

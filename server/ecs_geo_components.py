@@ -70,6 +70,14 @@ class Stats:
 class Traits:
     traits: list
 
+@dataclass
+class Messages:
+    messages: list
+
+@dataclass
+class DismissMessage:
+    target_id: str
+    message: str
 
 # ---------------------------------------------------------------------------
 # Components for tracking zone interactions

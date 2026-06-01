@@ -43,6 +43,9 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _ in list(esper.get_component(ecs_event_components.DeletedEvent)):
             self.session_state.apply_deleted_event_request(entity_id)
 
+        for entity_id, _ in list(esper.get_component(ecs_geo_components.DismissMessage)):
+            self.session_state.apply_dismiss_message_request(entity_id)
+
 
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self, session_state) -> None:
@@ -403,8 +406,12 @@ class EventProcessor(esper.Processor):
                     appearance.visible_to.remove(tag)
 
     def _toggle_visibility(self, target_entity_id: int, component: ecs_event_components.ResultToggleVisibility) -> None:
-        # TODO: implement — Appearance.visible is a list; define toggle semantics
-        pass
+        if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
+            for tag in component.tags:
+                if tag in appearance.visible_to:
+                    appearance.visible_to.remove(tag)
+                else:
+                    appearance.visible_to.append(tag)
 
     def _set_color(self, target_entity_id: int, component: ecs_event_components.ResultSetColor) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):
@@ -468,6 +475,13 @@ class EventProcessor(esper.Processor):
                     if key in stats.items:
                         stats.items[key] += delta
 
+    def _popup_message(self, target_entity_id: int, component: ecs_event_components.ResultPopupMessage) -> None:
+        messages = esper.try_component(target_entity_id, ecs_geo_components.Messages)
+        if messages is None:
+            esper.add_component(target_entity_id, ecs_geo_components.Messages(messages=[component.text]))
+        else:
+            messages.messages.append(component.text)
+
 
 class SyncGeoObjectsToDatabase(esper.Processor):
     def __init__(self, session_state) -> None:
@@ -525,6 +539,9 @@ class SyncGeoObjectsToDatabase(esper.Processor):
         stats = esper.try_component(entity_id, ecs_geo_components.Stats)
         if stats is not None and stats.items:
             payload["properties/stats"] = stats.items
+
+        messages = esper.try_component(entity_id, ecs_geo_components.Messages)
+        payload["properties/messages"] = messages.messages if (messages is not None and messages.messages) else None
 
         return payload
 

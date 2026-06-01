@@ -133,6 +133,9 @@ class ResultSetStatsToValues:
 class ResultChangeStatsByValues:
     stats_to_values: dict
 
+@dataclass
+class ResultPopupMessage:
+    text: str
 
 class Event:
     def __init__(self, id: str, name: str) -> None:

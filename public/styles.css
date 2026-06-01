@@ -930,3 +930,37 @@ label.traits-label input[type="text"] {
     right: 14px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Message modal (popup message from event system)
+   --------------------------------------------------------------------------- */
+
+#message-modal {
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 0;
+  width: min(380px, calc(100vw - 32px));
+  box-shadow: var(--shadow);
+  background: var(--panel-strong);
+}
+
+#message-modal::backdrop {
+  background: rgba(14, 43, 36, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.message-modal-card {
+  display: grid;
+  gap: 14px;
+  padding: 28px 24px;
+}
+
+.message-modal-card > p {
+  margin: 0;
+}
+
+#message-modal-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
