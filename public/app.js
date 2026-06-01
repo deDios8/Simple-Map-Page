@@ -65,6 +65,9 @@ const requestYButton = document.querySelector("#request-y-button");
 const addObjectButton = document.querySelector("#add-object-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
+const editorPanel = document.querySelector("#editor-panel");
+const editorCancelButton = document.querySelector("#editor-cancel-button");
+const editorCancelBottomButton = document.querySelector("#editor-cancel-bottom-button");
 const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
 const deleteObjectButton = document.querySelector("#delete-object-button");
@@ -996,7 +999,7 @@ function initMap() {
 
 function bindUi() {
   drawerToggle.addEventListener("click", () => setDrawerOpen(drawer, drawerToggle, !drawer.classList.contains("is-open")));
-  drawerClose.addEventListener("click", () => setDrawerOpen(drawer, drawerToggle, false));
+  drawerClose.addEventListener("click", () => { setDrawerOpen(drawer, drawerToggle, false); closeEditorPanel(); });
   listenerToggle.addEventListener("click", toggleListener);
   requestAButton.addEventListener("click", () => {
     void submitRequest({ requestId: "request A", requestType: "button_click", successMessage: "request A sent" });
@@ -1016,6 +1019,8 @@ function bindUi() {
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
   });
+  editorCancelButton?.addEventListener("click", () => closeEditorPanel());
+  editorCancelBottomButton?.addEventListener("click", () => closeEditorPanel());
   coordPickButton?.addEventListener("click", () => {
     const entering = !state.coordPickMode;
     setCoordPickMode(entering);
@@ -1629,10 +1634,8 @@ function handleObjectSnapshot(nextObjects) {
   }
 
   if (state.selectedId && !state.objects[state.selectedId]) {
-    state.selectedId = null;
-  }
-
-  if (state.selectedId) {
+    closeEditorPanel();
+  } else if (state.selectedId) {
     populateEditor(state.selectedId);
   } else {
     showEmptyEditor();
@@ -1829,6 +1832,7 @@ function selectObject(id, options = {}) {
 
   state.selectedId = id;
   populateEditor(id);
+  showEditorPanel();
   renderObjectList();
   setDrawerOpen(drawer, drawerToggle, true);
 
@@ -1889,6 +1893,17 @@ function showEmptyEditor() {
   saveStatus.textContent = "";
   renderStatsEditor({});
   applyEditorPermissions();
+}
+
+function showEditorPanel() {
+  editorPanel.classList.add("is-open");
+}
+
+function closeEditorPanel() {
+  editorPanel.classList.remove("is-open");
+  state.selectedId = null;
+  showEmptyEditor();
+  renderObjectList();
 }
 
 function canEditObjects() {

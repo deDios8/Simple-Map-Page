@@ -135,6 +135,7 @@ body {
   background: var(--panel-strong);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
+  overflow: hidden;
   transform: translateY(18px);
   opacity: 0;
   pointer-events: none;
@@ -201,6 +202,56 @@ body {
 .drawer-body {
   overflow: auto;
   padding: 14px 18px 18px;
+}
+
+.editor-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: var(--panel-strong);
+  backdrop-filter: blur(16px);
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.editor-panel.is-open {
+  display: grid;
+}
+
+.editor-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.editor-panel-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-panel-body {
+  overflow: auto;
+  padding: 14px 18px 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.editor-cancel-row {
+  display: flex;
+}
+
+.editor-cancel-row button {
+  width: 100%;
 }
 
 .text-button,

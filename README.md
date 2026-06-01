@@ -15,10 +15,6 @@ Tuning the timing of events to have a predictable tick rate for DOT-like effects
 App auto-select a newly added zone, criteria, event for editing.
 
 
-I'd like to add a new functionality to the front end #file:app.js with support from the server:
-One the server: When an event result #sym:ResultPopupMessage is triggered to be applied and #sym:_popup_message handler (which needs to be implemented to grant a text string to a list of  messages in #sym:Messages ) similar to adding a #sym:Traits , except messages cannot be csv because they may include commas.
-The front end: for each user whose sign-in id matches a geo object with property/messages, a pop-up modal should appear for each message. An 'OK' button on the modal will send a client request to remove that message from the geo object matching the user's sign-in id.
-The goal is for events results happening on the server to be able to deliver specific messages to specific users on the front end; and for the user to be able to dismiss the message and clear it from the database. I'm suggesting using the geo object as a carrier, but I'm open open to suggestions for an easier way.
 
 # Dependencies
 ## macos

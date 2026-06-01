@@ -73,18 +73,21 @@
 
         <div class="drawer-body">
           <section class="panel-section">
-            <ul id="object-list" class="object-list"></ul>
-          </section>
-
-          <section class="panel-section">
             <div class="editor-header">
-              <!-- <h2>Edit object</h2> -->
-              <h2 id="editor-empty-state">Select an object to edit.</h2>
               <div class="section-actions">
                 <button id="add-object-button" class="text-button" type="button" aria-label="Add new geo object at current location">Add object</button>
               </div>
             </div>
+            <ul id="object-list" class="object-list"></ul>
+          </section>
+        </div>
 
+        <div id="editor-panel" class="editor-panel">
+          <div class="editor-panel-header">
+            <h2 id="editor-empty-state">Select an object to edit.</h2>
+            <button id="editor-cancel-button" class="text-button" type="button">Cancel</button>
+          </div>
+          <div class="editor-panel-body">
             <form id="editor-form" class="editor-form" hidden>
               <div class="name-row">
                 <label>
@@ -148,9 +151,13 @@
                 <p id="save-status" class="save-status" aria-live="polite"></p>
               </div>
 
+              <div class="editor-cancel-row">
+                <button id="editor-cancel-bottom-button" class="text-button" type="button">Cancel</button>
+              </div>
+
               <div class="editor-bottom-spacer" aria-hidden="true"></div>
             </form>
-          </section>
+          </div>
         </div>
       </aside>
 
