@@ -779,50 +779,12 @@ label.traits-label input[type="text"] {
 }
 
 /* ---------------------------------------------------------------------------
-   Events drawer toggle button
-   --------------------------------------------------------------------------- */
-
-.events-drawer-toggle {
-  position: fixed;
-  top: 84px;
-  right: 10px;
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  box-shadow: 0 4px 12px rgba(14, 43, 36, 0.15);
-  backdrop-filter: blur(8px);
-  color: var(--accent-dark);
-  font: inherit;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease;
-}
-
-.events-drawer-toggle:hover {
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.events-drawer-toggle[aria-expanded="true"] {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent-dark);
-}
-
-/* ---------------------------------------------------------------------------
    Event results drawer toggle button
    --------------------------------------------------------------------------- */
 
 .events-results-drawer-toggle {
   position: fixed;
-  top: 126px;
+  top: 84px;
   right: 10px;
   z-index: 900;
   display: flex;
@@ -855,14 +817,8 @@ label.traits-label input[type="text"] {
 }
 
 /* ---------------------------------------------------------------------------
-   Events drawer positioning
+   Events drawer positioning (removed — criteria drawer no longer exists)
    --------------------------------------------------------------------------- */
-
-.events-drawer {
-  right: auto;
-  left: 12px;
-  bottom: calc(var(--safe-bottom) + 78px);
-}
 
 /* ---------------------------------------------------------------------------
    Event results drawer positioning
@@ -918,36 +874,6 @@ label.traits-label input[type="text"] {
   gap: 12px;
 }
 
-/* Trigger/target selector row */
-.trigger-target-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  align-items: start;
-}
-
-.trigger-target-row label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-weight: 600;
-  min-width: 0;
-}
-
-/* Multi-select for event trigger/target name pickers */
-#event-field-trigger-names,
-#event-field-target-names {
-  width: 100%;
-  min-height: 72px;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--input-bg, #fff);
-  font: inherit;
-  font-size: 0.875rem;
-  color: var(--text);
-}
-
 .result-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -972,12 +898,8 @@ label.traits-label input[type="text"] {
 }
 
 @media (max-width: 760px) {
-  .events-drawer-toggle {
-    top: 80px;
-    right: 14px;
-  }
   .events-results-drawer-toggle {
-    top: 122px;
+    top: 80px;
     right: 14px;
   }
 }

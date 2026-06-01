@@ -1229,6 +1229,40 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     ## Criteria management
+    def _apply_criteria_components_patch(self, key: str, criteria_components: dict) -> None:
+        """Upsert criteria entity and persist components to DB. Creates criteria if it doesn't exist."""
+        entity_id = self.EventCriteriaEntityIds.get(key)
+        if entity_id is None:
+            new_entry = {
+                "type": "Feature",
+                "geometry": None,
+                "properties": {
+                    "id": key,
+                    "displayName": key,
+                    "ObjectsThatMetAllCriteria": {"object_ids": []},
+                    "ObjectsThatMetAnyCriteria": {"object_ids": []},
+                },
+            }
+            put_db_entry(self.database_url, self.session_name, key, new_entry, NODE=EVENT_CRITERIA_NODE)
+            entity_id = self._upsert_criteria_entity(key, CriteriaEntry(new_entry))
+
+        self._sync_criteria_components(entity_id, criteria_components)
+
+        patch_data: dict = {}
+        for comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
+            patch_data[f"properties/{comp_name}"] = criteria_components.get(comp_name)
+        patch_db_entry(self.database_url, self.session_name, key, patch_data, node=EVENT_CRITERIA_NODE)
+
+        stream_obj = self.stream.criteria_state.get(key)
+        if isinstance(stream_obj, dict):
+            props = stream_obj.setdefault("properties", {})
+            if isinstance(props, dict):
+                for comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
+                    props.pop(comp_name, None)
+                for comp_name, comp_data in criteria_components.items():
+                    if comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
+                        props[comp_name] = comp_data
+
     def _sync_criteria_components(self, entity_id: int, criteria_components: dict) -> None:
         """Remove all existing criteria ECS components and re-add from criteria_components dict."""
         for comp_type in ecs_event_components.CRITERIA_COMPONENT_MAP.values():
@@ -1450,26 +1484,48 @@ class SessionState:
         if new_key in self.EventResultEntityIds:
             new_key = f"{new_key}_{self._random_string(3)}"
 
-        new_entry = {
+        trigger_key = f"{new_key}Trigger"
+        target_key = f"{new_key}Target"
+
+        trigger_entry = {
+            "type": "Feature",
+            "geometry": None,
+            "properties": {
+                "id": trigger_key,
+                "displayName": trigger_key,
+                "ObjectsThatMetAllCriteria": {"object_ids": []},
+                "ObjectsThatMetAnyCriteria": {"object_ids": []},
+            },
+        }
+        put_db_entry(self.database_url, self.session_name, trigger_key, trigger_entry, NODE=EVENT_CRITERIA_NODE)
+        self._upsert_criteria_entity(trigger_key, CriteriaEntry(trigger_entry))
+
+        target_entry = {
+            "type": "Feature",
+            "geometry": None,
+            "properties": {
+                "id": target_key,
+                "displayName": target_key,
+                "ObjectsThatMetAllCriteria": {"object_ids": []},
+                "ObjectsThatMetAnyCriteria": {"object_ids": []},
+            },
+        }
+        put_db_entry(self.database_url, self.session_name, target_key, target_entry, NODE=EVENT_CRITERIA_NODE)
+        self._upsert_criteria_entity(target_key, CriteriaEntry(target_entry))
+
+        new_event_entry = {
             "type": "Feature",
             "geometry": None,
             "properties": {
                 "id": new_key,
                 "displayName": new_key,
-                "EventTriggerNames": {"criteria_ids": []},
-                "EventTargetNames": {"criteria_ids": []},
+                "EventTriggerNames": {"criteria_ids": [trigger_key]},
+                "EventTargetNames": {"criteria_ids": [target_key]},
                 "Results": {},
             },
         }
-
-        put_db_entry(
-            self.database_url,
-            self.session_name,
-            new_key,
-            new_entry,
-            NODE=EVENT_RESULTS_NODE,
-        )
-        self._upsert_event_entity(new_key, EventResultEntry(new_entry))
+        put_db_entry(self.database_url, self.session_name, new_key, new_event_entry, NODE=EVENT_RESULTS_NODE)
+        self._upsert_event_entity(new_key, EventResultEntry(new_event_entry))
         self._consume_client_request(request_entity_id)
 
     def apply_edited_event_request(self, request_entity_id: int) -> None:
@@ -1493,17 +1549,23 @@ class SessionState:
         display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
-        trigger_names = form_data.get("triggerNames", [])
-        if not isinstance(trigger_names, list):
-            trigger_names = []
-        trigger_comp = esper.component_for_entity(target_entity_id, ecs_event_components.EventTriggerNames)
-        trigger_comp.names = trigger_names
+        trigger_criteria_key = f"{target_key}Trigger"
+        target_criteria_key = f"{target_key}Target"
 
-        target_names = form_data.get("targetNames", [])
-        if not isinstance(target_names, list):
-            target_names = []
+        trigger_components = form_data.get("triggerComponents", {})
+        if not isinstance(trigger_components, dict):
+            trigger_components = {}
+        self._apply_criteria_components_patch(trigger_criteria_key, trigger_components)
+
+        target_components = form_data.get("targetComponents", {})
+        if not isinstance(target_components, dict):
+            target_components = {}
+        self._apply_criteria_components_patch(target_criteria_key, target_components)
+
+        trigger_comp = esper.component_for_entity(target_entity_id, ecs_event_components.EventTriggerNames)
+        trigger_comp.criteria_ids = [trigger_criteria_key]
         target_comp = esper.component_for_entity(target_entity_id, ecs_event_components.EventTargetNames)
-        target_comp.names = target_names
+        target_comp.criteria_ids = [target_criteria_key]
 
         result_components = form_data.get("results", {})
         if not isinstance(result_components, dict):
@@ -1513,8 +1575,8 @@ class SessionState:
 
         patch_data: dict = {
             "properties/displayName": display_name_comp.display_name,
-            "properties/EventTriggerNames/criteria_ids": trigger_names,
-            "properties/EventTargetNames/criteria_ids": target_names,
+            "properties/EventTriggerNames/criteria_ids": [trigger_criteria_key],
+            "properties/EventTargetNames/criteria_ids": [target_criteria_key],
         }
         for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
             patch_data[f"properties/Results/{comp_name}"] = result_components.get(comp_name)
@@ -1533,8 +1595,8 @@ class SessionState:
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
                 props["displayName"] = display_name_comp.display_name
-                props["EventTriggerNames"] = {"criteria_ids": trigger_names}
-                props["EventTargetNames"] = {"criteria_ids": target_names}
+                props["EventTriggerNames"] = {"criteria_ids": [trigger_criteria_key]}
+                props["EventTargetNames"] = {"criteria_ids": [target_criteria_key]}
                 results = props.setdefault("Results", {})
                 if isinstance(results, dict):
                     for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
@@ -1546,13 +1608,25 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_event_request(self, request_entity_id: int) -> None:
-        self._apply_deleted_request(
-            request_entity_id,
-            ecs_event_components.DeletedEvent,
-            self.EventResultEntityIds,
-            self.EventResults,
-            EVENT_RESULTS_NODE,
-        )
+        deleted = esper.try_component(request_entity_id, ecs_event_components.DeletedEvent)
+        if deleted is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        target_key = self._find_key_by_identifier(self.EventResultEntityIds, deleted.target_id)
+        if target_key is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        for suffix in ("Trigger", "Target"):
+            criteria_key = f"{target_key}{suffix}"
+            if criteria_key in self.EventCriteriaEntityIds:
+                self._delete_tracked_entity(self.EventCriteriaEntityIds, self.EventCriteria, criteria_key)
+                delete_db_entry(self.database_url, self.session_name, criteria_key, node=EVENT_CRITERIA_NODE)
+
+        self._delete_tracked_entity(self.EventResultEntityIds, self.EventResults, target_key)
+        delete_db_entry(self.database_url, self.session_name, target_key, node=EVENT_RESULTS_NODE)
+        self._consume_client_request(request_entity_id)
 
 
     ## DB maintenance loop and ECS processing

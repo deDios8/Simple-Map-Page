@@ -43,10 +43,9 @@ const state = {
   pendingUserSetup: false,
   coordPickMode: false,
   criteria: {},
-  selectedCriteriaId: null,
-  criteriaListenerUnsubscribe: null,
-  events: {},
   selectedEventId: null,
+  events: {},
+  criteriaListenerUnsubscribe: null,
   eventListenerUnsubscribe: null,
   dismissedMessages: new Set(),
 };
@@ -84,20 +83,6 @@ const addStatButton = document.querySelector("#add-stat-button");
 const statsSection = document.querySelector(".stats-section");
 
 // Events drawer DOM references
-const eventsDrawer = document.querySelector("#events-drawer");
-const eventsDrawerToggle = document.querySelector("#events-drawer-toggle");
-const eventsDrawerClose = document.querySelector("#events-drawer-close");
-const criteriaList = document.querySelector("#criteria-list");
-const criteriaEditorForm = document.querySelector("#criteria-editor-form");
-const criteriaEditorEmptyState = document.querySelector("#criteria-editor-empty-state");
-const criteriaSaveStatus = document.querySelector("#criteria-save-status");
-const deleteCriteriaButton = document.querySelector("#delete-criteria-button");
-const criteriaFieldName = document.querySelector("#criteria-field-name");
-const criteriaComponentsList = document.querySelector("#criteria-components-list");
-const addCriterionButton = document.querySelector("#add-criterion-button");
-const addCriteriaButton = document.querySelector("#add-criteria-button");
-
-// Event results drawer DOM references
 const eventsResultsDrawer = document.querySelector("#events-results-drawer");
 const eventsResultsDrawerToggle = document.querySelector("#events-results-drawer-toggle");
 const eventsResultsDrawerClose = document.querySelector("#events-results-drawer-close");
@@ -107,8 +92,10 @@ const eventEditorEmptyState = document.querySelector("#event-editor-empty-state"
 const eventSaveStatus = document.querySelector("#event-save-status");
 const deleteEventButton = document.querySelector("#delete-event-button");
 const eventFieldName = document.querySelector("#event-field-name");
-const eventFieldTriggerNames = document.querySelector("#event-field-trigger-names");
-const eventFieldTargetNames = document.querySelector("#event-field-target-names");
+const triggerCriteriaList = document.querySelector("#trigger-criteria-list");
+const addTriggerCriterionButton = document.querySelector("#add-trigger-criterion-button");
+const targetCriteriaList = document.querySelector("#target-criteria-list");
+const addTargetCriterionButton = document.querySelector("#add-target-criterion-button");
 const eventResultsList = document.querySelector("#event-results-list");
 const addResultButton = document.querySelector("#add-result-button");
 const addEventButton = document.querySelector("#add-event-button");
@@ -118,13 +105,8 @@ const messageModal = document.querySelector("#message-modal");
 const messageModalText = document.querySelector("#message-modal-text");
 const messageModalOk = document.querySelector("#message-modal-ok");
 
-const criteriaEditableFields = [
-  criteriaFieldName,
-];
 const eventEditableFields = [
   eventFieldName,
-  eventFieldTriggerNames,
-  eventFieldTargetNames,
 ];
 const editableFields = [
   fieldName,
@@ -418,46 +400,15 @@ function normalizeCollection(raw, normFn) {
   }, {});
 }
 
-function renderCriteriaList() {
-  if (!criteriaList) return;
-  const entries = Object.values(state.criteria);
-  criteriaList.innerHTML = entries.length
-    ? entries
-        .map((entry) => {
-          const id = entry.properties?.id;
-          const name = escapeHtml(entry.properties?.displayName || id || "Unnamed criteria");
-          const selectedClass = state.selectedCriteriaId === id ? "is-selected" : "";
-          return `
-            <li>
-              <button class="${selectedClass}" type="button" data-criteria-id="${escapeHtml(id)}">
-                <span>${name}</span><span class="list-meta"> &middot; ${escapeHtml(id)}</span>
-              </button>
-            </li>
-          `;
-        })
-        .join("")
-    : "<li>No event criteria found.</li>";
-}
-
-function selectCriteria(id, options = {}) {
-  const entry = state.criteria[id];
-  if (!entry) return;
-  state.selectedCriteriaId = id;
-  populateCriteriaEditor(id);
-  renderCriteriaList();
-  setDrawerOpen(eventsDrawer, eventsDrawerToggle, true);
-}
-
-
-function renderCriteriaComponentsEditor(components) {
-  if (!criteriaComponentsList) return;
+function renderCriterionRowsInto(listEl, components) {
+  if (!listEl) return;
   const entries = Object.entries(components || {});
   if (!entries.length) {
-    criteriaComponentsList.innerHTML = '<div class="stats-empty">No criteria yet. Add one to define matching rules.</div>';
+    listEl.innerHTML = '<div class="stats-empty">No criteria yet. Add one to define matching rules.</div>';
     return;
   }
 
-  criteriaComponentsList.innerHTML = entries
+  listEl.innerHTML = entries
     .map(([name, data], index) => {
       const tags = Array.isArray(data?.tags) ? data.tags.join(", ") : "";
       return `
@@ -480,19 +431,21 @@ function renderCriteriaComponentsEditor(components) {
     .join("");
 }
 
-function addEmptyCriterionRow() {
-  const currentComponents = collectCriteriaComponentsFromEditor();
+function addEmptyCriterionRowTo(listEl) {
+  if (!listEl) return;
+  const currentComponents = collectCriteriaComponentsFrom(listEl);
   const nextComponents = { ...currentComponents };
   const nextKey =
     CRITERIA_COMPONENT_OPTIONS.find((opt) => !Object.prototype.hasOwnProperty.call(nextComponents, opt)) ??
     CRITERIA_COMPONENT_OPTIONS[0];
   nextComponents[nextKey] = { tags: [] };
-  renderCriteriaComponentsEditor(nextComponents);
-  applyCriteriaEditorPermissions();
+  renderCriterionRowsInto(listEl, nextComponents);
+  applyEventEditorPermissions();
 }
 
-function collectCriteriaComponentsFromEditor() {
-  const rows = Array.from(criteriaComponentsList?.querySelectorAll(".stat-row") || []);
+function collectCriteriaComponentsFrom(listEl) {
+  if (!listEl) return {};
+  const rows = Array.from(listEl.querySelectorAll(".stat-row"));
   const components = {};
   for (const row of rows) {
     const name = row.querySelector('[data-field="name"]')?.value?.trim() || "";
@@ -502,22 +455,6 @@ function collectCriteriaComponentsFromEditor() {
     components[name] = { tags };
   }
   return components;
-}
-
-function populateCriteriaEditor(id) {
-  const entry = state.criteria[id];
-  if (!entry) {
-    showEmptyCriteriaEditor();
-    return;
-  }
-  const displayName = entry.properties?.displayName || "";
-  const components = extractCriteriaComponents(entry.properties);
-  criteriaEditorForm.hidden = false;
-  criteriaEditorForm.classList.remove("is-collapsed");
-  criteriaEditorEmptyState.textContent = `Editing ${displayName || id}`;
-  criteriaFieldName.value = displayName;
-  renderCriteriaComponentsEditor(components);
-  applyCriteriaEditorPermissions();
 }
 
 function extractCriteriaComponents(properties) {
@@ -532,97 +469,17 @@ function extractCriteriaComponents(properties) {
   return components;
 }
 
-function showEmptyCriteriaEditor() {
-  criteriaEditorForm.hidden = true;
-  criteriaEditorForm.classList.add("is-collapsed");
-  criteriaEditorEmptyState.textContent = "Select a criteria to edit.";
-  criteriaSaveStatus.textContent = "";
-  renderCriteriaComponentsEditor({});
-  applyCriteriaEditorPermissions();
-}
-
-function applyCriteriaEditorPermissions() {
-  const isEditable = canEditObjects();
-  criteriaEditableFields.forEach((field) => {
-    if (field) field.disabled = !isEditable;
-  });
-  const isFormVisible = criteriaEditorForm && !criteriaEditorForm.hidden;
-  if (deleteCriteriaButton) {
-    deleteCriteriaButton.disabled = !isEditable || !isFormVisible;
-  }
-  const saveButton = criteriaEditorForm?.querySelector('button[type="submit"]');
-  if (saveButton) {
-    saveButton.disabled = !isEditable || !isFormVisible;
-  }
-  if (addCriterionButton) {
-    addCriterionButton.disabled = !isEditable || !isFormVisible;
-  }
-  criteriaComponentsList?.querySelectorAll("input, button").forEach((el) => {
-    el.disabled = !isEditable || !isFormVisible;
-  });
-}
-
 function handleCriteriaSnapshot(nextCriteria) {
   state.criteria = normalizeCollection(nextCriteria, normalizeNonGeoEntry);
-  renderCriteriaList();
-
-  if (state.selectedCriteriaId && !state.criteria[state.selectedCriteriaId]) {
-    state.selectedCriteriaId = null;
-  }
-
-  if (state.selectedCriteriaId) {
-    populateCriteriaEditor(state.selectedCriteriaId);
-  } else {
-    showEmptyCriteriaEditor();
-  }
-
-  // Refresh event name dropdowns with updated criteria list
   if (state.selectedEventId) {
-    const eventEntry = state.events[state.selectedEventId];
-    const triggerNames = eventEntry?.properties?.EventTriggerNames?.criteria_ids || [];
-    const targetNames = eventEntry?.properties?.EventTargetNames?.criteria_ids || [];
-    renderEventNameSelects(triggerNames, targetNames);
-  } else {
-    renderEventNameSelects([], []);
+    populateEventEditor(state.selectedEventId);
   }
 }
-
-
 
 function getRequestCoordinates() {
   return Array.isArray(state.userLocation)
     ? [state.userLocation[1], state.userLocation[0]]
     : [0, 0];
-}
-
-async function submitAddCriteriaRequest() {
-  await submitRequest({
-    requestId: "add_criteria",
-    requestType: "add_criteria",
-    coordinates: getRequestCoordinates(),
-    successMessage: "Add criteria request sent",
-  });
-}
-
-async function submitEditedCriteriaRequest(targetId, formData) {
-  await submitRequest({
-    requestId: `edit-criteria-${targetId}`,
-    requestType: "edited_criteria",
-    coordinates: getRequestCoordinates(),
-    clientRequestPayload: { targetId },
-    properties: { formData },
-    successMessage: `Edit criteria request for ${targetId} sent`,
-  });
-}
-
-async function submitDeletedCriteriaRequest(targetId) {
-  await submitRequest({
-    requestId: `delete-criteria-${targetId}`,
-    requestType: "deleted_criteria",
-    coordinates: getRequestCoordinates(),
-    clientRequestPayload: { targetId },
-    successMessage: `Delete criteria request for ${targetId} sent`,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -803,29 +660,6 @@ function extractEventResults(properties) {
   return out;
 }
 
-function renderEventNameSelects(selectedTriggers = [], selectedTargets = []) {
-  const triggerSet = new Set(selectedTriggers);
-  const targetSet = new Set(selectedTargets);
-  const criteriaEntries = Object.values(state.criteria);
-
-  const buildOptions = (selectedSet) => {
-    if (!criteriaEntries.length) {
-      return '<option disabled value="">No criteria available</option>';
-    }
-    return criteriaEntries
-      .map((entry) => {
-        const id = entry.properties?.id || "";
-        const name = entry.properties?.displayName || id || "Unnamed";
-        const sel = selectedSet.has(id) ? " selected" : "";
-        return `<option value="${escapeHtml(id)}"${sel}>${escapeHtml(name)} (${escapeHtml(id)})</option>`;
-      })
-      .join("");
-  };
-
-  if (eventFieldTriggerNames) eventFieldTriggerNames.innerHTML = buildOptions(triggerSet);
-  if (eventFieldTargetNames) eventFieldTargetNames.innerHTML = buildOptions(targetSet);
-}
-
 function populateEventEditor(id) {
   const entry = state.events[id];
   if (!entry) {
@@ -833,14 +667,17 @@ function populateEventEditor(id) {
     return;
   }
   const displayName = entry.properties?.displayName || "";
-  const triggerNames = entry.properties?.EventTriggerNames?.criteria_ids || [];
-  const targetNames = entry.properties?.EventTargetNames?.criteria_ids || [];
+  const triggerEntry = state.criteria[id + "Trigger"];
+  const targetEntry = state.criteria[id + "Target"];
+  const triggerComponents = extractCriteriaComponents(triggerEntry?.properties);
+  const targetComponents = extractCriteriaComponents(targetEntry?.properties);
   const results = extractEventResults(entry.properties);
   eventEditorForm.hidden = false;
   eventEditorForm.classList.remove("is-collapsed");
   eventEditorEmptyState.textContent = `Editing ${displayName || id}`;
   eventFieldName.value = displayName;
-  renderEventNameSelects(triggerNames, targetNames);
+  renderCriterionRowsInto(triggerCriteriaList, triggerComponents);
+  renderCriterionRowsInto(targetCriteriaList, targetComponents);
   renderEventResultsEditor(results);
   applyEventEditorPermissions();
 }
@@ -852,7 +689,8 @@ function showEmptyEventEditor() {
   }
   if (eventEditorEmptyState) eventEditorEmptyState.textContent = "Select an event to edit.";
   if (eventSaveStatus) eventSaveStatus.textContent = "";
-  renderEventNameSelects([], []);
+  renderCriterionRowsInto(triggerCriteriaList, {});
+  renderCriterionRowsInto(targetCriteriaList, {});
   renderEventResultsEditor({});
   applyEventEditorPermissions();
 }
@@ -873,7 +711,19 @@ function applyEventEditorPermissions() {
   if (addResultButton) {
     addResultButton.disabled = !isEditable || !isFormVisible;
   }
+  if (addTriggerCriterionButton) {
+    addTriggerCriterionButton.disabled = !isEditable || !isFormVisible;
+  }
+  if (addTargetCriterionButton) {
+    addTargetCriterionButton.disabled = !isEditable || !isFormVisible;
+  }
   eventResultsList?.querySelectorAll("input, select, button").forEach((el) => {
+    el.disabled = !isEditable || !isFormVisible;
+  });
+  triggerCriteriaList?.querySelectorAll("input, select, button").forEach((el) => {
+    el.disabled = !isEditable || !isFormVisible;
+  });
+  targetCriteriaList?.querySelectorAll("input, select, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
   });
 }
@@ -1042,85 +892,32 @@ function bindUi() {
   });
 
   // Events drawer bindings
-  eventsDrawerToggle?.addEventListener("click", () => {
-    setDrawerOpen(eventsDrawer, eventsDrawerToggle, !eventsDrawer?.classList.contains("is-open"));
-  });
-  eventsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsDrawer, eventsDrawerToggle, false));
-  addCriteriaButton?.addEventListener("click", () => {
-    void submitAddCriteriaRequest();
-  });
-  addCriterionButton?.addEventListener("click", () => {
-    addEmptyCriterionRow();
-  });
-  criteriaComponentsList?.addEventListener("click", (event) => {
-    const button = event.target.closest('button[data-action="remove-criterion"]');
-    if (!button) return;
-    button.closest(".stat-row")?.remove();
-    if (!criteriaComponentsList.querySelector(".stat-row")) {
-      renderCriteriaComponentsEditor({});
-    }
-    applyCriteriaEditorPermissions();
-  });
-  criteriaList?.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-criteria-id]");
-    if (!button) return;
-    selectCriteria(button.dataset.criteriaId);
-  });
-  criteriaEditorForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!canEditObjects()) {
-      criteriaSaveStatus.textContent = "Read-only mode: editing requires gm password.";
-      return;
-    }
-    if (!state.selectedCriteriaId) return;
-    const criteriaEntry = state.criteria[state.selectedCriteriaId];
-    if (!criteriaEntry) return;
-
-    const formData = {
-      name: criteriaFieldName.value.trim(),
-      criteriaComponents: collectCriteriaComponentsFromEditor(),
-    };
-
-    criteriaSaveStatus.textContent = state.firebaseReady ? "Sending edit request..." : "Saving...";
-    try {
-      await submitEditedCriteriaRequest(state.selectedCriteriaId, formData);
-      criteriaSaveStatus.textContent = state.firebaseReady
-        ? "Edit request sent. Server will apply updates shortly."
-        : "Saved locally.";
-    } catch (error) {
-      console.error(error);
-      criteriaSaveStatus.textContent = "Edit request failed. Check Firebase configuration and permissions.";
-    }
-  });
-  deleteCriteriaButton?.addEventListener("click", async () => {
-    if (!canEditObjects()) {
-      criteriaSaveStatus.textContent = "Read-only mode: deleting requires gm password.";
-      return;
-    }
-    if (!state.selectedCriteriaId || !state.criteria[state.selectedCriteriaId]) {
-      criteriaSaveStatus.textContent = "Delete failed: no criteria selected.";
-      return;
-    }
-    const deletingId = state.selectedCriteriaId;
-    criteriaSaveStatus.textContent = state.firebaseReady ? "Sending delete request..." : "Deleting...";
-    try {
-      await submitDeletedCriteriaRequest(deletingId);
-      criteriaSaveStatus.textContent = state.firebaseReady
-        ? "Delete request sent. Server will remove the criteria shortly."
-        : "Deleted locally.";
-    } catch (error) {
-      console.error(error);
-      criteriaSaveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
-    }
-  });
-
-  // Event results drawer bindings
   eventsResultsDrawerToggle?.addEventListener("click", () => {
     setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, !eventsResultsDrawer?.classList.contains("is-open"));
   });
   eventsResultsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, false));
   addEventButton?.addEventListener("click", () => {
     void submitAddEventRequest();
+  });
+  addTriggerCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(triggerCriteriaList));
+  addTargetCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(targetCriteriaList));
+  triggerCriteriaList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-criterion"]');
+    if (!button) return;
+    button.closest(".stat-row")?.remove();
+    if (!triggerCriteriaList.querySelector(".stat-row")) {
+      renderCriterionRowsInto(triggerCriteriaList, {});
+    }
+    applyEventEditorPermissions();
+  });
+  targetCriteriaList?.addEventListener("click", (event) => {
+    const button = event.target.closest('button[data-action="remove-criterion"]');
+    if (!button) return;
+    button.closest(".stat-row")?.remove();
+    if (!targetCriteriaList.querySelector(".stat-row")) {
+      renderCriterionRowsInto(targetCriteriaList, {});
+    }
+    applyEventEditorPermissions();
   });
   addResultButton?.addEventListener("click", () => {
     addEmptyResultRow();
@@ -1168,12 +965,10 @@ function bindUi() {
     const eventEntry = state.events[state.selectedEventId];
     if (!eventEntry) return;
 
-    const triggerRaw = eventFieldTriggerNames?.value.trim() || "";
-    const targetRaw = eventFieldTargetNames?.value.trim() || "";
     const formData = {
       name: eventFieldName?.value.trim() || "",
-      triggerNames: Array.from(eventFieldTriggerNames?.selectedOptions || []).map((o) => o.value),
-      targetNames: Array.from(eventFieldTargetNames?.selectedOptions || []).map((o) => o.value),
+      triggerComponents: collectCriteriaComponentsFrom(triggerCriteriaList),
+      targetComponents: collectCriteriaComponentsFrom(targetCriteriaList),
       results: collectResultsFromEditor(),
     };
 
