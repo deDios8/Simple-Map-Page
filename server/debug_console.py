@@ -29,6 +29,7 @@ class SessionDebugConsole:
     def __init__(self, state: DebugState) -> None:
         self._state = state
         self._command_queue: queue.Queue[str] = queue.Queue()
+        self._exit_requested: bool = False
 
     def start(self) -> None:
         def _read_commands() -> None:
@@ -53,7 +54,7 @@ class SessionDebugConsole:
             "[DEBUG] Commands: "
             "help | stats | world | list [geo|req|criteria|events] [count] | "
             "dump <key> | dumpgeo <key> | dumpreq <key> | dumpcriteria <key> | dumpevent <key> | "
-            "zoneborders [key]"
+            "zoneborders [key] | exit"
         )
 
     def _zone_borders_payload(self, entity_id: int) -> dict[str, dict[str, list[str]]]:
@@ -234,6 +235,9 @@ class SessionDebugConsole:
 
         command = parts[0].lower()
 
+        if command == "exit":
+            self._exit_requested = True
+            return
         if command == "help":
             self.print_help()
             return
@@ -309,10 +313,12 @@ class SessionDebugConsole:
 
         print(f"[DEBUG] Unknown command: {raw_command}")
 
-    def drain_commands(self) -> None:
+    def drain_commands(self) -> bool:
         while True:
             try:
                 command = self._command_queue.get_nowait()
             except queue.Empty:
-                return
+                return self._exit_requested
             self._process_command(command)
+            if self._exit_requested:
+                return True

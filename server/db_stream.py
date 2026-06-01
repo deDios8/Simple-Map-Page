@@ -1568,7 +1568,10 @@ class SessionState:
 
         while True:
             try:
-                self.debug.drain_commands()
+                if self.debug.drain_commands():
+                    self.stream.stop()
+                    print("\nStopped listener.")
+                    return
 
                 # Run ECS ticks on schedule while avoiding runaway catch-up.
                 now = time.perf_counter()
