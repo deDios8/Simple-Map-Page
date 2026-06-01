@@ -19,54 +19,84 @@ One entity is the event result. It specifies, by name, which trigger and target 
 # Components for trigger/target criteria
 # ---------------------------------------------------------------------------
 @dataclass
-class CriteriaHasTags:
+class TriggerHasTags:
     tags: list
 
 @dataclass
-class CriteriaIsWithin:
+class TargetHasTags:
     tags: list
 
 @dataclass
-class CriteriaNotWithin:
+class TriggerIsWithin:
     tags: list
 
 @dataclass
-class CriteriaJustEntered:
+class TargetIsWithin:
     tags: list
 
 @dataclass
-class CriteriaJustExited:
+class TriggerNotWithin:
     tags: list
 
 @dataclass
-class CriteriaVisibleTo:
+class TargetNotWithin:
     tags: list
 
 @dataclass
-class CriteriaNotVisibleTo:
+class TriggerJustEntered:
     tags: list
 
 @dataclass
-class CriteriaFirstEntered:
+class TargetJustEntered:
     tags: list
 
 @dataclass
-class ObjectsThatMetAllCriteria:
+class TriggerJustExited:
+    tags: list
+
+@dataclass
+class TargetJustExited:
+    tags: list
+
+@dataclass
+class TriggerVisibleTo:
+    tags: list
+
+@dataclass
+class TargetVisibleTo:
+    tags: list
+
+@dataclass
+class TriggerNotVisibleTo:
+    tags: list
+
+@dataclass
+class TargetNotVisibleTo:
+    tags: list
+
+@dataclass
+class TriggerFirstEntered:
+    tags: list
+
+@dataclass
+class TargetFirstEntered:
+    tags: list
+
+@dataclass
+class ObjectsThatMetAllTriggerCriteria:
     object_ids: list
 
 @dataclass
-class ObjectsThatMetAnyCriteria:
+class ObjectsThatMetAllTargetCriteria:
     object_ids: list
 
+@dataclass
+class ObjectsThatMetAnyTriggerCriteria:
+    object_ids: list
 
-class Criteria:
-    def __init__(self, id: str, name: str) -> None:
-        new_entity_id = esper.create_entity()
-        self.entity_id = new_entity_id
-        esper.add_component(new_entity_id, ID(id=id))
-        esper.add_component(new_entity_id, DisplayName(display_name=name))
-        esper.add_component(new_entity_id, ObjectsThatMetAllCriteria(object_ids=[]))
-        esper.add_component(new_entity_id, ObjectsThatMetAnyCriteria(object_ids=[]))
+@dataclass
+class ObjectsThatMetAnyTargetCriteria:
+    object_ids: list
 
 
 # ---------------------------------------------------------------------------
@@ -143,8 +173,22 @@ class Event:
         self.entity_id = new_entity_id
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, DisplayName(display_name=name))
-        esper.add_component(new_entity_id, EventTriggerNames(criteria_ids=[]))
-        esper.add_component(new_entity_id, EventTargetNames(criteria_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAllTriggerCriteria(object_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAllTargetCriteria(object_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAnyTriggerCriteria(object_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAnyTargetCriteria(object_ids=[]))
+
+
+# ---------------------------------------------------------------------------
+# Legacy Criteria ECS entity (used by old eventCriteria DB node entries).
+# No longer created for new events — criteria are embedded on Event entities.
+# ---------------------------------------------------------------------------
+class Criteria:
+    def __init__(self, id: str, name: str) -> None:
+        new_entity_id = esper.create_entity()
+        self.entity_id = new_entity_id
+        esper.add_component(new_entity_id, ID(id=id))
+        esper.add_component(new_entity_id, DisplayName(display_name=name))
 
 
 # ---------------------------------------------------------------------------
@@ -187,10 +231,27 @@ CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(_criteria_json.keys())
 CRITERIA_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in CRITERIA_COMPONENT_NAMES}
 CRITERIA_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _criteria_json.items()}
 
-# Separate tracking components added to every criteria entity (not filter criteria).
+TRIGGER_COMPONENT_NAMES: frozenset[str] = frozenset(
+    name for name, meta in _criteria_json.items() if meta.get("role") == "trigger"
+)
+TARGET_COMPONENT_NAMES: frozenset[str] = frozenset(
+    name for name, meta in _criteria_json.items() if meta.get("role") == "target"
+)
+TRIGGER_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in TRIGGER_COMPONENT_NAMES}
+TARGET_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in TARGET_COMPONENT_NAMES}
+TRIGGER_COMPONENT_HANDLER_NAMES: dict[str, str] = {
+    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "trigger"
+}
+TARGET_COMPONENT_HANDLER_NAMES: dict[str, str] = {
+    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "target"
+}
+
+# Tracking components added to every event entity (not filter criteria).
 CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
-    "ObjectsThatMetAnyCriteria": ObjectsThatMetAnyCriteria,
-    "ObjectsThatMetAllCriteria": ObjectsThatMetAllCriteria,
+    "ObjectsThatMetAllTriggerCriteria": ObjectsThatMetAllTriggerCriteria,
+    "ObjectsThatMetAllTargetCriteria": ObjectsThatMetAllTargetCriteria,
+    "ObjectsThatMetAnyTriggerCriteria": ObjectsThatMetAnyTriggerCriteria,
+    "ObjectsThatMetAnyTargetCriteria": ObjectsThatMetAnyTargetCriteria,
 }
 
 _result_json: dict = json.loads((_PUBLIC_DIR / "map_result_components.json").read_text())

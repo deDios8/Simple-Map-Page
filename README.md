@@ -6,14 +6,14 @@ Entering and exiting zones doesn't seem to work consistently.
 debug console should display DisplayName rather than ID's
 wishlist: would like a way to move a user on laptop (overriding gps)
 stat editor for drop-down stat addition.
-anchor point for session
+anchor point for session or a bulk move option for relocating entire games
 reformat event editor
-popup generator
 IsUser component doesn't seem to be doing anything.
-Adding an event clock
+Add an event clock/timer
 Tuning the timing of events to have a predictable tick rate for DOT-like effects
 App auto-select a newly added zone, criteria, event for editing.
-
+Move popup message to the top of the results chooser list.
+Restructure JSON to group Triggers and Targets in the same way Results are grouped.
 
 
 # Dependencies

@@ -10,6 +10,8 @@ import {
 
 // Populated at startup by init() from map_criteria_components.json
 let CRITERIA_COMPONENT_OPTIONS = [];
+let TRIGGER_COMPONENT_OPTIONS = [];
+let TARGET_COMPONENT_OPTIONS = [];
 
 // Populated at startup by init() from map_result_components.json
 let RESULT_COMPONENT_FIELD_CONFIG = {};
@@ -400,7 +402,7 @@ function normalizeCollection(raw, normFn) {
   }, {});
 }
 
-function renderCriterionRowsInto(listEl, components) {
+function renderCriterionRowsInto(listEl, components, options) {
   if (!listEl) return;
   const entries = Object.entries(components || {});
   if (!entries.length) {
@@ -416,7 +418,7 @@ function renderCriterionRowsInto(listEl, components) {
           <div class="criterion-row-grid">
             <label>
               <select data-field="name">
-                ${CRITERIA_COMPONENT_OPTIONS.map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
+                ${(options || CRITERIA_COMPONENT_OPTIONS).map((opt) => `<option value="${opt}"${opt === name ? " selected" : ""}>${opt}</option>`).join("")}
               </select>
             </label>
             <label>
@@ -431,15 +433,16 @@ function renderCriterionRowsInto(listEl, components) {
     .join("");
 }
 
-function addEmptyCriterionRowTo(listEl) {
+function addEmptyCriterionRowTo(listEl, options) {
   if (!listEl) return;
   const currentComponents = collectCriteriaComponentsFrom(listEl);
   const nextComponents = { ...currentComponents };
+  const opts = options || CRITERIA_COMPONENT_OPTIONS;
   const nextKey =
-    CRITERIA_COMPONENT_OPTIONS.find((opt) => !Object.prototype.hasOwnProperty.call(nextComponents, opt)) ??
-    CRITERIA_COMPONENT_OPTIONS[0];
+    opts.find((opt) => !Object.prototype.hasOwnProperty.call(nextComponents, opt)) ??
+    opts[0];
   nextComponents[nextKey] = { tags: [] };
-  renderCriterionRowsInto(listEl, nextComponents);
+  renderCriterionRowsInto(listEl, nextComponents, opts);
   applyEventEditorPermissions();
 }
 
@@ -457,9 +460,9 @@ function collectCriteriaComponentsFrom(listEl) {
   return components;
 }
 
-function extractCriteriaComponents(properties) {
+function extractCriteriaComponents(properties, allowedNames) {
   if (!properties || typeof properties !== "object") return {};
-  const knownNames = new Set(CRITERIA_COMPONENT_OPTIONS);
+  const knownNames = new Set(allowedNames || CRITERIA_COMPONENT_OPTIONS);
   const components = {};
   for (const [key, value] of Object.entries(properties)) {
     if (knownNames.has(key) && value && typeof value === "object") {
@@ -471,9 +474,6 @@ function extractCriteriaComponents(properties) {
 
 function handleCriteriaSnapshot(nextCriteria) {
   state.criteria = normalizeCollection(nextCriteria, normalizeNonGeoEntry);
-  if (state.selectedEventId) {
-    populateEventEditor(state.selectedEventId);
-  }
 }
 
 function getRequestCoordinates() {
@@ -667,17 +667,15 @@ function populateEventEditor(id) {
     return;
   }
   const displayName = entry.properties?.displayName || "";
-  const triggerEntry = state.criteria[id + "Trigger"];
-  const targetEntry = state.criteria[id + "Target"];
-  const triggerComponents = extractCriteriaComponents(triggerEntry?.properties);
-  const targetComponents = extractCriteriaComponents(targetEntry?.properties);
+  const triggerComponents = extractCriteriaComponents(entry.properties, TRIGGER_COMPONENT_OPTIONS);
+  const targetComponents = extractCriteriaComponents(entry.properties, TARGET_COMPONENT_OPTIONS);
   const results = extractEventResults(entry.properties);
   eventEditorForm.hidden = false;
   eventEditorForm.classList.remove("is-collapsed");
   eventEditorEmptyState.textContent = `Editing ${displayName || id}`;
   eventFieldName.value = displayName;
-  renderCriterionRowsInto(triggerCriteriaList, triggerComponents);
-  renderCriterionRowsInto(targetCriteriaList, targetComponents);
+  renderCriterionRowsInto(triggerCriteriaList, triggerComponents, TRIGGER_COMPONENT_OPTIONS);
+  renderCriterionRowsInto(targetCriteriaList, targetComponents, TARGET_COMPONENT_OPTIONS);
   renderEventResultsEditor(results);
   applyEventEditorPermissions();
 }
@@ -689,8 +687,8 @@ function showEmptyEventEditor() {
   }
   if (eventEditorEmptyState) eventEditorEmptyState.textContent = "Select an event to edit.";
   if (eventSaveStatus) eventSaveStatus.textContent = "";
-  renderCriterionRowsInto(triggerCriteriaList, {});
-  renderCriterionRowsInto(targetCriteriaList, {});
+  renderCriterionRowsInto(triggerCriteriaList, {}, TRIGGER_COMPONENT_OPTIONS);
+  renderCriterionRowsInto(targetCriteriaList, {}, TARGET_COMPONENT_OPTIONS);
   renderEventResultsEditor({});
   applyEventEditorPermissions();
 }
@@ -781,7 +779,10 @@ async function init() {
     fetch("map_result_components.json"),
     fetch("online_config.json"),
   ]);
-  CRITERIA_COMPONENT_OPTIONS = Object.keys(await criteriaRes.json());
+  const criteriaJson = await criteriaRes.json();
+  CRITERIA_COMPONENT_OPTIONS = Object.keys(criteriaJson);
+  TRIGGER_COMPONENT_OPTIONS = Object.entries(criteriaJson).filter(([, m]) => m.role === "trigger").map(([k]) => k);
+  TARGET_COMPONENT_OPTIONS = Object.entries(criteriaJson).filter(([, m]) => m.role === "target").map(([k]) => k);
   RESULT_COMPONENT_FIELD_CONFIG = await resultRes.json();
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
   const { nodes, defaultSessionName, updateLocationInterval, mapLayer, ...fbSdkConfig } = await fbConfigRes.json();
@@ -899,14 +900,14 @@ function bindUi() {
   addEventButton?.addEventListener("click", () => {
     void submitAddEventRequest();
   });
-  addTriggerCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(triggerCriteriaList));
-  addTargetCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(targetCriteriaList));
+  addTriggerCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(triggerCriteriaList, TRIGGER_COMPONENT_OPTIONS));
+  addTargetCriterionButton?.addEventListener("click", () => addEmptyCriterionRowTo(targetCriteriaList, TARGET_COMPONENT_OPTIONS));
   triggerCriteriaList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-criterion"]');
     if (!button) return;
     button.closest(".stat-row")?.remove();
     if (!triggerCriteriaList.querySelector(".stat-row")) {
-      renderCriterionRowsInto(triggerCriteriaList, {});
+      renderCriterionRowsInto(triggerCriteriaList, {}, TRIGGER_COMPONENT_OPTIONS);
     }
     applyEventEditorPermissions();
   });
@@ -915,7 +916,7 @@ function bindUi() {
     if (!button) return;
     button.closest(".stat-row")?.remove();
     if (!targetCriteriaList.querySelector(".stat-row")) {
-      renderCriterionRowsInto(targetCriteriaList, {});
+      renderCriterionRowsInto(targetCriteriaList, {}, TARGET_COMPONENT_OPTIONS);
     }
     applyEventEditorPermissions();
   });

@@ -1,10 +1,18 @@
 {
-  "CriteriaHasTags":      { "handler": "_check_has_tags" },
-  "CriteriaIsWithin":     { "handler": "_check_is_within" },
-  "CriteriaNotWithin":    { "handler": "_check_is_not_within" },
-  "CriteriaJustEntered":  { "handler": "_check_just_entered" },
-  "CriteriaJustExited":   { "handler": "_check_just_exited" },
-  "CriteriaVisibleTo":    { "handler": "_check_is_visible" },
-  "CriteriaNotVisibleTo": { "handler": "_check_is_not_visible" },
-  "CriteriaFirstEntered": { "handler": "_check_first_entered" }
+  "TriggerHasTags":       { "handler": "_check_has_tags",        "role": "trigger" },
+  "TargetHasTags":        { "handler": "_check_has_tags",        "role": "target"  },
+  "TriggerIsWithin":      { "handler": "_check_is_within",       "role": "trigger" },
+  "TargetIsWithin":       { "handler": "_check_is_within",       "role": "target"  },
+  "TriggerNotWithin":     { "handler": "_check_is_not_within",   "role": "trigger" },
+  "TargetNotWithin":      { "handler": "_check_is_not_within",   "role": "target"  },
+  "TriggerJustEntered":   { "handler": "_check_just_entered",    "role": "trigger" },
+  "TargetJustEntered":    { "handler": "_check_just_entered",    "role": "target"  },
+  "TriggerJustExited":    { "handler": "_check_just_exited",     "role": "trigger" },
+  "TargetJustExited":     { "handler": "_check_just_exited",     "role": "target"  },
+  "TriggerVisibleTo":     { "handler": "_check_is_visible",      "role": "trigger" },
+  "TargetVisibleTo":      { "handler": "_check_is_visible",      "role": "target"  },
+  "TriggerNotVisibleTo":  { "handler": "_check_is_not_visible",  "role": "trigger" },
+  "TargetNotVisibleTo":   { "handler": "_check_is_not_visible",  "role": "target"  },
+  "TriggerFirstEntered":  { "handler": "_check_first_entered",   "role": "trigger" },
+  "TargetFirstEntered":   { "handler": "_check_first_entered",   "role": "target"  }
 }

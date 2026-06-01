@@ -19,8 +19,8 @@ class DebugState(Protocol):
     ClientRequests: dict[str, ecs_geo_components.ClientRequest]
     GeoObjectEntityIds: dict[str, int]
     ClientRequestEntityIds: dict[str, int]
-    EventCriteria: dict[str, ecs_event_components.Criteria]
-    EventCriteriaEntityIds: dict[str, int]
+    # EventCriteria: dict[str, ecs_event_components.Criteria]
+    # EventCriteriaEntityIds: dict[str, int]
     EventResults: dict[str, ecs_event_components.Event]
     EventResultEntityIds: dict[str, int]
 
@@ -107,8 +107,8 @@ class SessionDebugConsole:
             f"geoEntityIds={len(self._state.GeoObjectEntityIds)} "
             f"clientRequests={len(self._state.ClientRequests)} "
             f"requestEntityIds={len(self._state.ClientRequestEntityIds)} "
-            f"eventCriteria={len(self._state.EventCriteria)} "
-            f"criteriaEntityIds={len(self._state.EventCriteriaEntityIds)} "
+            # f"eventCriteria={len(self._state.EventCriteria)} "
+            # f"criteriaEntityIds={len(self._state.EventCriteriaEntityIds)} "
             f"eventResults={len(self._state.EventResults)} "
             f"eventResultEntityIds={len(self._state.EventResultEntityIds)}"
         )
@@ -143,8 +143,8 @@ class SessionDebugConsole:
             print(f"[DEBUG] req keys ({len(keys)} total): {keys[:count]}")
             return
         if subject == "criteria":
-            keys = sorted(self._state.EventCriteriaEntityIds.keys())
-            print(f"[DEBUG] criteria keys ({len(keys)} total): {keys[:count]}")
+            # keys = sorted(self._state.EventCriteriaEntityIds.keys())
+            # print(f"[DEBUG] criteria keys ({len(keys)} total): {keys[:count]}")
             return
         if subject == "events":
             keys = sorted(self._state.EventResultEntityIds.keys())

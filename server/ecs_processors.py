@@ -224,39 +224,64 @@ class CriteriaProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
         self.session_state = session_state
-        self._criteria_dispatch: dict = {
-            comp_type: getattr(self, ecs_event_components.CRITERIA_COMPONENT_HANDLER_NAMES[name])
-            for name, comp_type in ecs_event_components.CRITERIA_COMPONENT_MAP.items()
+        self._trigger_dispatch: dict = {
+            comp_type: getattr(self, ecs_event_components.TRIGGER_COMPONENT_HANDLER_NAMES[name])
+            for name, comp_type in ecs_event_components.TRIGGER_COMPONENT_MAP.items()
+        }
+        self._target_dispatch: dict = {
+            comp_type: getattr(self, ecs_event_components.TARGET_COMPONENT_HANDLER_NAMES[name])
+            for name, comp_type in ecs_event_components.TARGET_COMPONENT_MAP.items()
         }
 
     def process(self) -> None:
         geo_entity_ids = list(self.session_state.GeoObjectEntityIds.values())
-        criteria_entity_ids = list(self.session_state.EventCriteriaEntityIds.values())
+        event_entity_ids = list(self.session_state.EventResultEntityIds.values())
 
-        for criteria_entity_id in criteria_entity_ids:
+        for event_entity_id in event_entity_ids:
 
-            # Collect active criterion for this criteria entity
-            criteria_checks = []
-            for comp_type, handler in self._criteria_dispatch.items():
-                if comp := esper.try_component(criteria_entity_id, comp_type):
-                    criteria_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
+            # --- Trigger criteria ---
+            trigger_checks = []
+            for comp_type, handler in self._trigger_dispatch.items():
+                if comp := esper.try_component(event_entity_id, comp_type):
+                    trigger_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
 
-            # passed_any: met at least one criterion; failed_any: failed at least one.
-            # met_all = passed_any - failed_any
-            passed_any: set[int] = set()
-            failed_any: set[int] = set()
-
+            trigger_passed_any: set[int] = set()
+            trigger_failed_any: set[int] = set()
             for geo_eid in geo_entity_ids:
-                for check in criteria_checks:
+                for check in trigger_checks:
                     if check(geo_eid):
-                        passed_any.add(geo_eid)
+                        trigger_passed_any.add(geo_eid)
                     else:
-                        failed_any.add(geo_eid)
+                        trigger_failed_any.add(geo_eid)
 
-            any_criterion = esper.try_component(criteria_entity_id, ecs_event_components.ObjectsThatMetAnyCriteria)
-            any_criterion.object_ids = list(passed_any)
-            all_criteria = esper.try_component(criteria_entity_id, ecs_event_components.ObjectsThatMetAllCriteria)
-            all_criteria.object_ids = list(passed_any - failed_any)
+            all_trigger = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAllTriggerCriteria)
+            if all_trigger:
+                all_trigger.object_ids = list(trigger_passed_any - trigger_failed_any)
+            any_trigger = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAnyTriggerCriteria)
+            if any_trigger:
+                any_trigger.object_ids = list(trigger_passed_any)
+
+            # --- Target criteria ---
+            target_checks = []
+            for comp_type, handler in self._target_dispatch.items():
+                if comp := esper.try_component(event_entity_id, comp_type):
+                    target_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
+
+            target_passed_any: set[int] = set()
+            target_failed_any: set[int] = set()
+            for geo_eid in geo_entity_ids:
+                for check in target_checks:
+                    if check(geo_eid):
+                        target_passed_any.add(geo_eid)
+                    else:
+                        target_failed_any.add(geo_eid)
+
+            all_target = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAllTargetCriteria)
+            if all_target:
+                all_target.object_ids = list(target_passed_any - target_failed_any)
+            any_target = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAnyTargetCriteria)
+            if any_target:
+                any_target.object_ids = list(target_passed_any)
 
     def _get_entity_tags(self, eid: int) -> set[str]:
         tags: set[str] = set()
@@ -269,10 +294,10 @@ class CriteriaProcessor(esper.Processor):
                 tags.update(stats.items.keys())
         return tags
 
-    def _check_has_tags(self, geo_eid: int, component: ecs_event_components.CriteriaHasTags) -> bool:
+    def _check_has_tags(self, geo_eid: int, component) -> bool:
         return any(tag in self._get_entity_tags(geo_eid) for tag in component.tags)
 
-    def _check_is_within(self, geo_eid: int, component: ecs_event_components.CriteriaIsWithin) -> bool:
+    def _check_is_within(self, geo_eid: int, component) -> bool:
         within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
         if not within:
             return False
@@ -285,7 +310,7 @@ class CriteriaProcessor(esper.Processor):
                 return True
         return False
 
-    def _check_is_not_within(self, geo_eid: int, component: ecs_event_components.CriteriaNotWithin) -> bool:
+    def _check_is_not_within(self, geo_eid: int, component) -> bool:
         within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
         if not within:
             return True  # If the entity has no WithinZones component, it is considered "not within" any zones.
@@ -298,7 +323,7 @@ class CriteriaProcessor(esper.Processor):
                 return False
         return True
 
-    def _check_just_entered(self, geo_eid: int, component: ecs_event_components.CriteriaJustEntered) -> bool:
+    def _check_just_entered(self, geo_eid: int, component) -> bool:
         entered = esper.try_component(geo_eid, ecs_geo_components.EnteredZones)
         if not entered:
             return False
@@ -311,7 +336,7 @@ class CriteriaProcessor(esper.Processor):
                 return True
         return False
 
-    def _check_just_exited(self, geo_eid: int, component: ecs_event_components.CriteriaJustExited) -> bool:
+    def _check_just_exited(self, geo_eid: int, component) -> bool:
         exited = esper.try_component(geo_eid, ecs_geo_components.ExitedZones)
         if not exited:
             return False
@@ -324,20 +349,20 @@ class CriteriaProcessor(esper.Processor):
                 return True
         return False
 
-    def _check_is_visible(self, geo_eid: int, component: ecs_event_components.CriteriaVisibleTo) -> bool:
+    def _check_is_visible(self, geo_eid: int, component) -> bool:
         appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
         if not appearance:
             return False
         return any(tag in appearance.visible_to for tag in component.tags)
 
-    def _check_is_not_visible(self, geo_eid: int, component: ecs_event_components.CriteriaNotVisibleTo) -> bool:
+    def _check_is_not_visible(self, geo_eid: int, component) -> bool:
         appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
         if not appearance:
             return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
         return all(tag not in appearance.visible_to for tag in component.tags)
 
-    def _check_first_entered(self, geo_eid: int, component: ecs_event_components.CriteriaFirstEntered) -> bool:
-        # TODO: implement — CriteriaFirstEntered check
+    def _check_first_entered(self, geo_eid: int, component) -> bool:
+        # TODO: implement — TriggerFirstEntered / TargetFirstEntered check
         return False
 
 
@@ -353,45 +378,31 @@ class EventProcessor(esper.Processor):
     def process(self) -> None:
         event_entity_ids = list(self.session_state.EventResultEntityIds.values())
 
-        ## For each event, check if any of its triggers have met all trigger criteria, and if so, apply the event's result to its targets that have met all target criteria.
+        ## For each event, check if any triggers have met all trigger criteria, and if so, apply results to targets.
         for event_entity_id in event_entity_ids:
 
-            # Get the objects that met all criteria for each trigger
-            event_triggers = esper.try_component(event_entity_id, ecs_event_components.EventTriggerNames)
-            trigger_objects_sets = []
-            for trigger_name in event_triggers.criteria_ids:
-                trigger_entity_id = self.session_state.EventCriteriaEntityIds.get(trigger_name)
-                if trigger_entity_id is not None:
-                    if trigger_comp := esper.try_component(trigger_entity_id, ecs_event_components.ObjectsThatMetAllCriteria):
-                        trigger_objects_sets.append(set(trigger_comp.object_ids))
+            # Read trigger/target results computed by CriteriaProcessor
+            trigger_comp = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAllTriggerCriteria)
+            if not trigger_comp or not trigger_comp.object_ids:
+                continue
 
-            # Check if any trigger has met all criteria
-            trigger_met = any(trigger_objects_sets)
+            target_comp = esper.try_component(event_entity_id, ecs_event_components.ObjectsThatMetAllTargetCriteria)
+            if not target_comp or not target_comp.object_ids:
+                continue
 
-            if trigger_met:
-                # Get the objects that met all criteria for each target
-                event_targets = esper.try_component(event_entity_id, ecs_event_components.EventTargetNames)
-                target_objects_sets = []
-                for target_name in event_targets.criteria_ids:
-                    target_entity_id = self.session_state.EventCriteriaEntityIds.get(target_name)
-                    if target_entity_id is not None:
-                        if target_comp := esper.try_component(target_entity_id, ecs_event_components.ObjectsThatMetAllCriteria):
-                            target_objects_sets.append(set(target_comp.object_ids))
+            # Apply this event's result components to each qualifying target geo object
+            for target_entity_id in target_comp.object_ids:
 
-                # If a trigger has met all criteria, apply the event's result to targets that have met all criteria
-                for target_objects in target_objects_sets:
-                    for target_entity_id in target_objects:
+                results_to_apply = []
+                for comp_type, handler in self._result_dispatch.items():
+                    if comp := esper.try_component(event_entity_id, comp_type):
+                        results_to_apply.append(lambda eid, c=comp, h=handler: h(eid, c))
 
-                        results_to_apply = []
-                        for comp_type, handler in self._result_dispatch.items():
-                            if comp := esper.try_component(event_entity_id, comp_type):
-                                results_to_apply.append(lambda eid, c=comp, h=handler: h(eid, c))
+                for result in results_to_apply:
+                    result(target_entity_id)
 
-                        for result in results_to_apply:
-                            result(target_entity_id)
-
-                        if results_to_apply:
-                            esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
+                if results_to_apply:
+                    esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
 
     def _grant_visibility(self, target_entity_id: int, component: ecs_event_components.ResultGrantVisibility) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_geo_components.Appearance):

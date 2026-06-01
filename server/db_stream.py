@@ -107,10 +107,13 @@ class CriteriaEntry(DBEntry):
 class EventResultEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
-        trigger = self.properties.get("EventTriggerNames", {})
-        self.trigger_names: list = trigger.get("criteria_ids", []) if isinstance(trigger, dict) else []
-        target = self.properties.get("EventTargetNames", {})
-        self.target_names: list = target.get("criteria_ids", []) if isinstance(target, dict) else []
+        self.trigger_components: dict[str, dict] = {}
+        self.target_components: dict[str, dict] = {}
+        for key, value in self.properties.items():
+            if key in ecs_event_components.TRIGGER_COMPONENT_NAMES and isinstance(value, dict):
+                self.trigger_components[key] = value
+            elif key in ecs_event_components.TARGET_COMPONENT_NAMES and isinstance(value, dict):
+                self.target_components[key] = value
         results = self.properties.get("Results", {})
         self.result_components: dict[str, dict] = {
             k: v for k, v in results.items()
@@ -1229,53 +1232,19 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     ## Criteria management
-    def _apply_criteria_components_patch(self, key: str, criteria_components: dict) -> None:
-        """Upsert criteria entity and persist components to DB. Creates criteria if it doesn't exist."""
-        entity_id = self.EventCriteriaEntityIds.get(key)
-        if entity_id is None:
-            new_entry = {
-                "type": "Feature",
-                "geometry": None,
-                "properties": {
-                    "id": key,
-                    "displayName": key,
-                    "ObjectsThatMetAllCriteria": {"object_ids": []},
-                    "ObjectsThatMetAnyCriteria": {"object_ids": []},
-                },
-            }
-            put_db_entry(self.database_url, self.session_name, key, new_entry, NODE=EVENT_CRITERIA_NODE)
-            entity_id = self._upsert_criteria_entity(key, CriteriaEntry(new_entry))
-
-        self._sync_criteria_components(entity_id, criteria_components)
-
-        patch_data: dict = {}
-        for comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
-            patch_data[f"properties/{comp_name}"] = criteria_components.get(comp_name)
-        patch_db_entry(self.database_url, self.session_name, key, patch_data, node=EVENT_CRITERIA_NODE)
-
-        stream_obj = self.stream.criteria_state.get(key)
-        if isinstance(stream_obj, dict):
-            props = stream_obj.setdefault("properties", {})
-            if isinstance(props, dict):
-                for comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
-                    props.pop(comp_name, None)
-                for comp_name, comp_data in criteria_components.items():
-                    if comp_name in ecs_event_components.CRITERIA_COMPONENT_NAMES:
-                        props[comp_name] = comp_data
-
-    def _sync_criteria_components(self, entity_id: int, criteria_components: dict) -> None:
-        """Remove all existing criteria ECS components and re-add from criteria_components dict."""
-        for comp_type in ecs_event_components.CRITERIA_COMPONENT_MAP.values():
+    def _sync_criteria_components(self, entity_id: int, components: dict, component_map: dict) -> None:
+        """Remove all components of the given map from entity, then re-add from the components dict."""
+        for comp_type in component_map.values():
             try:
                 esper.remove_component(entity_id, comp_type)
             except KeyError:
                 pass
 
-        for comp_name, comp_data in criteria_components.items():
+        for comp_name, comp_data in components.items():
             if not isinstance(comp_data, dict):
                 continue
-            if comp_name in ecs_event_components.CRITERIA_COMPONENT_MAP:
-                comp_type = ecs_event_components.CRITERIA_COMPONENT_MAP[comp_name]
+            if comp_name in component_map:
+                comp_type = component_map[comp_name]
                 tags = comp_data.get("tags", [])
                 if not isinstance(tags, list):
                     tags = []
@@ -1290,7 +1259,7 @@ class SessionState:
             )
             self.EventCriteria[key] = criteria
             self.EventCriteriaEntityIds[key] = criteria.entity_id
-            self._sync_criteria_components(criteria.entity_id, entry.criteria_components)
+            self._sync_criteria_components(criteria.entity_id, entry.criteria_components, ecs_event_components.CRITERIA_COMPONENT_MAP)
             return criteria.entity_id
 
         props = entry.properties if isinstance(entry.properties, dict) else {}
@@ -1301,7 +1270,7 @@ class SessionState:
         display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
         display_name_comp.display_name = props.get("displayName", "")
 
-        self._sync_criteria_components(existing_entity_id, entry.criteria_components)
+        self._sync_criteria_components(existing_entity_id, entry.criteria_components, ecs_event_components.CRITERIA_COMPONENT_MAP)
         return existing_entity_id
 
     def apply_add_criteria_request(self, request_entity_id: int) -> None:
@@ -1446,10 +1415,8 @@ class SessionState:
             )
             self.EventResults[key] = event
             self.EventResultEntityIds[key] = event.entity_id
-            trigger_comp = esper.component_for_entity(event.entity_id, ecs_event_components.EventTriggerNames)
-            trigger_comp.criteria_ids = entry.trigger_names
-            target_comp = esper.component_for_entity(event.entity_id, ecs_event_components.EventTargetNames)
-            target_comp.criteria_ids = entry.target_names
+            self._sync_criteria_components(event.entity_id, entry.trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
+            self._sync_criteria_components(event.entity_id, entry.target_components, ecs_event_components.TARGET_COMPONENT_MAP)
             self._sync_event_result_components(event.entity_id, entry.result_components)
             return event.entity_id
 
@@ -1461,11 +1428,8 @@ class SessionState:
         display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
         display_name_comp.display_name = props.get("displayName", "")
 
-        trigger_comp = esper.component_for_entity(existing_entity_id, ecs_event_components.EventTriggerNames)
-        trigger_comp.criteria_ids = entry.trigger_names
-        target_comp = esper.component_for_entity(existing_entity_id, ecs_event_components.EventTargetNames)
-        target_comp.criteria_ids = entry.target_names
-
+        self._sync_criteria_components(existing_entity_id, entry.trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
+        self._sync_criteria_components(existing_entity_id, entry.target_components, ecs_event_components.TARGET_COMPONENT_MAP)
         self._sync_event_result_components(existing_entity_id, entry.result_components)
         return existing_entity_id
 
@@ -1484,43 +1448,12 @@ class SessionState:
         if new_key in self.EventResultEntityIds:
             new_key = f"{new_key}_{self._random_string(3)}"
 
-        trigger_key = f"{new_key}Trigger"
-        target_key = f"{new_key}Target"
-
-        trigger_entry = {
-            "type": "Feature",
-            "geometry": None,
-            "properties": {
-                "id": trigger_key,
-                "displayName": trigger_key,
-                "ObjectsThatMetAllCriteria": {"object_ids": []},
-                "ObjectsThatMetAnyCriteria": {"object_ids": []},
-            },
-        }
-        put_db_entry(self.database_url, self.session_name, trigger_key, trigger_entry, NODE=EVENT_CRITERIA_NODE)
-        self._upsert_criteria_entity(trigger_key, CriteriaEntry(trigger_entry))
-
-        target_entry = {
-            "type": "Feature",
-            "geometry": None,
-            "properties": {
-                "id": target_key,
-                "displayName": target_key,
-                "ObjectsThatMetAllCriteria": {"object_ids": []},
-                "ObjectsThatMetAnyCriteria": {"object_ids": []},
-            },
-        }
-        put_db_entry(self.database_url, self.session_name, target_key, target_entry, NODE=EVENT_CRITERIA_NODE)
-        self._upsert_criteria_entity(target_key, CriteriaEntry(target_entry))
-
         new_event_entry = {
             "type": "Feature",
             "geometry": None,
             "properties": {
                 "id": new_key,
                 "displayName": new_key,
-                "EventTriggerNames": {"criteria_ids": [trigger_key]},
-                "EventTargetNames": {"criteria_ids": [target_key]},
                 "Results": {},
             },
         }
@@ -1549,35 +1482,28 @@ class SessionState:
         display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
-        trigger_criteria_key = f"{target_key}Trigger"
-        target_criteria_key = f"{target_key}Target"
-
         trigger_components = form_data.get("triggerComponents", {})
         if not isinstance(trigger_components, dict):
             trigger_components = {}
-        self._apply_criteria_components_patch(trigger_criteria_key, trigger_components)
+        self._sync_criteria_components(target_entity_id, trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
 
         target_components = form_data.get("targetComponents", {})
         if not isinstance(target_components, dict):
             target_components = {}
-        self._apply_criteria_components_patch(target_criteria_key, target_components)
-
-        trigger_comp = esper.component_for_entity(target_entity_id, ecs_event_components.EventTriggerNames)
-        trigger_comp.criteria_ids = [trigger_criteria_key]
-        target_comp = esper.component_for_entity(target_entity_id, ecs_event_components.EventTargetNames)
-        target_comp.criteria_ids = [target_criteria_key]
+        self._sync_criteria_components(target_entity_id, target_components, ecs_event_components.TARGET_COMPONENT_MAP)
 
         result_components = form_data.get("results", {})
         if not isinstance(result_components, dict):
             result_components = {}
-
         self._sync_event_result_components(target_entity_id, result_components)
 
         patch_data: dict = {
             "properties/displayName": display_name_comp.display_name,
-            "properties/EventTriggerNames/criteria_ids": [trigger_criteria_key],
-            "properties/EventTargetNames/criteria_ids": [target_criteria_key],
         }
+        for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+            patch_data[f"properties/{comp_name}"] = trigger_components.get(comp_name)
+        for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+            patch_data[f"properties/{comp_name}"] = target_components.get(comp_name)
         for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
             patch_data[f"properties/Results/{comp_name}"] = result_components.get(comp_name)
 
@@ -1595,8 +1521,16 @@ class SessionState:
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
                 props["displayName"] = display_name_comp.display_name
-                props["EventTriggerNames"] = {"criteria_ids": [trigger_criteria_key]}
-                props["EventTargetNames"] = {"criteria_ids": [target_criteria_key]}
+                for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                    props.pop(comp_name, None)
+                for comp_name, comp_data in trigger_components.items():
+                    if comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                        props[comp_name] = comp_data
+                for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                    props.pop(comp_name, None)
+                for comp_name, comp_data in target_components.items():
+                    if comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                        props[comp_name] = comp_data
                 results = props.setdefault("Results", {})
                 if isinstance(results, dict):
                     for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
@@ -1617,12 +1551,6 @@ class SessionState:
         if target_key is None:
             self._consume_client_request(request_entity_id)
             return
-
-        for suffix in ("Trigger", "Target"):
-            criteria_key = f"{target_key}{suffix}"
-            if criteria_key in self.EventCriteriaEntityIds:
-                self._delete_tracked_entity(self.EventCriteriaEntityIds, self.EventCriteria, criteria_key)
-                delete_db_entry(self.database_url, self.session_name, criteria_key, node=EVENT_CRITERIA_NODE)
 
         self._delete_tracked_entity(self.EventResultEntityIds, self.EventResults, target_key)
         delete_db_entry(self.database_url, self.session_name, target_key, node=EVENT_RESULTS_NODE)
