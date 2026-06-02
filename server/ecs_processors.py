@@ -25,15 +25,6 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _ in list(esper.get_component(ecs_geo_components.DeletedObject)):
             self.session_state.apply_deleted_object_request(entity_id)
 
-        for entity_id, _ in list(esper.get_component(ecs_event_components.AddCriteria)):
-            self.session_state.apply_add_criteria_request(entity_id)
-
-        for entity_id, _ in list(esper.get_component(ecs_event_components.EditedCriteria)):
-            self.session_state.apply_edited_criteria_request(entity_id)
-
-        for entity_id, _ in list(esper.get_component(ecs_event_components.DeletedCriteria)):
-            self.session_state.apply_deleted_criteria_request(entity_id)
-
         for entity_id, _ in list(esper.get_component(ecs_event_components.AddEvent)):
             self.session_state.apply_add_event_request(entity_id)
 

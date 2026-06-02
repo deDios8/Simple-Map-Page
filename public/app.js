@@ -21,7 +21,6 @@ let RESULT_COMPONENT_OPTIONS = [];
 let firebaseConfig = {};
 let firebaseGeoObjectsNode = "";
 let firebaseClientRequestNode = "";
-let firebaseEventCriteriaNode = "";
 let firebaseEventResultsNode = "";
 
 const state = {
@@ -44,10 +43,8 @@ const state = {
   listenerUnsubscribe: null,
   pendingUserSetup: false,
   coordPickMode: false,
-  criteria: {},
   selectedEventId: null,
   events: {},
-  criteriaListenerUnsubscribe: null,
   eventListenerUnsubscribe: null,
   dismissedMessages: new Set(),
 };
@@ -472,10 +469,6 @@ function extractCriteriaComponents(properties, allowedNames) {
   return components;
 }
 
-function handleCriteriaSnapshot(nextCriteria) {
-  state.criteria = normalizeCollection(nextCriteria, normalizeNonGeoEntry);
-}
-
 function getRequestCoordinates() {
   return Array.isArray(state.userLocation)
     ? [state.userLocation[1], state.userLocation[0]]
@@ -789,7 +782,6 @@ async function init() {
   firebaseConfig = fbSdkConfig;
   firebaseGeoObjectsNode = nodes.geoObjects;
   firebaseClientRequestNode = nodes.clientRequests;
-  firebaseEventCriteriaNode = nodes.eventCriteria;
   firebaseEventResultsNode = nodes.eventResults;
   state.sessionName = defaultSessionName || "testBed";
   state.updateLocationInterval = updateLocationInterval || 2000;
@@ -1218,7 +1210,6 @@ function promptUserId() {
     }
 
     resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
-    resetListener(firebaseEventCriteriaNode, "criteriaListenerUnsubscribe", handleCriteriaSnapshot);
     resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
     modal.hidden = true;
 
@@ -1277,7 +1268,6 @@ function initFirebaseListener() {
 
   state.firebaseReady = true;
   resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
-  resetListener(firebaseEventCriteriaNode, "criteriaListenerUnsubscribe", handleCriteriaSnapshot);
   resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
 }
 

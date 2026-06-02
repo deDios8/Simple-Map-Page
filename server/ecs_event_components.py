@@ -180,33 +180,8 @@ class Event:
 
 
 # ---------------------------------------------------------------------------
-# Legacy Criteria ECS entity (used by old eventCriteria DB node entries).
-# No longer created for new events — criteria are embedded on Event entities.
+# Components for event client requests
 # ---------------------------------------------------------------------------
-class Criteria:
-    def __init__(self, id: str, name: str) -> None:
-        new_entity_id = esper.create_entity()
-        self.entity_id = new_entity_id
-        esper.add_component(new_entity_id, ID(id=id))
-        esper.add_component(new_entity_id, DisplayName(display_name=name))
-
-
-# ---------------------------------------------------------------------------
-# Components for criteria client requests
-# ---------------------------------------------------------------------------
-@dataclass
-class AddCriteria:
-    requester_id: str
-
-@dataclass
-class EditedCriteria:
-    target_id: str
-    form_data: dict
-
-@dataclass
-class DeletedCriteria:
-    target_id: str
-
 @dataclass
 class AddEvent:
     requester_id: str
