@@ -143,7 +143,7 @@ class ResultRevokeStats:
     tags: list
 
 @dataclass
-class ResultToggleStats:
+class ResultToggleStatsWithValue:
     stats: list
 
 @dataclass

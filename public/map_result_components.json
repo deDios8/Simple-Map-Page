@@ -9,8 +9,8 @@
   "ResultSetColor":            { "handler": "_set_color",              "fieldName": "color",            "fieldType": "text",   "label": "Color",           "placeholder": "#ff0000" },
   "ResultSetRadius":           { "handler": "_set_radius",             "fieldName": "radius",           "fieldType": "number", "label": "Radius",          "placeholder": "5" },
   "ResultChangeRadius":        { "handler": "_change_radius",          "fieldName": "change",           "fieldType": "number", "label": "Change",          "placeholder": "-1" },
-  "ResultRevokeStats":         { "handler": "_revoke_stats",           "fieldName": "tags",             "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
-  "ResultToggleStats":         { "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" },
   "ResultSetStatsToValues":    { "handler": "_set_stats_to_values",    "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" },
-  "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 10}" }
+  "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 10}" },
+  "ResultRevokeStats":         { "handler": "_revoke_stats",           "fieldName": "tags",             "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
+  "ResultToggleStatsWithValue":{ "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" }
 }
