@@ -14,10 +14,6 @@ class DisplayName:
     display_name: str
 
 @dataclass
-class IsUser:
-    is_user: bool = True
-
-@dataclass
 class Appearance:
     color: str
     shape: str

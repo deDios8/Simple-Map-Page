@@ -185,9 +185,6 @@ class SessionDebugConsole:
             return False
         id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
         display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
-        trigger = esper.try_component(entity_id, ecs_event_components.EventTriggerNames)
-        target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
-        
         # Get tracking components
         trigger_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTriggerCriteria)
         target_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTargetCriteria)
@@ -201,8 +198,6 @@ class SessionDebugConsole:
             "[DEBUG][event] "
             f"key={key} entity={entity_id} "
             f"id={id_component.id} display_name={display_name_comp.display_name!r} "
-            f"triggerNames={trigger.names if trigger is not None else []} "
-            f"targetNames={target.names if target is not None else []} "
             f"triggerObjectsAll={trigger_all.object_ids if trigger_all is not None else []} "
             f"targetObjectsAll={target_all.object_ids if target_all is not None else []} "
             f"results={active_results}"

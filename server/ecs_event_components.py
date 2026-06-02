@@ -103,14 +103,6 @@ class ObjectsThatMetAnyTargetCriteria:
 # Components for results
 # ---------------------------------------------------------------------------
 @dataclass
-class EventTriggerNames: # should maybe use ID's
-    criteria_ids: list
-
-@dataclass
-class EventTargetNames: # should maybe use ID's
-    criteria_ids: list
-
-@dataclass
 class ResultGrantVisibility:
     tags: list
 

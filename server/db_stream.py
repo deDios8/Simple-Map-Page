@@ -669,22 +669,6 @@ class SessionState:
             for key, raw in fetch_node(self.database_url, self.session_name, node).items():
                 upsert_fn(key, entry_class(raw))
 
-    def _sync_is_user_component(self, entity_id: int) -> None:
-        stats = esper.try_component(entity_id, ecs_geo_components.Stats)
-        is_user = (
-            stats is not None
-            and isinstance(stats.items.get("user"), dict)
-            and str(stats.items["user"].get("name", "")).upper() == "USER"
-        )
-        current = esper.try_component(entity_id, ecs_geo_components.IsUser)
-        if is_user and current is None:
-            esper.add_component(entity_id, ecs_geo_components.IsUser())
-        elif not is_user and current is not None:
-            try:
-                esper.remove_component(entity_id, ecs_geo_components.IsUser)
-            except KeyError:
-                pass
-
     def _extract_geo_key_from_target_path(self, target_path: str) -> str:
         if not isinstance(target_path, str):
             return ""
@@ -926,7 +910,6 @@ class SessionState:
         next_stats_payload = normalize_stats({"stats": stats_payload})
 
         self._sync_stats_component(target_entity_id, {"stats": next_stats_payload})
-        self._sync_is_user_component(target_entity_id)
 
         extra_data = form_data.get("extraData")
         if not isinstance(extra_data, dict):
@@ -1036,7 +1019,6 @@ class SessionState:
             self._sync_stats_component(geo.entity_id, geo_object.properties)
             self._sync_traits_component(geo.entity_id, geo_object.properties)
             self._sync_messages_component(geo.entity_id, geo_object.properties)
-            self._sync_is_user_component(geo.entity_id)
 
             return geo.entity_id
 
@@ -1060,7 +1042,6 @@ class SessionState:
         self._sync_stats_component(existing_entity_id, props)
         self._sync_traits_component(existing_entity_id, props)
         self._sync_messages_component(existing_entity_id, props)
-        self._sync_is_user_component(existing_entity_id)
         
         return existing_entity_id
 
