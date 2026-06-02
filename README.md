@@ -1,20 +1,17 @@
 # TODO
-Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
-Allow triggers to assign targets reflexively targeting the object the triggered
-Entering and exiting zones doesn't seem to work consistently.
+- Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
+- Allow triggers to assign targets reflexively targeting the object the triggered
 
-debug console should display DisplayName rather than ID's
-wishlist: would like a way to move a user on laptop (overriding gps)
-stat editor for drop-down stat addition.
-anchor point for session or a bulk move option for relocating entire games
-reformat event editor
-IsUser component doesn't seem to be doing anything.
-Add an event clock/timer
-Tuning the timing of events to have a predictable tick rate for DOT-like effects
-App auto-select a newly added zone, criteria, event for editing.
-Move popup message to the top of the results chooser list.
-Restructure JSON to group Triggers and Targets in the same way Results are grouped.
-
+- debug console should display DisplayName rather than ID's
+- wishlist: would like a way to move a user on laptop (overriding gps)
+- stat editor for drop-down stat addition.
+- anchor point for session or a bulk move option for relocating entire games
+- IsUser component doesn't seem to be doing anything.
+- Add an event clock/timer
+- Tuning the timing of events to have a predictable tick rate for DOT-like effects
+- App auto-select a newly added zone, criteria, event for editing.
+- Move popup message to the top of the results chooser list.
+- Restructure JSON to group Triggers and Targets in the same way Results are grouped.
 
 # Dependencies
 ## macos
@@ -31,7 +28,6 @@ or
 .venv/bin/pip install pyproj
 .venv/bin/pip install shapely
 .venv/bin/pip install firebase
-
 
 # Instructions for deployment
 ## Project Console: 

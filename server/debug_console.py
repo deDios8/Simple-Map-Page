@@ -1,4 +1,5 @@
-"""Debug command handling for SessionState.
+"""
+Debug command handling for SessionState.
 
 This module isolates the interactive debug console so SessionState can stay
 focused on stream synchronization and ECS updates.
@@ -186,6 +187,11 @@ class SessionDebugConsole:
         display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
         trigger = esper.try_component(entity_id, ecs_event_components.EventTriggerNames)
         target = esper.try_component(entity_id, ecs_event_components.EventTargetNames)
+        
+        # Get tracking components
+        trigger_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTriggerCriteria)
+        target_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTargetCriteria)
+        
         active_results: dict[str, object] = {}
         for comp_name, comp_type in EVENT_RESULT_COMPONENT_MAP.items():
             comp = esper.try_component(entity_id, comp_type)
@@ -197,6 +203,8 @@ class SessionDebugConsole:
             f"id={id_component.id} display_name={display_name_comp.display_name!r} "
             f"triggerNames={trigger.names if trigger is not None else []} "
             f"targetNames={target.names if target is not None else []} "
+            f"triggerObjectsAll={trigger_all.object_ids if trigger_all is not None else []} "
+            f"targetObjectsAll={target_all.object_ids if target_all is not None else []} "
             f"results={active_results}"
         )
         return True
@@ -221,17 +229,29 @@ class SessionDebugConsole:
             self._print_world_stats()
             return
         if command == "list":
-            subject = "geo"
             count = 10
             if len(parts) >= 2:
-                subject = parts[1].lower()
-            if len(parts) >= 3:
-                try:
-                    count = max(1, int(parts[2]))
-                except ValueError:
-                    print("[DEBUG] count must be an integer")
-                    return
-            self._print_debug_list(subject, count)
+                # Check if first arg is a count (no subject) or a subject name
+                if parts[1].lower() in ("geo", "req", "criteria", "events"):
+                    subject = parts[1].lower()
+                    if len(parts) >= 3:
+                        try:
+                            count = max(1, int(parts[2]))
+                        except ValueError:
+                            print("[DEBUG] count must be an integer")
+                            return
+                    self._print_debug_list(subject, count)
+                else:
+                    try:
+                        count = max(1, int(parts[1]))
+                    except ValueError:
+                        print("[DEBUG] list usage: list [geo|req|criteria|events] [count]")
+                        return
+                    for subject in ("geo", "req", "criteria", "events"):
+                        self._print_debug_list(subject, count)
+            else:
+                for subject in ("geo", "req", "criteria", "events"):
+                    self._print_debug_list(subject, count)
             return
         if command == "dumpgeo":
             if len(parts) < 2:
