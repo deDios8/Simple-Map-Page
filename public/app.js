@@ -21,7 +21,7 @@ let RESULT_COMPONENT_OPTIONS = [];
 let firebaseConfig = {};
 let firebaseGeoObjectsNode = "";
 let firebaseClientRequestNode = "";
-let firebaseEventResultsNode = "";
+let firebaseEventsNode = "";
 
 const state = {
   updateLocationInterval: 0,
@@ -660,8 +660,8 @@ function populateEventEditor(id) {
     return;
   }
   const displayName = entry.properties?.displayName || "";
-  const triggerComponents = extractCriteriaComponents(entry.properties, TRIGGER_COMPONENT_OPTIONS);
-  const targetComponents = extractCriteriaComponents(entry.properties, TARGET_COMPONENT_OPTIONS);
+  const triggerComponents = extractCriteriaComponents(entry.properties?.Triggers, TRIGGER_COMPONENT_OPTIONS);
+  const targetComponents = extractCriteriaComponents(entry.properties?.Targets, TARGET_COMPONENT_OPTIONS);
   const results = extractEventResults(entry.properties);
   eventEditorForm.hidden = false;
   eventEditorForm.classList.remove("is-collapsed");
@@ -782,7 +782,7 @@ async function init() {
   firebaseConfig = fbSdkConfig;
   firebaseGeoObjectsNode = nodes.geoObjects;
   firebaseClientRequestNode = nodes.clientRequests;
-  firebaseEventResultsNode = nodes.eventResults;
+  firebaseEventsNode = nodes.events;
   state.sessionName = defaultSessionName || "testBed";
   state.updateLocationInterval = updateLocationInterval || 2000;
   state.mapLayer = mapLayer?.default?.url || "";
@@ -1210,7 +1210,7 @@ function promptUserId() {
     }
 
     resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
-    resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
+    resetListener(firebaseEventsNode, "eventListenerUnsubscribe", handleEventSnapshot);
     modal.hidden = true;
 
     // Defer startCoordinateTracking until the first Firebase
@@ -1268,7 +1268,7 @@ function initFirebaseListener() {
 
   state.firebaseReady = true;
   resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
-  resetListener(firebaseEventResultsNode, "eventListenerUnsubscribe", handleEventSnapshot);
+  resetListener(firebaseEventsNode, "eventListenerUnsubscribe", handleEventSnapshot);
 }
 
 function toggleListener() {

@@ -12,7 +12,7 @@
     "clientRequests":           "z_clientRequests",
     "clientRequestsProcessed":  "z_clientRequests_processed",
     "eventCriteria":            "eventCriteria",
-    "eventResults":             "eventResults"
+    "events":                   "events"
   },
 
   "defaultSessionName":      "testBed",

@@ -29,7 +29,7 @@ GEO_OBJECTS_NODE = _nodes["geoObjects"]
 CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
 EVENT_CRITERIA_NODE = _nodes["eventCriteria"]
-EVENT_RESULTS_NODE = _nodes["eventResults"]
+EVENTS_NODE = _nodes["events"]
 
 
 def build_node_url(database_url: str, *path_segments: str) -> str:
@@ -94,13 +94,16 @@ class GeoObjectEntry(DBEntry):
 class EventResultEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
-        self.trigger_components: dict[str, dict] = {}
-        self.target_components: dict[str, dict] = {}
-        for key, value in self.properties.items():
-            if key in ecs_event_components.TRIGGER_COMPONENT_NAMES and isinstance(value, dict):
-                self.trigger_components[key] = value
-            elif key in ecs_event_components.TARGET_COMPONENT_NAMES and isinstance(value, dict):
-                self.target_components[key] = value
+        triggers = self.properties.get("Triggers", {}) if isinstance(self.properties, dict) else {}
+        self.trigger_components: dict[str, dict] = {
+            k: v for k, v in triggers.items()
+            if k in ecs_event_components.TRIGGER_COMPONENT_NAMES and isinstance(v, dict)
+        } if isinstance(triggers, dict) else {}
+        targets = self.properties.get("Targets", {}) if isinstance(self.properties, dict) else {}
+        self.target_components: dict[str, dict] = {
+            k: v for k, v in targets.items()
+            if k in ecs_event_components.TARGET_COMPONENT_NAMES and isinstance(v, dict)
+        } if isinstance(targets, dict) else {}
         results = self.properties.get("Results", {})
         self.result_components: dict[str, dict] = {
             k: v for k, v in results.items()
@@ -540,7 +543,7 @@ class DatabaseStream:
         _streams = [
             (CLIENT_REQUESTS_NODE, self.request_state,       self.request_index,       ClientRequestEntry, "_client_request_thread"),
             # (GEO_OBJECTS_NODE,     self.geo_object_state,    self.geo_object_index,    GeoObjectEntry,     "_geo_object_thread"),
-            # (EVENT_RESULTS_NODE,   self.event_results_state, self.event_results_index, EventResultEntry,   "_event_results_thread"),
+            # (EVENTS_NODE,         self.event_results_state, self.event_results_index, EventResultEntry,   "_event_results_thread"),
         ]
         for node, state, index, factory, attr in _streams:
             fetch_fn = lambda db, session, n=node: fetch_node(db, session, n)
@@ -663,7 +666,7 @@ class SessionState:
         _nodes = [
             (GEO_OBJECTS_NODE,     GeoObjectEntry,     self._upsert_geo_object_entity),
             (CLIENT_REQUESTS_NODE, ClientRequestEntry, self._upsert_client_request_entity),
-            (EVENT_RESULTS_NODE,   EventResultEntry,   self._upsert_event_entity),
+            (EVENTS_NODE,          EventResultEntry,   self._upsert_event_entity),
         ]
         for node, entry_class, upsert_fn in _nodes:
             for key, raw in fetch_node(self.database_url, self.session_name, node).items():
@@ -1279,10 +1282,12 @@ class SessionState:
             "properties": {
                 "id": new_key,
                 "displayName": new_key,
+                "Triggers": {},
+                "Targets": {},
                 "Results": {},
             },
         }
-        put_db_entry(self.database_url, self.session_name, new_key, new_event_entry, NODE=EVENT_RESULTS_NODE)
+        put_db_entry(self.database_url, self.session_name, new_key, new_event_entry, NODE=EVENTS_NODE)
         self._upsert_event_entity(new_key, EventResultEntry(new_event_entry))
         self._consume_client_request(request_entity_id)
 
@@ -1326,9 +1331,9 @@ class SessionState:
             "properties/displayName": display_name_comp.display_name,
         }
         for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
-            patch_data[f"properties/{comp_name}"] = trigger_components.get(comp_name)
+            patch_data[f"properties/Triggers/{comp_name}"] = trigger_components.get(comp_name)
         for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
-            patch_data[f"properties/{comp_name}"] = target_components.get(comp_name)
+            patch_data[f"properties/Targets/{comp_name}"] = target_components.get(comp_name)
         for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
             patch_data[f"properties/Results/{comp_name}"] = result_components.get(comp_name)
 
@@ -1337,7 +1342,7 @@ class SessionState:
             self.session_name,
             target_key,
             patch_data,
-            node=EVENT_RESULTS_NODE,
+            node=EVENTS_NODE,
         )
 
         # Mirror to stream state to suppress echo
@@ -1346,16 +1351,20 @@ class SessionState:
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
                 props["displayName"] = display_name_comp.display_name
-                for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
-                    props.pop(comp_name, None)
-                for comp_name, comp_data in trigger_components.items():
-                    if comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
-                        props[comp_name] = comp_data
-                for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
-                    props.pop(comp_name, None)
-                for comp_name, comp_data in target_components.items():
-                    if comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
-                        props[comp_name] = comp_data
+                triggers = props.setdefault("Triggers", {})
+                if isinstance(triggers, dict):
+                    for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                        triggers.pop(comp_name, None)
+                    for comp_name, comp_data in trigger_components.items():
+                        if comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                            triggers[comp_name] = comp_data
+                targets = props.setdefault("Targets", {})
+                if isinstance(targets, dict):
+                    for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                        targets.pop(comp_name, None)
+                    for comp_name, comp_data in target_components.items():
+                        if comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                            targets[comp_name] = comp_data
                 results = props.setdefault("Results", {})
                 if isinstance(results, dict):
                     for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
@@ -1378,7 +1387,7 @@ class SessionState:
             return
 
         self._delete_tracked_entity(self.EventResultEntityIds, self.EventResults, target_key)
-        delete_db_entry(self.database_url, self.session_name, target_key, node=EVENT_RESULTS_NODE)
+        delete_db_entry(self.database_url, self.session_name, target_key, node=EVENTS_NODE)
         self._consume_client_request(request_entity_id)
 
 
@@ -1444,7 +1453,7 @@ class SessionState:
                             self._delete_tracked_entity(self.ClientRequestEntityIds, self.ClientRequests, change.key)
                         elif change.stream_name == GEO_OBJECTS_NODE:
                             self._delete_tracked_entity(self.GeoObjectEntityIds, self.GeoObjects, change.key)
-                        elif change.stream_name == EVENT_RESULTS_NODE:
+                        elif change.stream_name == EVENTS_NODE:
                             self._delete_tracked_entity(self.EventResultEntityIds, self.EventResults, change.key)
                         elif isinstance(change.feature, ClientRequestEntry) or change.feature is None:
                             self._delete_tracked_entity(self.ClientRequestEntityIds, self.ClientRequests, change.key)
