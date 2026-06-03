@@ -82,11 +82,10 @@ class CheckZoneEntryExit(esper.Processor):
             if entered_zones:
                 zone_names = self._get_zone_names(entered_zones)
                 esper.add_component(entity_id, ecs_geo_components.EnteredZones(zone_ids=list(entered_zones)))
-                esper.add_component(entity_id, ecs_geo_components.ZoneEntryLog(zone_ids=list(entered_zones)))
                 print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' entered zones: {zone_names}")
             if exited_zones:
                 zone_names = self._get_zone_names(exited_zones)
-                esper.add_component(entity_id, ecs_geo_components.ExneExitLog(zone_ids=list(exited_zones)))
+                esper.add_component(entity_id, ecs_geo_components.ExitedZones(zone_ids=list(exited_zones)))
                 print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' exited zones: {zone_names}")
 
     def _get_zone_names(self, zone_ids: set[str]) -> list[str]:
@@ -195,16 +194,17 @@ class RemoveZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        # Dispatcher: (component_type, set_operation)
+        # Dispatcher: (component_type, set_operation, log_component_type)
         zone_updates = [
-            (ecs_geo_components.EnteredZones, lambda before, change: before | change),
-            (ecs_geo_components.ExitedZones, lambda before, change: before - change),
+            (ecs_geo_components.EnteredZones, lambda before, change: before | change, ecs_geo_components.ZoneEntryLog),
+            (ecs_geo_components.ExitedZones, lambda before, change: before - change, ecs_geo_components.ZoneExitLog),
         ]
 
-        for component_type, set_operation in zone_updates:
+        for component_type, set_operation, log_component_type in zone_updates:
             for entity_id, zone_component in list(esper.get_component(component_type)):
                 zone_set = set(zone_component.zone_ids)
 
+                # Update WithinZones
                 within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
                 before_zones = set(within.zone_ids) if within else set()
                 within_zones = set_operation(before_zones, zone_set)
@@ -217,6 +217,14 @@ class RemoveZoneEntryExit(esper.Processor):
                     except KeyError:
                         pass
 
+                # Append to log
+                log = esper.try_component(entity_id, log_component_type)
+                if log is None:
+                    esper.add_component(entity_id, log_component_type(zone_ids=list(zone_component.zone_ids)))
+                else:
+                    log.zone_ids.extend(zone_component.zone_ids)
+
+                # Remove temporary component
                 try:
                     esper.remove_component(entity_id, component_type)
                 except KeyError:

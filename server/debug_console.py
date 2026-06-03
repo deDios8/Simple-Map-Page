@@ -178,6 +178,8 @@ class SessionDebugConsole:
         geometry = esper.component_for_entity(entity_id, ecs_geo_components.Geometry)
         traits = esper.try_component(entity_id, ecs_geo_components.Traits)
         stats = esper.try_component(entity_id, ecs_geo_components.Stats)
+        zone_entry_log = esper.try_component(entity_id, ecs_geo_components.ZoneEntryLog)
+        zone_exit_log = esper.try_component(entity_id, ecs_geo_components.ZoneExitLog)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
@@ -186,7 +188,9 @@ class SessionDebugConsole:
             f"shape={appearance.shape!r} radius={appearance.radius} "
             f"coordinates={geometry.coordinates} "
             f"traits={traits.traits if traits is not None else []} "
-            f"stats={stats.items if stats is not None else {}}"
+            f"stats={stats.items if stats is not None else {}} "
+            f"entry_log={zone_entry_log.zone_ids if zone_entry_log is not None else []} "
+            f"exit_log={zone_exit_log.zone_ids if zone_exit_log is not None else []}"
         )
         return True
 
