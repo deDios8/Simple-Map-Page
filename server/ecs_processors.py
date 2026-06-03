@@ -224,6 +224,9 @@ class RemoveZoneEntryExit(esper.Processor):
                 else:
                     log.zone_ids.extend(zone_component.zone_ids)
 
+                # Mark entity as dirty to sync log to database
+                esper.add_component(entity_id, ecs_geo_components.GeoObjectDirty())
+
                 # Remove temporary component
                 try:
                     esper.remove_component(entity_id, component_type)
@@ -564,6 +567,14 @@ class SyncGeoObjectsToDatabase(esper.Processor):
 
         messages = esper.try_component(entity_id, ecs_geo_components.Messages)
         payload["properties/messages"] = messages.messages if (messages is not None and messages.messages) else None
+
+        zone_entry_log = esper.try_component(entity_id, ecs_geo_components.ZoneEntryLog)
+        if zone_entry_log is not None and zone_entry_log.zone_ids:
+            payload["properties/zoneEntryLog"] = zone_entry_log.zone_ids
+
+        zone_exit_log = esper.try_component(entity_id, ecs_geo_components.ZoneExitLog)
+        if zone_exit_log is not None and zone_exit_log.zone_ids:
+            payload["properties/zoneExitLog"] = zone_exit_log.zone_ids
 
         return payload
 
