@@ -47,6 +47,11 @@ class DismissMessage:
     target_id: str
     message: str
 
+@dataclass
+class ClearLogs:
+    target_id: str
+    target_path: str
+
 
 ## Entity
 class ClientRequest:

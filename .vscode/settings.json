@@ -8,5 +8,8 @@
         "**/.firebaserc": true,
         "**/firebase.json": true,
         "**/.gitignore": true,
+    },
+    "chat.tools.terminal.autoApprove": {
+        "/Users/aaron.klingbeil/Documents/Simple-Map-Page/.venv/bin/python": true
     }
 }

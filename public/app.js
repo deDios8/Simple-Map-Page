@@ -69,6 +69,7 @@ const editorCancelBottomButton = document.querySelector("#editor-cancel-bottom-b
 const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
 const deleteObjectButton = document.querySelector("#delete-object-button");
+const clearLogsButton = document.querySelector("#clear-logs-button");
 const fieldName = document.querySelector("#field-name");
 const fieldColor = document.querySelector("#field-color");
 const fieldVisible = document.querySelector("#field-visible");
@@ -1108,6 +1109,31 @@ function bindUi() {
       saveStatus.textContent = "Delete request failed. Check Firebase configuration and permissions.";
     }
   });
+
+  clearLogsButton?.addEventListener("click", async () => {
+    if (!canEditObjects()) {
+      saveStatus.textContent = "Read-only mode: clearing logs requires gm password.";
+      return;
+    }
+
+    if (!state.selectedId || !state.objects[state.selectedId]) {
+      saveStatus.textContent = "Clear logs failed: no object selected.";
+      return;
+    }
+
+    const selectedId = state.selectedId;
+    saveStatus.textContent = state.firebaseReady ? "Sending clear logs request..." : "Request unavailable...";
+
+    try {
+      await submitClearLogsRequest(selectedId);
+      saveStatus.textContent = state.firebaseReady
+        ? "Clear logs request sent. Server will clear logs shortly."
+        : "Request unavailable: Firebase is not ready.";
+    } catch (error) {
+      console.error(error);
+      saveStatus.textContent = "Clear logs request failed. Check Firebase configuration and permissions.";
+    }
+  });
 }
 
 function setDrawerOpen(drawerEl, toggleEl, isOpen) {
@@ -1402,6 +1428,24 @@ async function submitDeletedObjectRequest(targetId) {
       targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
     },
     successMessage: `Delete request for ${targetId} sent`,
+  });
+}
+
+async function submitClearLogsRequest(targetId) {
+  const selected = state.objects[targetId];
+  const coordinates = Array.isArray(selected?.geometry?.coordinates)
+    ? selected.geometry.coordinates
+    : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
+
+  await submitRequest({
+    requestId: `clear-logs-${targetId}`,
+    requestType: "clear_logs",
+    coordinates,
+    clientRequestPayload: {
+      targetId,
+      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
+    },
+    successMessage: `Clear logs request for ${targetId} sent`,
   });
 }
 
@@ -1711,6 +1755,9 @@ function applyEditorPermissions() {
     }
   }
   deleteObjectButton.disabled = !isEditable || !isFormVisible;
+  if (clearLogsButton) {
+    clearLogsButton.disabled = !isEditable || !isFormVisible;
+  }
   const saveButton = editorForm.querySelector('button[type="submit"]');
   if (saveButton) {
     saveButton.disabled = !isEditable || !isFormVisible;
