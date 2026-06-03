@@ -61,29 +61,48 @@ class SessionDebugConsole:
 
         within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
         if within is not None:
-            payload["withinZones"] = {"zone_ids": [str(zone_id) for zone_id in within.zone_ids]}
+            payload["withinZones"] = {"zone_names": self._get_display_names_for_ids(within.zone_ids)}
 
         entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
         if entered is not None:
-            payload["enteredZones"] = {"zone_ids": [str(zone_id) for zone_id in entered.zone_ids]}
+            payload["enteredZones"] = {"zone_names": self._get_display_names_for_ids(entered.zone_ids)}
 
         exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
         if exited is not None:
-            payload["exitedZones"] = {"zone_ids": [str(zone_id) for zone_id in exited.zone_ids]}
+            payload["exitedZones"] = {"zone_names": self._get_display_names_for_ids(exited.zone_ids)}
 
         return payload
+
+    def _get_display_names_for_ids(self, zone_ids: list[str]) -> list[str]:
+        """Convert zone IDs to display names for debug output."""
+        names = []
+        for zone_id in zone_ids:
+            zone_eid = self._state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is not None:
+                display_name_comp = esper.try_component(zone_eid, ecs_geo_components.DisplayName)
+                if display_name_comp:
+                    names.append(display_name_comp.display_name)
+                else:
+                    names.append(zone_id)
+            else:
+                names.append(zone_id)
+        return names
 
     def _print_zone_borders_for_key(self, key: str) -> bool:
         if key in self._state.GeoObjectEntityIds:
             entity_id = self._state.GeoObjectEntityIds[key]
+            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
-            print(f"[DEBUG][zoneBorders][geo] key={key} entity={entity_id} payload={payload}")
+            print(f"[DEBUG][zoneBorders][geo] key={key} name='{display_name}' entity={entity_id} payload={payload}")
             return True
 
         if key in self._state.ClientRequestEntityIds:
             entity_id = self._state.ClientRequestEntityIds[key]
+            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
-            print(f"[DEBUG][zoneBorders][req] key={key} entity={entity_id} payload={payload}")
+            print(f"[DEBUG][zoneBorders][req] key={key} name='{display_name}' entity={entity_id} payload={payload}")
             return True
 
         return False
@@ -91,13 +110,17 @@ class SessionDebugConsole:
     def _print_zone_borders_all(self) -> None:
         for key in sorted(self._state.GeoObjectEntityIds.keys()):
             entity_id = self._state.GeoObjectEntityIds[key]
+            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
-            print(f"[DEBUG][zoneBorders][geo] key={key} entity={entity_id} payload={payload}")
+            print(f"[DEBUG][zoneBorders][geo] key={key} name='{display_name}' entity={entity_id} payload={payload}")
 
         for key in sorted(self._state.ClientRequestEntityIds.keys()):
             entity_id = self._state.ClientRequestEntityIds[key]
+            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
-            print(f"[DEBUG][zoneBorders][req] key={key} entity={entity_id} payload={payload}")
+            print(f"[DEBUG][zoneBorders][req] key={key} name='{display_name}' entity={entity_id} payload={payload}")
 
     def _print_debug_stats(self) -> None:
         print(

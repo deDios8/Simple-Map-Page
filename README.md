@@ -3,13 +3,12 @@
 - Allow triggers to assign targets reflexively targeting the object the triggered
 
 - debug console should display DisplayName rather than ID's
-- wishlist: would like a way to move a user on laptop (overriding gps)
+- wishlist: would like a way to move a user on pc (overriding gps)
 - stat editor for drop-down stat addition.
 - anchor point for session or a bulk move option for relocating entire games
-- Add an event clock/timer
-- Tuning the timing of events to have a predictable tick rate for DOT-like effects
 - App auto-select a newly added zone, criteria, event for editing.
-- Restructure JSON to group Triggers and Targets in the same way Results are grouped.
+- Add an event clock/timer
+  - Tuning the timing of events to have a predictable tick rate for DOT-like effects
 
 # Dependencies
 ## macos

@@ -75,13 +75,33 @@ class CheckZoneEntryExit(esper.Processor):
             entered_zones = current_zones - previous_zones
             exited_zones = previous_zones - current_zones
 
+            if entered_zones or exited_zones:
+                display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+                entity_display_name = display_name_comp.display_name if display_name_comp else id_component.id
+
             if entered_zones:
+                zone_names = self._get_zone_names(entered_zones)
                 esper.add_component(entity_id, ecs_geo_components.EnteredZones(zone_ids=list(entered_zones)))
-                print(f"[CheckZoneEntryExit] Entity {id_component.id} entered zones: {entered_zones}")
+                print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' entered zones: {zone_names}")
             if exited_zones:
+                zone_names = self._get_zone_names(exited_zones)
                 esper.add_component(entity_id, ecs_geo_components.ExitedZones(zone_ids=list(exited_zones)))
-                print(f"[CheckZoneEntryExit] Entity {id_component.id} exited zones: {exited_zones}")
-                
+                print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' exited zones: {zone_names}")
+
+    def _get_zone_names(self, zone_ids: set[str]) -> list[str]:
+        """Convert zone IDs to display names for logging."""
+        names = []
+        for zone_id in zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is not None:
+                display_name_comp = esper.try_component(zone_eid, ecs_geo_components.DisplayName)
+                if display_name_comp:
+                    names.append(display_name_comp.display_name)
+                else:
+                    names.append(zone_id)
+            else:
+                names.append(zone_id)
+        return names
 
     def is_within_zone_distance(self, object_coordinates: list, zone: dict) -> bool:
         # Expected format for Point coordinates is [longitude, latitude].
