@@ -1,7 +1,7 @@
 import esper
 import math
-import ecs_comps_geo as ecs_comps_geo
-import ecs_comps_event as ecs_comps_event
+import ecs_comps_geo
+import ecs_comps_event
 import ecs_comps_client_request
 from pyproj import CRS, Transformer
 from shapely.geometry import Point

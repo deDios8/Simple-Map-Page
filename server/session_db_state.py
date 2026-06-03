@@ -10,8 +10,8 @@ import time
 import random
 import string
 import esper
-import ecs_comps_geo as ecs_comps_geo
-import ecs_comps_event as ecs_comps_event
+import ecs_comps_geo
+import ecs_comps_event
 import ecs_comps_client_request
 from typing import Any, Callable
 from dataclasses import dataclass

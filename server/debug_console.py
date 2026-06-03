@@ -9,8 +9,8 @@ import esper
 import queue
 import threading
 from typing import Protocol
-import ecs_comps_geo as ecs_comps_geo
-import ecs_comps_event as ecs_comps_event
+import ecs_comps_geo
+import ecs_comps_event
 import ecs_comps_client_request
 from ecs_comps_event import EVENT_RESULT_COMPONENT_MAP
 
