@@ -363,6 +363,30 @@ class CriteriaProcessor(esper.Processor):
                 return True
         return False
 
+    def _check_first_entered(self, geo_eid: int, component) -> bool:
+        # TODO: implement — TriggerFirstEntered / TargetFirstEntered check
+        return False
+
+    def _check_first_exited(self, geo_eid: int, component) -> bool:
+        # TODO: implement — TriggerFirstExited / TargetFirstExited check
+        return False
+
+    def _check_ever_entered(self, geo_eid: int, component) -> bool:
+        # TODO: implement — check if entity has ever entered zones matching component.tags
+        return False
+
+    def _check_ever_exited(self, geo_eid: int, component) -> bool:
+        # TODO: implement — check if entity has ever exited zones matching component.tags
+        return False
+
+    def _check_recently_entered(self, geo_eid: int, component) -> bool:
+        # TODO: implement — check if entity recently entered zones matching component.tags
+        return False
+
+    def _check_recently_exited(self, geo_eid: int, component) -> bool:
+        # TODO: implement — check if entity recently exited zones matching component.tags
+        return False
+
     def _check_is_visible(self, geo_eid: int, component) -> bool:
         appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
         if not appearance:
@@ -375,9 +399,6 @@ class CriteriaProcessor(esper.Processor):
             return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
         return all(tag not in appearance.visible_to for tag in component.tags)
 
-    def _check_first_entered(self, geo_eid: int, component) -> bool:
-        # TODO: implement — TriggerFirstEntered / TargetFirstEntered check
-        return False
 
 
 class EventProcessor(esper.Processor):

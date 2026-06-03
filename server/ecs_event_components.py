@@ -59,6 +59,46 @@ class TargetJustExited:
     tags: list
 
 @dataclass
+class TriggerFirstEntered:
+    tags: list
+
+@dataclass
+class TargetFirstEntered:
+    tags: list
+
+@dataclass
+class TriggerEverEntered:
+    tags: list
+
+@dataclass
+class TargetEverEntered:
+    tags: list
+
+@dataclass
+class TriggerEverExited:
+    tags: list
+
+@dataclass
+class TargetEverExited:
+    tags: list
+
+@dataclass
+class TriggerRecentlyEntered:
+    tags: list
+
+@dataclass
+class TargetRecentlyEntered:
+    tags: list
+
+@dataclass
+class TriggerRecentlyExited:
+    tags: list
+
+@dataclass
+class TargetRecentlyExited:
+    tags: list
+
+@dataclass
 class TriggerVisibleTo:
     tags: list
 
@@ -72,14 +112,6 @@ class TriggerNotVisibleTo:
 
 @dataclass
 class TargetNotVisibleTo:
-    tags: list
-
-@dataclass
-class TriggerFirstEntered:
-    tags: list
-
-@dataclass
-class TargetFirstEntered:
     tags: list
 
 @dataclass
