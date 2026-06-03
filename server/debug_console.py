@@ -12,7 +12,7 @@ from typing import Protocol
 import ecs_event_components
 import ecs_geo_components
 import esper
-from ecs_event_components import EVENT_RESULT_COMPONENT_MAP, CRITERIA_COMPONENT_MAP, CRITERIA_TRACKING_COMPONENT_MAP
+from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
 
 
 class DebugState(Protocol):

@@ -242,32 +242,16 @@ class DeletedEvent:
 # ---------------------------------------------------------------------------
 
 _criteria_json: dict = json.loads((_PUBLIC_DIR / "map_criteria_components.json").read_text())
-CRITERIA_COMPONENT_NAMES: frozenset[str] = frozenset(_criteria_json.keys())
-CRITERIA_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in CRITERIA_COMPONENT_NAMES}
-CRITERIA_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _criteria_json.items()}
-
 TRIGGER_COMPONENT_NAMES: frozenset[str] = frozenset(
-    name for name, meta in _criteria_json.items() if meta.get("role") == "trigger"
-)
+    name for name, meta in _criteria_json.items() if meta.get("role") == "trigger")
 TARGET_COMPONENT_NAMES: frozenset[str] = frozenset(
-    name for name, meta in _criteria_json.items() if meta.get("role") == "target"
-)
+    name for name, meta in _criteria_json.items() if meta.get("role") == "target")
 TRIGGER_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in TRIGGER_COMPONENT_NAMES}
 TARGET_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in TARGET_COMPONENT_NAMES}
 TRIGGER_COMPONENT_HANDLER_NAMES: dict[str, str] = {
-    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "trigger"
-}
+    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "trigger"}
 TARGET_COMPONENT_HANDLER_NAMES: dict[str, str] = {
-    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "target"
-}
-
-# Tracking components added to every event entity (not filter criteria).
-CRITERIA_TRACKING_COMPONENT_MAP: dict[str, type] = {
-    "ObjectsThatMetAllTriggerCriteria": ObjectsThatMetAllTriggerCriteria,
-    "ObjectsThatMetAllTargetCriteria": ObjectsThatMetAllTargetCriteria,
-    "ObjectsThatMetAnyTriggerCriteria": ObjectsThatMetAnyTriggerCriteria,
-    "ObjectsThatMetAnyTargetCriteria": ObjectsThatMetAnyTargetCriteria,
-}
+    name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "target"}
 
 _result_json: dict = json.loads((_PUBLIC_DIR / "map_result_components.json").read_text())
 EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(_result_json.keys())
