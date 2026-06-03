@@ -559,22 +559,22 @@ class SyncGeoObjectsToDatabase(esper.Processor):
 
         traits = esper.try_component(entity_id, ecs_geo_components.Traits)
         if traits is not None:
-            payload["properties/traits"] = traits.traits
+            payload["properties/traits"] = list(traits.traits)
 
         stats = esper.try_component(entity_id, ecs_geo_components.Stats)
         if stats is not None and stats.items:
-            payload["properties/stats"] = stats.items
+            payload["properties/stats"] = dict(stats.items)
 
         messages = esper.try_component(entity_id, ecs_geo_components.Messages)
-        payload["properties/messages"] = messages.messages if (messages is not None and messages.messages) else None
+        payload["properties/messages"] = list(messages.messages) if (messages is not None and messages.messages) else None
 
         zone_entry_log = esper.try_component(entity_id, ecs_geo_components.ZoneEntryLog)
         if zone_entry_log is not None and zone_entry_log.zone_ids:
-            payload["properties/zoneEntryLog"] = zone_entry_log.zone_ids
+            payload["properties/zoneEntryLog"] = list(zone_entry_log.zone_ids)
 
         zone_exit_log = esper.try_component(entity_id, ecs_geo_components.ZoneExitLog)
         if zone_exit_log is not None and zone_exit_log.zone_ids:
-            payload["properties/zoneExitLog"] = zone_exit_log.zone_ids
+            payload["properties/zoneExitLog"] = list(zone_exit_log.zone_ids)
 
         return payload
 

@@ -95,7 +95,6 @@ class ZoneExitLog:
     '''Add a zone id to the log whenever an entity exits another, keep the list for historical reference.'''
     zone_ids: list
 
-
 @dataclass
 class GeoObjectDirty:
     '''Marker component to indicate that zone borders need to be uploaded to the db.'''
