@@ -4,7 +4,7 @@ Main server application that listens to Firebase database changes and updates th
 
 import esper
 import ecs_processors
-from db_stream import DEFAULT_DATABASE_URL, SessionState
+from session_db_state import DEFAULT_DATABASE_URL, SessionState
 
 
 def main() -> None:

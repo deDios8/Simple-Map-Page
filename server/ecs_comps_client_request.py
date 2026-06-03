@@ -1,6 +1,6 @@
 import esper
 from dataclasses import dataclass
-from ecs_geo_components import ID, Geometry
+from ecs_comps_geo import ID, Geometry
 
 # Components for client requests
 @dataclass

@@ -10,8 +10,8 @@ import time
 import random
 import string
 import esper
-import ecs_geo_components
-import ecs_event_components
+import ecs_comps_geo as ecs_comps_geo
+import ecs_comps_event as ecs_comps_event
 import ecs_comps_client_request
 from typing import Any, Callable
 from dataclasses import dataclass
@@ -98,17 +98,17 @@ class EventResultEntry(DBEntry):
         triggers = self.properties.get("Triggers", {}) if isinstance(self.properties, dict) else {}
         self.trigger_components: dict[str, dict] = {
             k: v for k, v in triggers.items()
-            if k in ecs_event_components.TRIGGER_COMPONENT_NAMES and isinstance(v, dict)
+            if k in ecs_comps_event.TRIGGER_COMPONENT_NAMES and isinstance(v, dict)
         } if isinstance(triggers, dict) else {}
         targets = self.properties.get("Targets", {}) if isinstance(self.properties, dict) else {}
         self.target_components: dict[str, dict] = {
             k: v for k, v in targets.items()
-            if k in ecs_event_components.TARGET_COMPONENT_NAMES and isinstance(v, dict)
+            if k in ecs_comps_event.TARGET_COMPONENT_NAMES and isinstance(v, dict)
         } if isinstance(targets, dict) else {}
         results = self.properties.get("Results", {})
         self.result_components: dict[str, dict] = {
             k: v for k, v in results.items()
-            if k in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES and isinstance(v, dict)
+            if k in ecs_comps_event.EVENT_RESULT_COMPONENT_NAMES and isinstance(v, dict)
         } if isinstance(results, dict) else {}
 
 
@@ -568,11 +568,11 @@ class SessionState:
         self.session_name = session_name.strip().strip("/") or "testBed"
 
         # Keep dict-backed state so Firebase keys can map directly to ECS entities.
-        self.GeoObjects: dict[str, ecs_geo_components.GeoObject] = {}
+        self.GeoObjects: dict[str, ecs_comps_geo.GeoObject] = {}
         self.ClientRequests: dict[str, ecs_comps_client_request.ClientRequest] = {}
         self.GeoObjectEntityIds: dict[str, int] = {}
         self.ClientRequestEntityIds: dict[str, int] = {}
-        self.EventResults: dict[str, ecs_event_components.Event] = {}
+        self.EventResults: dict[str, ecs_comps_event.Event] = {}
         self.EventResultEntityIds: dict[str, int] = {}
 
         self.stream = DatabaseStream(self.database_url, self.session_name)
@@ -606,45 +606,45 @@ class SessionState:
             entity_id,
             payload,
             "withinZones",
-            ecs_geo_components.WithinZones,
+            ecs_comps_geo.WithinZones,
         )
         self._sync_zone_component_from_payload(
             entity_id,
             payload,
             "enteredZones",
-            ecs_geo_components.EnteredZones,
+            ecs_comps_geo.EnteredZones,
         )
         self._sync_zone_component_from_payload(
             entity_id,
             payload,
             "exitedZones",
-            ecs_geo_components.ExitedZones,
+            ecs_comps_geo.ExitedZones,
         )
 
     def _sync_stats_component(self, entity_id: int, props: object) -> dict[str, dict]:
         normalized_stats = normalize_stats(props)
-        stats_component = esper.try_component(entity_id, ecs_geo_components.Stats)
+        stats_component = esper.try_component(entity_id, ecs_comps_geo.Stats)
         if normalized_stats:
             if stats_component is None:
-                esper.add_component(entity_id, ecs_geo_components.Stats(items=normalized_stats))
+                esper.add_component(entity_id, ecs_comps_geo.Stats(items=normalized_stats))
             else:
                 stats_component.items = normalized_stats
         elif stats_component is not None:
-            esper.remove_component(entity_id, ecs_geo_components.Stats)
+            esper.remove_component(entity_id, ecs_comps_geo.Stats)
 
         return normalized_stats
 
     def _sync_messages_component(self, entity_id: int, props: object) -> list[str]:
         normalized_messages = normalize_messages(props)
-        messages_component = esper.try_component(entity_id, ecs_geo_components.Messages)
+        messages_component = esper.try_component(entity_id, ecs_comps_geo.Messages)
         if normalized_messages:
             if messages_component is None:
-                esper.add_component(entity_id, ecs_geo_components.Messages(messages=normalized_messages))
+                esper.add_component(entity_id, ecs_comps_geo.Messages(messages=normalized_messages))
             else:
                 messages_component.messages = normalized_messages
         elif messages_component is not None:
             try:
-                esper.remove_component(entity_id, ecs_geo_components.Messages)
+                esper.remove_component(entity_id, ecs_comps_geo.Messages)
             except KeyError:
                 pass
         return normalized_messages
@@ -652,14 +652,14 @@ class SessionState:
     def _sync_traits_component(self, entity_id: int, props: object) -> list[str]:
         traits_value = props.get("traits", []) if isinstance(props, dict) else []
         normalized_traits = normalize_string_list(traits_value)
-        traits_component = esper.try_component(entity_id, ecs_geo_components.Traits)
+        traits_component = esper.try_component(entity_id, ecs_comps_geo.Traits)
         if normalized_traits:
             if traits_component is None:
-                esper.add_component(entity_id, ecs_geo_components.Traits(traits=normalized_traits))
+                esper.add_component(entity_id, ecs_comps_geo.Traits(traits=normalized_traits))
             else:
                 traits_component.traits = normalized_traits
         elif traits_component is not None:
-            esper.remove_component(entity_id, ecs_geo_components.Traits)
+            esper.remove_component(entity_id, ecs_comps_geo.Traits)
 
         return normalized_traits
 
@@ -741,7 +741,7 @@ class SessionState:
                 print(f"[REQUEST CONSUME ERROR] {request_key}: {error}")
 
     def apply_new_location_request(self, request_entity_id: int) -> None:
-        request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
+        request_geometry = esper.try_component(request_entity_id, ecs_comps_geo.Geometry)
         request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
@@ -797,9 +797,9 @@ class SessionState:
             )
             target_entity_id = self._upsert_geo_object_entity(target_key, GeoObjectEntry(new_user_entry))
 
-        geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
+        geometry = esper.component_for_entity(target_entity_id, ecs_comps_geo.Geometry)
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
+        esper.add_component(target_entity_id, ecs_comps_geo.GeoObjectDirty())
 
         patch_db_entry(
             self.database_url,
@@ -811,7 +811,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_add_object_request(self, request_entity_id: int) -> None:
-        request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
+        request_geometry = esper.try_component(request_entity_id, ecs_comps_geo.Geometry)
         request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
@@ -888,9 +888,9 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
-        appearance = esper.component_for_entity(target_entity_id, ecs_geo_components.Appearance)
-        geometry = esper.component_for_entity(target_entity_id, ecs_geo_components.Geometry)
+        display_name_comp = esper.component_for_entity(target_entity_id, ecs_comps_geo.DisplayName)
+        appearance = esper.component_for_entity(target_entity_id, ecs_comps_geo.Appearance)
+        geometry = esper.component_for_entity(target_entity_id, ecs_comps_geo.Geometry)
 
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
@@ -900,7 +900,7 @@ class SessionState:
         appearance_visible = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else appearance.visible_to
         appearance.visible_to = appearance_visible
 
-        traits_component = esper.try_component(target_entity_id, ecs_geo_components.Traits)
+        traits_component = esper.try_component(target_entity_id, ecs_comps_geo.Traits)
         current_traits = traits_component.traits if traits_component is not None else []
         next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else current_traits
         self._sync_traits_component(target_entity_id, {"traits": next_traits})
@@ -908,7 +908,7 @@ class SessionState:
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
         lon = to_float(form_data.get("longitude"), float(geometry.coordinates[0]))
         geometry.coordinates = [lon, lat]
-        esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
+        esper.add_component(target_entity_id, ecs_comps_geo.GeoObjectDirty())
 
         stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
         next_stats_payload = normalize_stats({"stats": stats_payload})
@@ -964,7 +964,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_object_request(self, request_entity_id: int) -> None:
-        deleted = esper.try_component(request_entity_id, ecs_geo_components.DeletedObject)
+        deleted = esper.try_component(request_entity_id, ecs_comps_geo.DeletedObject)
         if deleted is None:
             self._consume_client_request(request_entity_id)
             return
@@ -987,7 +987,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_dismiss_message_request(self, request_entity_id: int) -> None:
-        dismiss = esper.try_component(request_entity_id, ecs_geo_components.DismissMessage)
+        dismiss = esper.try_component(request_entity_id, ecs_comps_geo.DismissMessage)
         if dismiss is None:
             self._consume_client_request(request_entity_id)
             return
@@ -1002,17 +1002,17 @@ class SessionState:
             self._consume_client_request(request_entity_id)
             return
 
-        messages = esper.try_component(target_entity_id, ecs_geo_components.Messages)
+        messages = esper.try_component(target_entity_id, ecs_comps_geo.Messages)
         if messages is not None and dismiss.message in messages.messages:
             messages.messages.remove(dismiss.message)
-            esper.add_component(target_entity_id, ecs_geo_components.GeoObjectDirty())
+            esper.add_component(target_entity_id, ecs_comps_geo.GeoObjectDirty())
 
         self._consume_client_request(request_entity_id)
 
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
-            geo = ecs_geo_components.GeoObject(
+            geo = ecs_comps_geo.GeoObject(
                 id=geo_object.id or key,
                 geometry=geo_object.geometry,
                 properties=geo_object.properties,
@@ -1028,20 +1028,20 @@ class SessionState:
 
         props = geo_object.properties if isinstance(geo_object.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_comps_geo.ID)
         id_component.id = props.get("id", geo_object.id or key)
 
-        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_comps_geo.DisplayName)
         display_name_comp.display_name = props.get("displayName", "")
 
-        appearance = esper.component_for_entity(existing_entity_id, ecs_geo_components.Appearance)
+        appearance = esper.component_for_entity(existing_entity_id, ecs_comps_geo.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
         appearance.visible_to = normalize_string_list(appearance_data.get("visibleTo", []))
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_comps_geo.Geometry)
         geometry.coordinates = geo_object.geometry.get("coordinates", [0, 0])
         self._sync_stats_component(existing_entity_id, props)
         self._sync_traits_component(existing_entity_id, props)
@@ -1104,10 +1104,10 @@ class SessionState:
 
         props = request.properties if isinstance(request.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_comps_geo.ID)
         id_component.id = props.get("id", request.id or key)
 
-        geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
+        geometry = esper.component_for_entity(existing_entity_id, ecs_comps_geo.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
 
         request_params = esper.component_for_entity(existing_entity_id, ecs_comps_client_request.ClientRequestPayload)
@@ -1150,7 +1150,7 @@ class SessionState:
         if identifier in entity_ids:
             return identifier
         for key, entity_id in entity_ids.items():
-            id_component = esper.try_component(entity_id, ecs_geo_components.ID)
+            id_component = esper.try_component(entity_id, ecs_comps_geo.ID)
             if id_component is not None and str(id_component.id) == identifier:
                 return key
         return None
@@ -1206,7 +1206,7 @@ class SessionState:
     ## Event management
     def _sync_event_result_components(self, entity_id: int, result_components: dict) -> None:
         """Remove all existing result ECS components and re-add from result_components dict."""
-        for comp_type in ecs_event_components.EVENT_RESULT_COMPONENT_MAP.values():
+        for comp_type in ecs_comps_event.EVENT_RESULT_COMPONENT_MAP.values():
             try:
                 esper.remove_component(entity_id, comp_type)
             except KeyError:
@@ -1215,8 +1215,8 @@ class SessionState:
         for comp_name, comp_data in result_components.items():
             if not isinstance(comp_data, dict):
                 continue
-            comp_type = ecs_event_components.EVENT_RESULT_COMPONENT_MAP.get(comp_name)
-            meta = ecs_event_components.EVENT_RESULT_COMPONENT_CONFIG.get(comp_name)
+            comp_type = ecs_comps_event.EVENT_RESULT_COMPONENT_MAP.get(comp_name)
+            meta = ecs_comps_event.EVENT_RESULT_COMPONENT_CONFIG.get(comp_name)
             if comp_type is None or meta is None:
                 continue
             field_name = meta["fieldName"]
@@ -1238,27 +1238,27 @@ class SessionState:
     def _upsert_event_entity(self, key: str, entry: EventResultEntry) -> int:
         existing_entity_id = self.EventResultEntityIds.get(key)
         if existing_entity_id is None:
-            event = ecs_event_components.Event(
+            event = ecs_comps_event.Event(
                 id=entry.id or key,
                 name=entry.name,
             )
             self.EventResults[key] = event
             self.EventResultEntityIds[key] = event.entity_id
-            self._sync_criteria_components(event.entity_id, entry.trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
-            self._sync_criteria_components(event.entity_id, entry.target_components, ecs_event_components.TARGET_COMPONENT_MAP)
+            self._sync_criteria_components(event.entity_id, entry.trigger_components, ecs_comps_event.TRIGGER_COMPONENT_MAP)
+            self._sync_criteria_components(event.entity_id, entry.target_components, ecs_comps_event.TARGET_COMPONENT_MAP)
             self._sync_event_result_components(event.entity_id, entry.result_components)
             return event.entity_id
 
         props = entry.properties if isinstance(entry.properties, dict) else {}
 
-        id_component = esper.component_for_entity(existing_entity_id, ecs_geo_components.ID)
+        id_component = esper.component_for_entity(existing_entity_id, ecs_comps_geo.ID)
         id_component.id = props.get("id", entry.id or key)
 
-        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp = esper.component_for_entity(existing_entity_id, ecs_comps_geo.DisplayName)
         display_name_comp.display_name = props.get("displayName", "")
 
-        self._sync_criteria_components(existing_entity_id, entry.trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
-        self._sync_criteria_components(existing_entity_id, entry.target_components, ecs_event_components.TARGET_COMPONENT_MAP)
+        self._sync_criteria_components(existing_entity_id, entry.trigger_components, ecs_comps_event.TRIGGER_COMPONENT_MAP)
+        self._sync_criteria_components(existing_entity_id, entry.target_components, ecs_comps_event.TARGET_COMPONENT_MAP)
         self._sync_event_result_components(existing_entity_id, entry.result_components)
         return existing_entity_id
 
@@ -1293,7 +1293,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_edited_event_request(self, request_entity_id: int) -> None:
-        edited = esper.try_component(request_entity_id, ecs_event_components.EditedEvent)
+        edited = esper.try_component(request_entity_id, ecs_comps_event.EditedEvent)
         if edited is None:
             self._consume_client_request(request_entity_id)
             return
@@ -1310,18 +1310,18 @@ class SessionState:
 
         form_data = edited.form_data if isinstance(edited.form_data, dict) else {}
 
-        display_name_comp = esper.component_for_entity(target_entity_id, ecs_geo_components.DisplayName)
+        display_name_comp = esper.component_for_entity(target_entity_id, ecs_comps_geo.DisplayName)
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
         trigger_components = form_data.get("triggerComponents", {})
         if not isinstance(trigger_components, dict):
             trigger_components = {}
-        self._sync_criteria_components(target_entity_id, trigger_components, ecs_event_components.TRIGGER_COMPONENT_MAP)
+        self._sync_criteria_components(target_entity_id, trigger_components, ecs_comps_event.TRIGGER_COMPONENT_MAP)
 
         target_components = form_data.get("targetComponents", {})
         if not isinstance(target_components, dict):
             target_components = {}
-        self._sync_criteria_components(target_entity_id, target_components, ecs_event_components.TARGET_COMPONENT_MAP)
+        self._sync_criteria_components(target_entity_id, target_components, ecs_comps_event.TARGET_COMPONENT_MAP)
 
         result_components = form_data.get("results", {})
         if not isinstance(result_components, dict):
@@ -1331,11 +1331,11 @@ class SessionState:
         patch_data: dict = {
             "properties/displayName": display_name_comp.display_name,
         }
-        for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+        for comp_name in ecs_comps_event.TRIGGER_COMPONENT_NAMES:
             patch_data[f"properties/Triggers/{comp_name}"] = trigger_components.get(comp_name)
-        for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+        for comp_name in ecs_comps_event.TARGET_COMPONENT_NAMES:
             patch_data[f"properties/Targets/{comp_name}"] = target_components.get(comp_name)
-        for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
+        for comp_name in ecs_comps_event.EVENT_RESULT_COMPONENT_NAMES:
             patch_data[f"properties/Results/{comp_name}"] = result_components.get(comp_name)
 
         patch_db_entry(
@@ -1354,24 +1354,24 @@ class SessionState:
                 props["displayName"] = display_name_comp.display_name
                 triggers = props.setdefault("Triggers", {})
                 if isinstance(triggers, dict):
-                    for comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                    for comp_name in ecs_comps_event.TRIGGER_COMPONENT_NAMES:
                         triggers.pop(comp_name, None)
                     for comp_name, comp_data in trigger_components.items():
-                        if comp_name in ecs_event_components.TRIGGER_COMPONENT_NAMES:
+                        if comp_name in ecs_comps_event.TRIGGER_COMPONENT_NAMES:
                             triggers[comp_name] = comp_data
                 targets = props.setdefault("Targets", {})
                 if isinstance(targets, dict):
-                    for comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                    for comp_name in ecs_comps_event.TARGET_COMPONENT_NAMES:
                         targets.pop(comp_name, None)
                     for comp_name, comp_data in target_components.items():
-                        if comp_name in ecs_event_components.TARGET_COMPONENT_NAMES:
+                        if comp_name in ecs_comps_event.TARGET_COMPONENT_NAMES:
                             targets[comp_name] = comp_data
                 results = props.setdefault("Results", {})
                 if isinstance(results, dict):
-                    for comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
+                    for comp_name in ecs_comps_event.EVENT_RESULT_COMPONENT_NAMES:
                         results.pop(comp_name, None)
                     for comp_name, comp_data in result_components.items():
-                        if comp_name in ecs_event_components.EVENT_RESULT_COMPONENT_NAMES:
+                        if comp_name in ecs_comps_event.EVENT_RESULT_COMPONENT_NAMES:
                             results[comp_name] = comp_data
 
         self._consume_client_request(request_entity_id)

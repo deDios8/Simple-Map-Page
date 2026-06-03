@@ -2,7 +2,7 @@ import json
 import esper
 import pathlib
 from dataclasses import dataclass
-from ecs_geo_components import ID, DisplayName
+from ecs_comps_geo import ID, DisplayName
 
 
 # ---------------------------------------------------------------------------

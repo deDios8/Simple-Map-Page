@@ -9,18 +9,18 @@ import esper
 import queue
 import threading
 from typing import Protocol
-import ecs_geo_components
-import ecs_event_components
+import ecs_comps_geo as ecs_comps_geo
+import ecs_comps_event as ecs_comps_event
 import ecs_comps_client_request
-from ecs_event_components import EVENT_RESULT_COMPONENT_MAP
+from ecs_comps_event import EVENT_RESULT_COMPONENT_MAP
 
 
 class DebugState(Protocol):
-    GeoObjects: dict[str, ecs_geo_components.GeoObject]
+    GeoObjects: dict[str, ecs_comps_geo.GeoObject]
     ClientRequests: dict[str, ecs_comps_client_request.ClientRequest]
     GeoObjectEntityIds: dict[str, int]
     ClientRequestEntityIds: dict[str, int]
-    EventResults: dict[str, ecs_event_components.Event]
+    EventResults: dict[str, ecs_comps_event.Event]
     EventResultEntityIds: dict[str, int]
 
 
@@ -59,15 +59,15 @@ class SessionDebugConsole:
     def _zone_borders_payload(self, entity_id: int) -> dict[str, dict[str, list[str]]]:
         payload: dict[str, dict[str, list[str]]] = {}
 
-        within = esper.try_component(entity_id, ecs_geo_components.WithinZones)
+        within = esper.try_component(entity_id, ecs_comps_geo.WithinZones)
         if within is not None:
             payload["withinZones"] = {"zone_names": self._get_display_names_for_ids(within.zone_ids)}
 
-        entered = esper.try_component(entity_id, ecs_geo_components.EnteredZones)
+        entered = esper.try_component(entity_id, ecs_comps_geo.EnteredZones)
         if entered is not None:
             payload["enteredZones"] = {"zone_names": self._get_display_names_for_ids(entered.zone_ids)}
 
-        exited = esper.try_component(entity_id, ecs_geo_components.ExitedZones)
+        exited = esper.try_component(entity_id, ecs_comps_geo.ExitedZones)
         if exited is not None:
             payload["exitedZones"] = {"zone_names": self._get_display_names_for_ids(exited.zone_ids)}
 
@@ -79,7 +79,7 @@ class SessionDebugConsole:
         for zone_id in zone_ids:
             zone_eid = self._state.GeoObjectEntityIds.get(zone_id)
             if zone_eid is not None:
-                display_name_comp = esper.try_component(zone_eid, ecs_geo_components.DisplayName)
+                display_name_comp = esper.try_component(zone_eid, ecs_comps_geo.DisplayName)
                 if display_name_comp:
                     names.append(display_name_comp.display_name)
                 else:
@@ -91,7 +91,7 @@ class SessionDebugConsole:
     def _print_zone_borders_for_key(self, key: str) -> bool:
         if key in self._state.GeoObjectEntityIds:
             entity_id = self._state.GeoObjectEntityIds[key]
-            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name_comp = esper.try_component(entity_id, ecs_comps_geo.DisplayName)
             display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
             print(f"[DEBUG][zoneBorders][geo] key={key} name='{display_name}' entity={entity_id} payload={payload}")
@@ -99,7 +99,7 @@ class SessionDebugConsole:
 
         if key in self._state.ClientRequestEntityIds:
             entity_id = self._state.ClientRequestEntityIds[key]
-            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name_comp = esper.try_component(entity_id, ecs_comps_geo.DisplayName)
             display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
             print(f"[DEBUG][zoneBorders][req] key={key} name='{display_name}' entity={entity_id} payload={payload}")
@@ -110,14 +110,14 @@ class SessionDebugConsole:
     def _print_zone_borders_all(self) -> None:
         for key in sorted(self._state.GeoObjectEntityIds.keys()):
             entity_id = self._state.GeoObjectEntityIds[key]
-            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name_comp = esper.try_component(entity_id, ecs_comps_geo.DisplayName)
             display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
             print(f"[DEBUG][zoneBorders][geo] key={key} name='{display_name}' entity={entity_id} payload={payload}")
 
         for key in sorted(self._state.ClientRequestEntityIds.keys()):
             entity_id = self._state.ClientRequestEntityIds[key]
-            display_name_comp = esper.try_component(entity_id, ecs_geo_components.DisplayName)
+            display_name_comp = esper.try_component(entity_id, ecs_comps_geo.DisplayName)
             display_name = display_name_comp.display_name if display_name_comp else key
             payload = self._zone_borders_payload(entity_id)
             print(f"[DEBUG][zoneBorders][req] key={key} name='{display_name}' entity={entity_id} payload={payload}")
@@ -134,13 +134,13 @@ class SessionDebugConsole:
         )
 
     def _print_world_stats(self) -> None:
-        id_count = len(list(esper.get_component(ecs_geo_components.ID)))
-        display_name_count = len(list(esper.get_component(ecs_geo_components.DisplayName)))
-        appearance_count = len(list(esper.get_component(ecs_geo_components.Appearance)))
-        geometry_count = len(list(esper.get_component(ecs_geo_components.Geometry)))
+        id_count = len(list(esper.get_component(ecs_comps_geo.ID)))
+        display_name_count = len(list(esper.get_component(ecs_comps_geo.DisplayName)))
+        appearance_count = len(list(esper.get_component(ecs_comps_geo.Appearance)))
+        geometry_count = len(list(esper.get_component(ecs_comps_geo.Geometry)))
         request_count = len(list(esper.get_component(ecs_comps_client_request.ClientRequestPayload)))
 
-        geo_entities = {entity_id for entity_id, _ in esper.get_component(ecs_geo_components.ID)}
+        geo_entities = {entity_id for entity_id, _ in esper.get_component(ecs_comps_geo.ID)}
         request_entities = {
             entity_id for entity_id, _ in esper.get_component(ecs_comps_client_request.ClientRequestPayload)
         }
@@ -172,14 +172,14 @@ class SessionDebugConsole:
         entity_id = self._state.GeoObjectEntityIds.get(key)
         if entity_id is None:
             return False
-        id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
-        display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
-        appearance = esper.component_for_entity(entity_id, ecs_geo_components.Appearance)
-        geometry = esper.component_for_entity(entity_id, ecs_geo_components.Geometry)
-        traits = esper.try_component(entity_id, ecs_geo_components.Traits)
-        stats = esper.try_component(entity_id, ecs_geo_components.Stats)
-        zone_entry_log = esper.try_component(entity_id, ecs_geo_components.ZoneEntryLog)
-        zone_exit_log = esper.try_component(entity_id, ecs_geo_components.ZoneExitLog)
+        id_component = esper.component_for_entity(entity_id, ecs_comps_geo.ID)
+        display_name_comp = esper.component_for_entity(entity_id, ecs_comps_geo.DisplayName)
+        appearance = esper.component_for_entity(entity_id, ecs_comps_geo.Appearance)
+        geometry = esper.component_for_entity(entity_id, ecs_comps_geo.Geometry)
+        traits = esper.try_component(entity_id, ecs_comps_geo.Traits)
+        stats = esper.try_component(entity_id, ecs_comps_geo.Stats)
+        zone_entry_log = esper.try_component(entity_id, ecs_comps_geo.ZoneEntryLog)
+        zone_exit_log = esper.try_component(entity_id, ecs_comps_geo.ZoneExitLog)
         print(
             "[DEBUG][geo] "
             f"key={key} entity={entity_id} "
@@ -210,11 +210,11 @@ class SessionDebugConsole:
         entity_id = self._state.EventResultEntityIds.get(key)
         if entity_id is None:
             return False
-        id_component = esper.component_for_entity(entity_id, ecs_geo_components.ID)
-        display_name_comp = esper.component_for_entity(entity_id, ecs_geo_components.DisplayName)
+        id_component = esper.component_for_entity(entity_id, ecs_comps_geo.ID)
+        display_name_comp = esper.component_for_entity(entity_id, ecs_comps_geo.DisplayName)
         # Get tracking components
-        trigger_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTriggerCriteria)
-        target_all = esper.try_component(entity_id, ecs_event_components.ObjectsThatMetAllTargetCriteria)
+        trigger_all = esper.try_component(entity_id, ecs_comps_event.ObjectsThatMetAllTriggerCriteria)
+        target_all = esper.try_component(entity_id, ecs_comps_event.ObjectsThatMetAllTargetCriteria)
         
         active_results: dict[str, object] = {}
         for comp_name, comp_type in EVENT_RESULT_COMPONENT_MAP.items():
