@@ -1,10 +1,9 @@
-from dataclasses import dataclass
 import json
-import pathlib
 import esper
+import pathlib
+from dataclasses import dataclass
 from ecs_geo_components import ID, DisplayName
 
-_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
@@ -207,6 +206,9 @@ class ResultChangeStatsByValues:
 class ResultPopupMessage:
     text: str
 
+# ---------------------------------------------------------------------------
+# Entities
+# ---------------------------------------------------------------------------
 class Event:
     def __init__(self, id: str, name: str) -> None:
         new_entity_id = esper.create_entity()
@@ -219,27 +221,12 @@ class Event:
         esper.add_component(new_entity_id, ObjectsThatMetAnyTargetCriteria(object_ids=[]))
 
 
-# ---------------------------------------------------------------------------
-# Components for event client requests
-# ---------------------------------------------------------------------------
-@dataclass
-class AddEvent:
-    requester_id: str
-
-@dataclass
-class EditedEvent:
-    target_id: str
-    form_data: dict
-
-@dataclass
-class DeletedEvent:
-    target_id: str
-
 
 # ---------------------------------------------------------------------------
 # Single-source registries: maps component name → class
 # Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
+_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
 
 _criteria_json: dict = json.loads((_PUBLIC_DIR / "map_criteria_components.json").read_text())
 TRIGGER_COMPONENT_NAMES: frozenset[str] = frozenset(

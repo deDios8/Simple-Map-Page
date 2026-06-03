@@ -12,6 +12,7 @@ import string
 import esper
 import ecs_geo_components
 import ecs_event_components
+import ecs_comps_client_request
 from typing import Any, Callable
 from dataclasses import dataclass
 from urllib.parse import quote
@@ -568,7 +569,7 @@ class SessionState:
 
         # Keep dict-backed state so Firebase keys can map directly to ECS entities.
         self.GeoObjects: dict[str, ecs_geo_components.GeoObject] = {}
-        self.ClientRequests: dict[str, ecs_geo_components.ClientRequest] = {}
+        self.ClientRequests: dict[str, ecs_comps_client_request.ClientRequest] = {}
         self.GeoObjectEntityIds: dict[str, int] = {}
         self.ClientRequestEntityIds: dict[str, int] = {}
         self.EventResults: dict[str, ecs_event_components.Event] = {}
@@ -689,12 +690,12 @@ class SessionState:
 
     def _consume_client_request(self, request_entity_id: int) -> None:
         for component_type in (
-            ecs_geo_components.NewLocation,
-            ecs_geo_components.EditedObject,
-            ecs_geo_components.DeletedObject,
-            ecs_event_components.AddEvent,
-            ecs_event_components.EditedEvent,
-            ecs_event_components.DeletedEvent,
+            ecs_comps_client_request.NewLocation,
+            ecs_comps_client_request.EditedObject,
+            ecs_comps_client_request.DeletedObject,
+            ecs_comps_client_request.AddEvent,
+            ecs_comps_client_request.EditedEvent,
+            ecs_comps_client_request.DeletedEvent,
         ):
             try:
                 esper.remove_component(request_entity_id, component_type)
@@ -741,7 +742,7 @@ class SessionState:
 
     def apply_new_location_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
+        request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -811,7 +812,7 @@ class SessionState:
 
     def apply_add_object_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_geo_components.Geometry)
-        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
+        request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_geometry is None or request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -867,7 +868,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_edited_object_request(self, request_entity_id: int) -> None:
-        edited = esper.try_component(request_entity_id, ecs_geo_components.EditedObject)
+        edited = esper.try_component(request_entity_id, ecs_comps_client_request.EditedObject)
         if edited is None:
             self._consume_client_request(request_entity_id)
             return
@@ -1059,21 +1060,21 @@ class SessionState:
         form_data: dict,
     ) -> None:
         if requested_action == "new_location":
-            esper.add_component(entity_id, ecs_geo_components.NewLocation(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_comps_client_request.NewLocation(requester_id=requester_id))
         elif requested_action == "add_object":
-            esper.add_component(entity_id, ecs_geo_components.AddObject(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_comps_client_request.AddObject(requester_id=requester_id))
         elif request_type == "edited_object":
-            esper.add_component(entity_id, ecs_geo_components.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
+            esper.add_component(entity_id, ecs_comps_client_request.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
         elif request_type == "deleted_object":
-            esper.add_component(entity_id, ecs_geo_components.DeletedObject(target_id=target_id, target_path=target_path))
+            esper.add_component(entity_id, ecs_comps_client_request.DeletedObject(target_id=target_id, target_path=target_path))
         elif requested_action == "add_event":
-            esper.add_component(entity_id, ecs_event_components.AddEvent(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_comps_client_request.AddEvent(requester_id=requester_id))
         elif request_type == "edited_event":
-            esper.add_component(entity_id, ecs_event_components.EditedEvent(target_id=target_id, form_data=form_data))
+            esper.add_component(entity_id, ecs_comps_client_request.EditedEvent(target_id=target_id, form_data=form_data))
         elif request_type == "deleted_event":
-            esper.add_component(entity_id, ecs_event_components.DeletedEvent(target_id=target_id))
+            esper.add_component(entity_id, ecs_comps_client_request.DeletedEvent(target_id=target_id))
         elif request_type == "dismiss_message":
-            esper.add_component(entity_id, ecs_geo_components.DismissMessage(
+            esper.add_component(entity_id, ecs_comps_client_request.DismissMessage(
                 target_id=target_id,
                 message=form_data.get("message", ""),
             ))
@@ -1081,14 +1082,14 @@ class SessionState:
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
         if existing_entity_id is None:
-            entity = ecs_geo_components.ClientRequest(
+            entity = ecs_comps_client_request.ClientRequest(
                 id=request.id or key,
                 geometry=request.geometry,
                 properties=request.properties,
             )
             self.ClientRequests[key] = entity
             self.ClientRequestEntityIds[key] = entity.entity_id
-            request_params = esper.component_for_entity(entity.entity_id, ecs_geo_components.ClientRequestPayload)
+            request_params = esper.component_for_entity(entity.entity_id, ecs_comps_client_request.ClientRequestPayload)
             self._attach_request_marker_component(
                 entity.entity_id,
                 request_type=str(request_params.request_type or "").strip().lower(),
@@ -1109,21 +1110,21 @@ class SessionState:
         geometry = esper.component_for_entity(existing_entity_id, ecs_geo_components.Geometry)
         geometry.coordinates = request.geometry.get("coordinates", [0, 0])
 
-        request_params = esper.component_for_entity(existing_entity_id, ecs_geo_components.ClientRequestPayload)
+        request_params = esper.component_for_entity(existing_entity_id, ecs_comps_client_request.ClientRequestPayload)
         crp = props.get("clientRequestPayload", {}) if isinstance(props.get("clientRequestPayload"), dict) else {}
         request_params.requester_id = crp.get("requesterId", "")
         request_params.timestamp = crp.get("timestamp", "")
         request_params.request_type = crp.get("type", "")
 
         for marker_component in (
-            ecs_geo_components.NewLocation,
-            ecs_geo_components.AddObject,
-            ecs_geo_components.EditedObject,
-            ecs_geo_components.DeletedObject,
-            ecs_event_components.AddEvent,
-            ecs_event_components.EditedEvent,
-            ecs_event_components.DeletedEvent,
-            ecs_geo_components.DismissMessage,
+            ecs_comps_client_request.NewLocation,
+            ecs_comps_client_request.AddObject,
+            ecs_comps_client_request.EditedObject,
+            ecs_comps_client_request.DeletedObject,
+            ecs_comps_client_request.AddEvent,
+            ecs_comps_client_request.EditedEvent,
+            ecs_comps_client_request.DeletedEvent,
+            ecs_comps_client_request.DismissMessage,
         ):
             try:
                 esper.remove_component(existing_entity_id, marker_component)
@@ -1262,7 +1263,7 @@ class SessionState:
         return existing_entity_id
 
     def apply_add_event_request(self, request_entity_id: int) -> None:
-        request_props = esper.try_component(request_entity_id, ecs_geo_components.ClientRequestPayload)
+        request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_props is None:
             self._consume_client_request(request_entity_id)
             return
@@ -1376,7 +1377,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_event_request(self, request_entity_id: int) -> None:
-        deleted = esper.try_component(request_entity_id, ecs_event_components.DeletedEvent)
+        deleted = esper.try_component(request_entity_id, ecs_comps_client_request.DeletedEvent)
         if deleted is None:
             self._consume_client_request(request_entity_id)
             return
