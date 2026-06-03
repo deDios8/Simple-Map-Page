@@ -308,8 +308,13 @@ class CriteriaProcessor(esper.Processor):
                 tags.update(stats.items.keys())
         return tags
 
+
     def _check_has_tags(self, geo_eid: int, component) -> bool:
         return any(tag in self._get_entity_tags(geo_eid) for tag in component.tags)
+
+    def _check_lacks_tags(self, geo_eid: int, component) -> bool:
+        return not self._check_has_tags(geo_eid, component)
+
 
     def _check_is_within(self, geo_eid: int, component) -> bool:
         within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
@@ -325,24 +330,16 @@ class CriteriaProcessor(esper.Processor):
         return False
 
     def _check_is_not_within(self, geo_eid: int, component) -> bool:
-        within = esper.try_component(geo_eid, ecs_geo_components.WithinZones)
-        if not within:
-            return True  # If the entity has no WithinZones component, it is considered "not within" any zones.
-        tag_set = set(component.tags)
-        for zone_id in within.zone_ids:
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
-            if zone_eid is None:
-                continue
-            if self._get_entity_tags(zone_eid) & tag_set:
-                return False
-        return True
+        return not self._check_is_within(geo_eid, component)
 
-    def _check_just_entered(self, geo_eid: int, component) -> bool:
-        entered = esper.try_component(geo_eid, ecs_geo_components.EnteredZones)
-        if not entered:
+
+    def _check_just_in_zone(self, geo_eid: int, component, temp_component_type) -> bool:
+        """Helper to check if entity is currently entering/exiting a zone matching component.tags."""
+        temp_component = esper.try_component(geo_eid, temp_component_type)
+        if not temp_component:
             return False
         tag_set = set(component.tags)
-        for zone_id in entered.zone_ids:
+        for zone_id in temp_component.zone_ids:
             zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
@@ -350,12 +347,29 @@ class CriteriaProcessor(esper.Processor):
                 return True
         return False
 
+    def _check_just_entered(self, geo_eid: int, component) -> bool:
+        return self._check_just_in_zone(geo_eid, component, ecs_geo_components.EnteredZones)
+
     def _check_just_exited(self, geo_eid: int, component) -> bool:
-        exited = esper.try_component(geo_eid, ecs_geo_components.ExitedZones)
-        if not exited:
+        return self._check_just_in_zone(geo_eid, component, ecs_geo_components.ExitedZones)
+
+
+    def _check_first_in_zone(self, geo_eid: int, component, temp_component_type, log_component_type) -> bool:
+        """Helper to check if entity is currently entering/exiting a zone for the first time.
+        Must run BEFORE RemoveZoneEntryExit appends to the log.
+        """
+        temp_component = esper.try_component(geo_eid, temp_component_type)
+        if not temp_component:
             return False
+        
         tag_set = set(component.tags)
-        for zone_id in exited.zone_ids:
+        log = esper.try_component(geo_eid, log_component_type)
+        existing_zones = set(log.zone_ids) if log else set()
+        
+        # Check if any currently changed zone matches tags and is NOT in the historical log
+        for zone_id in temp_component.zone_ids:
+            if zone_id in existing_zones:
+                continue  # Already in log (not first time)
             zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
@@ -364,28 +378,60 @@ class CriteriaProcessor(esper.Processor):
         return False
 
     def _check_first_entered(self, geo_eid: int, component) -> bool:
-        # TODO: implement — TriggerFirstEntered / TargetFirstEntered check
-        return False
+        return self._check_first_in_zone(geo_eid, component, ecs_geo_components.EnteredZones, ecs_geo_components.ZoneEntryLog)
 
     def _check_first_exited(self, geo_eid: int, component) -> bool:
-        # TODO: implement — TriggerFirstExited / TargetFirstExited check
+        return self._check_first_in_zone(geo_eid, component, ecs_geo_components.ExitedZones, ecs_geo_components.ZoneExitLog)
+
+
+    def _check_ever_in_log(self, geo_eid: int, component, log_component_type) -> bool:
+        """Helper to check if any zone in historical log matches component.tags."""
+        log = esper.try_component(geo_eid, log_component_type)
+        if not log or not log.zone_ids:
+            return False
+        
+        tag_set = set(component.tags)
+        for zone_id in log.zone_ids:
+            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            if zone_eid is None:
+                continue
+            if self._get_entity_tags(zone_eid) & tag_set:
+                return True
         return False
 
     def _check_ever_entered(self, geo_eid: int, component) -> bool:
-        # TODO: implement — check if entity has ever entered zones matching component.tags
-        return False
+        return self._check_ever_in_log(geo_eid, component, ecs_geo_components.ZoneEntryLog)
 
     def _check_ever_exited(self, geo_eid: int, component) -> bool:
-        # TODO: implement — check if entity has ever exited zones matching component.tags
-        return False
+        return self._check_ever_in_log(geo_eid, component, ecs_geo_components.ZoneExitLog)
+
+
+    def _check_recently_in_log(self, geo_eid: int, component, log_component_type) -> bool:
+        """Helper to check if the last zone in a log matches component.tags."""
+        log = esper.try_component(geo_eid, log_component_type)
+        if not log or not log.zone_ids:
+            return False
+        
+        # Validate component has tags attribute
+        if not hasattr(component, 'tags') or not component.tags:
+            return False
+        
+        tag_set = set(component.tags)
+        # Get the most recent zone (last item in the log)
+        last_zone_id = log.zone_ids[-1]
+        
+        zone_eid = self.session_state.GeoObjectEntityIds.get(last_zone_id)
+        if zone_eid is None:
+            return False  # Zone was deleted or doesn't exist
+        
+        return bool(self._get_entity_tags(zone_eid) & tag_set)
 
     def _check_recently_entered(self, geo_eid: int, component) -> bool:
-        # TODO: implement — check if entity recently entered zones matching component.tags
-        return False
+        return self._check_recently_in_log(geo_eid, component, ecs_geo_components.ZoneEntryLog)
 
     def _check_recently_exited(self, geo_eid: int, component) -> bool:
-        # TODO: implement — check if entity recently exited zones matching component.tags
-        return False
+        return self._check_recently_in_log(geo_eid, component, ecs_geo_components.ZoneExitLog)
+
 
     def _check_is_visible(self, geo_eid: int, component) -> bool:
         appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
@@ -394,10 +440,7 @@ class CriteriaProcessor(esper.Processor):
         return any(tag in appearance.visible_to for tag in component.tags)
 
     def _check_is_not_visible(self, geo_eid: int, component) -> bool:
-        appearance = esper.try_component(geo_eid, ecs_geo_components.Appearance)
-        if not appearance:
-            return True  # If the entity has no Appearance component, it is considered "not visible" to any tags.
-        return all(tag not in appearance.visible_to for tag in component.tags)
+        return not self._check_is_visible(geo_eid, component)
 
 
 

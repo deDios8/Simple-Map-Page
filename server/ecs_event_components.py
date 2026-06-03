@@ -27,6 +27,14 @@ class TargetHasTags:
     tags: list
 
 @dataclass
+class TriggerLacksTags:
+    tags: list
+
+@dataclass
+class TargetLacksTags:
+    tags: list
+
+@dataclass
 class TriggerIsWithin:
     tags: list
 
@@ -64,6 +72,14 @@ class TriggerFirstEntered:
 
 @dataclass
 class TargetFirstEntered:
+    tags: list
+
+@dataclass
+class TriggerFirstExited:
+    tags: list
+
+@dataclass
+class TargetFirstExited:
     tags: list
 
 @dataclass

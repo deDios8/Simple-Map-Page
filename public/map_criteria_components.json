@@ -1,6 +1,8 @@
 {
   "TriggerHasTags":          { "handler": "_check_has_tags",           "role": "trigger" },
   "TargetHasTags":           { "handler": "_check_has_tags",           "role": "target"  },
+  "TriggerLacksTags":        { "handler": "_check_lacks_tags",        "role": "trigger"  },
+  "TargetLacksTags":         { "handler": "_check_lacks_tags",         "role": "target"  },
   "TriggerIsWithin":         { "handler": "_check_is_within",          "role": "trigger" },
   "TargetIsWithin":          { "handler": "_check_is_within",          "role": "target"  },
   "TriggerNotWithin":        { "handler": "_check_is_not_within",      "role": "trigger" },
@@ -11,6 +13,8 @@
   "TargetJustExited":        { "handler": "_check_just_exited",        "role": "target"  },
   "TriggerFirstEntered":     { "handler": "_check_first_entered",      "role": "trigger" },
   "TargetFirstEntered":      { "handler": "_check_first_entered",      "role": "target"  },
+  "TriggerFirstExited":      { "handler": "_check_first_exited",       "role": "trigger" },
+  "TargetFirstExited":       { "handler": "_check_first_exited",       "role": "target"  },
   "TriggerEverEntered":      { "handler": "_check_ever_entered",       "role": "trigger" },
   "TargetEverEntered":       { "handler": "_check_ever_entered",       "role": "target"  },
   "TriggerEverExited":       { "handler": "_check_ever_exited",        "role": "trigger" },
