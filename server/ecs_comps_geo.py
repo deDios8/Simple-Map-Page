@@ -79,6 +79,7 @@ class GeoObject:
             ),
         )
 
+
 ## Temporary components for tracking zone interactions
 @dataclass
 class WithinZones:

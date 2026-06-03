@@ -9,7 +9,8 @@
 - App auto-select a newly added zone, criteria, event for editing.
 - Add an event clock/timer
   - Tuning the timing of events to have a predictable tick rate for DOT-like effects
-- Implement zone entry logging and FirstEntered
+- Test TriggerFirstEntered
+- add a reset entry logs button
 
 # Dependencies
 ## macos

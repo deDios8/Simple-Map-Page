@@ -987,7 +987,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_dismiss_message_request(self, request_entity_id: int) -> None:
-        dismiss = esper.try_component(request_entity_id, ecs_comps_geo.DismissMessage)
+        dismiss = esper.try_component(request_entity_id, ecs_comps_client_request.DismissMessage)
         if dismiss is None:
             self._consume_client_request(request_entity_id)
             return
@@ -1293,7 +1293,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_edited_event_request(self, request_entity_id: int) -> None:
-        edited = esper.try_component(request_entity_id, ecs_comps_event.EditedEvent)
+        edited = esper.try_component(request_entity_id, ecs_comps_client_request.EditedEvent)
         if edited is None:
             self._consume_client_request(request_entity_id)
             return
