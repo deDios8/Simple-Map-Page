@@ -61,6 +61,7 @@ const requestBButton = document.querySelector("#request-b-button");
 const requestXButton = document.querySelector("#request-x-button");
 const requestYButton = document.querySelector("#request-y-button");
 const addObjectButton = document.querySelector("#add-object-button");
+const clearAllLogsButton = document.querySelector("#clear-all-logs-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
 const editorPanel = document.querySelector("#editor-panel");
@@ -860,6 +861,18 @@ function bindUi() {
   addObjectButton?.addEventListener("click", () => {
     void submitRequest({ requestId: "add_object", requestType: "button_click", successMessage: "add object sent" });
   });
+  clearAllLogsButton?.addEventListener("click", async () => {
+    if (!canEditObjects()) {
+      locationStatus.textContent = "Read-only mode: clearing logs requires gm password.";
+      return;
+    }
+    try {
+      await submitClearAllLogsRequest();
+    } catch (error) {
+      console.error(error);
+      locationStatus.textContent = "Clear logs request failed. Check Firebase configuration and permissions.";
+    }
+  });
   addStatButton?.addEventListener("click", () => {
     addEmptyStatRow();
   });
@@ -1446,6 +1459,14 @@ async function submitClearLogsRequest(targetId) {
       targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
     },
     successMessage: `Clear logs request for ${targetId} sent`,
+  });
+}
+
+async function submitClearAllLogsRequest() {
+  await submitRequest({
+    requestId: "clear-logs-all",
+    requestType: "clear_logs_all",
+    successMessage: "Clear logs request for all objects sent",
   });
 }
 

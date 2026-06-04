@@ -699,6 +699,7 @@ class SessionState:
             ecs_comps_client_request.DeletedEvent,
             ecs_comps_client_request.DismissMessage,
             ecs_comps_client_request.ClearLogs,
+            ecs_comps_client_request.ClearLogsAll,
         ):
             try:
                 esper.remove_component(request_entity_id, component_type)
@@ -1058,6 +1059,40 @@ class SessionState:
 
         self._consume_client_request(request_entity_id)
 
+    def apply_clear_logs_all_request(self, request_entity_id: int) -> None:
+        clear_logs_all = esper.try_component(request_entity_id, ecs_comps_client_request.ClearLogsAll)
+        if clear_logs_all is None:
+            self._consume_client_request(request_entity_id)
+            return
+
+        for target_key, target_entity_id in self.GeoObjectEntityIds.items():
+            for log_component in (ecs_comps_geo.ZoneEntryLog, ecs_comps_geo.ZoneExitLog):
+                try:
+                    esper.remove_component(target_entity_id, log_component)
+                except KeyError:
+                    pass
+            esper.add_component(target_entity_id, ecs_comps_geo.GeoObjectDirty())
+
+            patch_db_entry(
+                self.database_url,
+                self.session_name,
+                target_key,
+                {
+                    "properties/zoneEntryLog": None,
+                    "properties/zoneExitLog": None,
+                },
+                node=GEO_OBJECTS_NODE,
+            )
+
+            stream_obj = self.stream.geo_object_state.get(target_key)
+            if isinstance(stream_obj, dict):
+                props = stream_obj.get("properties")
+                if isinstance(props, dict):
+                    props.pop("zoneEntryLog", None)
+                    props.pop("zoneExitLog", None)
+
+        self._consume_client_request(request_entity_id)
+
     def _upsert_geo_object_entity(self, key: str, geo_object: GeoObjectEntry) -> int:
         existing_entity_id = self.GeoObjectEntityIds.get(key)
         if existing_entity_id is None:
@@ -1132,6 +1167,10 @@ class SessionState:
                 target_id=target_id,
                 target_path=target_path,
             ))
+        elif request_type == "clear_logs_all":
+            esper.add_component(entity_id, ecs_comps_client_request.ClearLogsAll(
+                requester_id=requester_id,
+            ))
 
     def _upsert_client_request_entity(self, key: str, request: ClientRequestEntry) -> int:
         existing_entity_id = self.ClientRequestEntityIds.get(key)
@@ -1180,6 +1219,7 @@ class SessionState:
             ecs_comps_client_request.DeletedEvent,
             ecs_comps_client_request.DismissMessage,
             ecs_comps_client_request.ClearLogs,
+            ecs_comps_client_request.ClearLogsAll,
         ):
             try:
                 esper.remove_component(existing_entity_id, marker_component)

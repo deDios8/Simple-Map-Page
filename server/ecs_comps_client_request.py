@@ -52,6 +52,10 @@ class ClearLogs:
     target_id: str
     target_path: str
 
+@dataclass
+class ClearLogsAll:
+    requester_id: str
+
 
 ## Entity
 class ClientRequest:

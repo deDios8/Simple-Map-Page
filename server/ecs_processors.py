@@ -41,6 +41,9 @@ class ApplyClientRequests(esper.Processor):
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.ClearLogs)):
             self.session_state.apply_clear_logs_request(entity_id)
 
+        for entity_id, _ in list(esper.get_component(ecs_comps_client_request.ClearLogsAll)):
+            self.session_state.apply_clear_logs_all_request(entity_id)
+
 
 class CheckZoneEntryExit(esper.Processor):
     def __init__(self, session_state) -> None:
