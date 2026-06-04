@@ -241,6 +241,7 @@ class RemoveZoneEntryExit(esper.Processor):
                     pass
 
 
+
 class CriteriaProcessor(esper.Processor):
     def __init__(self, session_state) -> None:
         super().__init__()
@@ -569,7 +570,12 @@ class EventProcessor(esper.Processor):
             if stats.items:
                 for key, delta in component.stats_to_values.items():
                     if key in stats.items:
-                        stats.items[key] += delta
+                        stat_item = stats.items[key]
+                        current_value = float(stat_item.get("value", 0))
+                        min_value = float(stat_item.get("min_value", 0))
+                        max_value = float(stat_item.get("max_value", 100))
+                        delta_value = float(delta)
+                        stat_item["value"] = max(min_value, min(max_value, current_value + delta_value))
 
     def _popup_message(self, target_entity_id: int, component: ecs_comps_event.ResultPopupMessage) -> None:
         messages = esper.try_component(target_entity_id, ecs_comps_geo.Messages)
@@ -577,6 +583,7 @@ class EventProcessor(esper.Processor):
             esper.add_component(target_entity_id, ecs_comps_geo.Messages(messages=[component.text]))
         else:
             messages.messages.append(component.text)
+
 
 
 class SyncGeoObjectsToDatabase(esper.Processor):

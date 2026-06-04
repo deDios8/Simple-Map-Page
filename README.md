@@ -4,13 +4,14 @@
 
 - debug console should display DisplayName rather than ID's
 - wishlist: would like a way to move a user on pc (overriding gps)
-- stat editor for drop-down stat addition.
-- anchor point for session or a bulk move option for relocating entire games
 - App auto-select a newly added zone, criteria, event for editing.
 - Add an event clock/timer
   - Tuning the timing of events to have a predictable tick rate for DOT-like effects
-- Test TriggerFirstEntered
-- add a reset entry logs button
+- Bulk move option for anchor point for session to relocate entire games
+- Slow down tick rate for server event processing and separate that from db_updates
+- Stat editor for drop-down stat addition.
+- Test stat value checker triggers
+- 
 
 # Dependencies
 ## macos
