@@ -901,11 +901,8 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        appearance_visible = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else []
-        appearance.visible_to = appearance_visible
+        appearance.visible_to = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else []
 
-        traits_component = esper.try_component(target_entity_id, ecs_comps_geo.Traits)
-        current_traits = traits_component.traits if traits_component is not None else []
         next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else []
         self._sync_traits_component(target_entity_id, {"traits": next_traits})
 
@@ -932,7 +929,7 @@ class SessionState:
                 "properties/displayName": display_name_comp.display_name,
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
-                "properties/appearance/visibleTo": appearance_visible,
+                "properties/appearance/visibleTo": appearance.visible_to,
                 "properties/traits": next_traits,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
@@ -957,7 +954,7 @@ class SessionState:
                 if isinstance(appr, dict):
                     appr["color"] = appearance.color
                     appr["radius"] = appearance.radius
-                    appr["visibleTo"] = appearance_visible
+                    appr["visibleTo"] = appearance.visible_to
                 props["traits"] = next_traits
                 props["data"] = extra_data
                 if next_stats_payload:
