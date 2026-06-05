@@ -5,11 +5,15 @@ Main server application that listens to Firebase database changes and updates th
 import esper
 import ecs_processors
 from session_db_state import DEFAULT_DATABASE_URL, SessionState
-
+import sys
 
 def main() -> None:
     print("Firebase Feature Listener")
-    session_name = input("Session name: ")
+    if len(sys.argv) > 1:
+        session_name = sys.argv[1]
+        print(f"Session Name: {session_name}")
+    else:
+        session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
     esper.add_processor(ecs_processors.ApplyClientRequests(session_state), priority=100)
     esper.add_processor(ecs_processors.CheckZoneEntryExit(session_state), priority=95)

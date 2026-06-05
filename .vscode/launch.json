@@ -16,6 +16,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/server/main.py",
+            "args": ["testBed"],
             "console": "integratedTerminal"
         }
     ]
