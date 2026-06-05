@@ -1491,7 +1491,7 @@ class SessionState:
         self.debug.print_help()
 
         # 3x the app.js updateFrequency rate (2000 ms → 0.5 Hz → 1.5 Hz).
-        ticks_per_second = 1.5
+        ticks_per_second = 0.5
         tick_dt = 1.0 / ticks_per_second
         next_tick = time.perf_counter()
 

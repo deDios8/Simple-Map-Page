@@ -26,6 +26,7 @@ class Geometry:
 
 @dataclass
 class Stat:
+    '''Unused as a class, but a reminder of the expected format for stats in the Stats component.'''
     name: str
     value: int
     min_value: int = 0

@@ -1,3 +1,4 @@
+import copy
 import esper
 import math
 import ecs_comps_geo
@@ -44,6 +45,7 @@ class ApplyClientRequests(esper.Processor):
 
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.ClearLogsAll)):
             self.session_state.apply_clear_logs_all_request(entity_id)
+
 
 
 class CheckZoneEntryExit(esper.Processor):
@@ -195,6 +197,7 @@ class CheckZoneEntryExit(esper.Processor):
 
         object_area = object_point.buffer(object_radius_m)
         return object_area.intersects(zone_area)
+
 
 
 class RemoveZoneEntryExit(esper.Processor):
@@ -549,22 +552,37 @@ class EventProcessor(esper.Processor):
                 else:
                     traits.traits.append(trait)
 
-    def _revoke_stats(self, target_entity_id: int, component: ecs_comps_event.ResultRevokeStats) -> None:
-        # TODO: implement — define the item format in ResultRevokeStats.stats
-        pass
+    def _revoke_stats(self, target_entity_id: int, component) -> None:
+        if stats := esper.try_component(target_entity_id, ecs_comps_geo.Stats):
+            if stats.items:
+                for stat_to_remove in component.tags:
+                    if stat_to_remove in stats.items:
+                        del stats.items[stat_to_remove]
 
     def _toggle_stats_to_values(self, target_entity_id: int, component: ecs_comps_event.ResultToggleStatsWithValue) -> None:
-        # TODO: implement — define the item format in ResultToggleStatsWithValue.stats
-        pass
-
-    def _set_stats_to_values(self, target_entity_id: int, component: ecs_comps_event.ResultSetStatsToValues) -> None:
+        '''Toggle stats on/off with a specified value. If stat doesn't exist, add it with the value. If stat exists, remove it regardless of value.'''
         stats = esper.try_component(target_entity_id, ecs_comps_geo.Stats)
-        if stats is None:
-            esper.add_component(target_entity_id, ecs_comps_geo.Stats(items=dict(component.stats_to_values)))
+        if stats and stats.items and any(key in stats.items for key in component.stats_to_values.keys()):
+            self._revoke_stats(target_entity_id, component)
         else:
-            if stats.items is None:
-                stats.items = {}
-            stats.items.update(component.stats_to_values)
+            self._set_stats_to_values(target_entity_id, component)
+
+    def _set_stats_to_values(self, target_entity_id: int, component) -> None:
+        stats = esper.try_component(target_entity_id, ecs_comps_geo.Stats)
+        if not stats:
+            stats = ecs_comps_geo.Stats(items={})
+            esper.add_component(target_entity_id, stats)
+        if stats.items is None:
+            stats.items = {}
+        for key, value in component.stats_to_values.items():
+            stat_item = stats.items.get(key, {})
+            stat_item["name"] = key
+            stat_item["value"] = value
+            min_value = float(stat_item.get("min_value", 0))
+            max_value = float(stat_item.get("max_value", 100))
+            new_value = float(value)
+            stat_item["value"] = max(min_value, min(max_value, new_value))
+            stats.items[key] = stat_item
 
     def _change_stats_by_values(self, target_entity_id: int, component: ecs_comps_event.ResultChangeStatsByValues) -> None:
         if stats := esper.try_component(target_entity_id, ecs_comps_geo.Stats):
@@ -610,7 +628,7 @@ class SyncGeoObjectsToDatabase(esper.Processor):
             if self._cache.get(entity_id) != fields:
                 for field_path, value in fields.items():
                     multi_path_payload[f"{GEO_OBJECTS_NODE}/{key}/{field_path}"] = value
-                self._cache[entity_id] = fields
+                self._cache[entity_id] = copy.deepcopy(fields)
 
             try:
                 esper.remove_component(entity_id, ecs_comps_geo.GeoObjectDirty)

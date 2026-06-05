@@ -11,7 +11,9 @@
 - Slow down tick rate for server event processing and separate that from db_updates
 - Stat editor for drop-down stat addition.
 - Test stat value checker triggers
-- properly intake blank VisibleTo and Traits
+- Make it so adm1n logins always see every zone
+- Rename geo_object to zones for clarity
+- take arguments for main.py execution (testBed)
 
 # Dependencies
 ## macos
