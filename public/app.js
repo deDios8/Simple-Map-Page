@@ -1583,8 +1583,9 @@ function normalizeObjects(rawObjects) {
 }
 
 function parseVisibleList(value) {
-  if (!value || typeof value !== "string") return [];
-  return value.split(",").map((s) => s.trim()).filter(Boolean);
+  if (!value || typeof value !== "string") return null;
+  const visibleTo = value.split(",").map((s) => s.trim()).filter(Boolean);
+  return visibleTo.length > 0 ? visibleTo : null;
 }
 
 function isVisibleToCurrentUser(feature) {

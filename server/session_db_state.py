@@ -901,12 +901,12 @@ class SessionState:
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
 
-        appearance_visible = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else appearance.visible_to
+        appearance_visible = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else []
         appearance.visible_to = appearance_visible
 
         traits_component = esper.try_component(target_entity_id, ecs_comps_geo.Traits)
         current_traits = traits_component.traits if traits_component is not None else []
-        next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else current_traits
+        next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else []
         self._sync_traits_component(target_entity_id, {"traits": next_traits})
 
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
