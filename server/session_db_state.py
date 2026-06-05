@@ -785,7 +785,7 @@ class SessionState:
                     "displayName": requester_id,
                     "appearance": {
                         "color": "#000000",
-                        "visibleTo": ["USER"],
+                        "visibleTo": ["GM", "USER"],
                         "radius": 2,
                     },
                     "traits": ["USER"],
@@ -853,7 +853,7 @@ class SessionState:
                 "displayName": f"{new_object_key}",
                 "appearance": {
                     "color": "#0b8f87",
-                    "visibleTo": ["USER"],
+                    "visibleTo": ["GM", "USER"],
                     "radius": 5,
                 },
                 "traits": ["ZONE"],

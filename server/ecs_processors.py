@@ -5,11 +5,12 @@ import ecs_comps_event
 import ecs_comps_client_request
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
+from session_db_state import SessionState
 from session_db_state import GEO_OBJECTS_NODE, multi_path_patch
 
 
 class ApplyClientRequests(esper.Processor):
-    def __init__(self, session_state) -> None:
+    def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
 
@@ -46,7 +47,7 @@ class ApplyClientRequests(esper.Processor):
 
 
 class CheckZoneEntryExit(esper.Processor):
-    def __init__(self, session_state) -> None:
+    def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
 
@@ -243,7 +244,7 @@ class RemoveZoneEntryExit(esper.Processor):
 
 
 class CriteriaProcessor(esper.Processor):
-    def __init__(self, session_state) -> None:
+    def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
         self._trigger_dispatch: dict = {
@@ -453,7 +454,7 @@ class CriteriaProcessor(esper.Processor):
 
 
 class EventProcessor(esper.Processor):
-    def __init__(self, session_state) -> None:
+    def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
         self._result_dispatch: dict = {
@@ -587,7 +588,7 @@ class EventProcessor(esper.Processor):
 
 
 class SyncGeoObjectsToDatabase(esper.Processor):
-    def __init__(self, session_state) -> None:
+    def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
         self._cache: dict[int, dict] = {}
