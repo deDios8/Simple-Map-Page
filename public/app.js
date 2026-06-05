@@ -1589,6 +1589,9 @@ function parseVisibleList(value) {
 }
 
 function isVisibleToCurrentUser(feature) {
+  // Admins can always see every object
+  if (state.userPass === "adm1n") return true;
+
   const visibleTo = feature.properties?.appearance?.visibleTo;
   if (!Array.isArray(visibleTo) || visibleTo.length === 0) return false;
   const userTraits = state.objects[state.userId]?.properties?.traits || [];
