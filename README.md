@@ -11,7 +11,8 @@
 - Slow down tick rate for server event processing and separate that from db_updates
 - Stat editor for drop-down stat addition.
 - Test stat value checker triggers
-- 
+- properly intake blank VisibleTo and Traits
+- how to make zones not listed to users on who its not visible to
 
 # Dependencies
 ## macos

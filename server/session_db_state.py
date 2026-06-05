@@ -968,7 +968,7 @@ class SessionState:
         self._consume_client_request(request_entity_id)
 
     def apply_deleted_object_request(self, request_entity_id: int) -> None:
-        deleted = esper.try_component(request_entity_id, ecs_comps_geo.DeletedObject)
+        deleted = esper.try_component(request_entity_id, ecs_comps_client_request.DeletedObject)
         if deleted is None:
             self._consume_client_request(request_entity_id)
             return
