@@ -13,6 +13,7 @@
 - Test stat value checker triggers
 - properly intake blank VisibleTo and Traits
 - how to make zones not listed to users on who its not visible to
+- go object picker drawer needs some whitespace on the bottom to not end up under other buttons in the UI main window
 
 # Dependencies
 ## macos

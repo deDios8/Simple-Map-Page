@@ -1240,6 +1240,10 @@ function promptUserId() {
     state.userPass = normalizedPassword;
     state.sessionName = sessionName;
 
+    if (eventsResultsDrawerToggle) {
+      eventsResultsDrawerToggle.style.display = state.userPass === "adm1n" ? "" : "none";
+    }
+
     if (sessionInput) {
       sessionInput.value = sessionName;
     }
@@ -1650,10 +1654,10 @@ function buildPopupMarkup(feature) {
 }
 
 function renderObjectList() {
-  const entries = Object.values(state.objects);
+  const visibleFeatures = Object.values(state.objects).filter((feature) => isVisibleToCurrentUser(feature));
 
-  objectList.innerHTML = entries.length
-    ? entries
+  objectList.innerHTML = visibleFeatures.length
+    ? visibleFeatures
         .map((feature) => {
           const id = feature.properties?.id;
           const color = feature.properties?.appearance?.color || "#0b8f87";
