@@ -779,10 +779,10 @@ label.traits-label input[type="text"] {
 }
 
 /* ---------------------------------------------------------------------------
-   Event results drawer toggle button
+   Event events drawer toggle button
    --------------------------------------------------------------------------- */
 
-.events-results-drawer-toggle {
+.events-drawer-toggle {
   position: fixed;
   top: 84px;
   right: 10px;
@@ -806,11 +806,11 @@ label.traits-label input[type="text"] {
   transition: background 150ms ease, box-shadow 150ms ease;
 }
 
-.events-results-drawer-toggle:hover {
+.events-drawer-toggle:hover {
   background: rgba(255, 255, 255, 0.95);
 }
 
-.events-results-drawer-toggle[aria-expanded="true"] {
+.events-drawer-toggle[aria-expanded="true"] {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent-dark);
@@ -821,10 +821,10 @@ label.traits-label input[type="text"] {
    --------------------------------------------------------------------------- */
 
 /* ---------------------------------------------------------------------------
-   Event results drawer positioning
+   Event events drawer positioning
    --------------------------------------------------------------------------- */
 
-.events-results-drawer {
+.events-drawer {
   right: 12px;
   bottom: calc(var(--safe-bottom) + 78px);
 }
@@ -869,7 +869,7 @@ label.traits-label input[type="text"] {
    Event result row (two-column component + value layout)
    --------------------------------------------------------------------------- */
 
-.event-results-section {
+.event-section {
   display: grid;
   gap: 12px;
 }
@@ -898,7 +898,7 @@ label.traits-label input[type="text"] {
 }
 
 @media (max-width: 760px) {
-  .events-results-drawer-toggle {
+  .events-drawer-toggle {
     top: 80px;
     right: 14px;
   }

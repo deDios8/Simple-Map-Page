@@ -19,7 +19,7 @@ let RESULT_COMPONENT_OPTIONS = [];
 
 
 let firebaseConfig = {};
-let firebaseGeoObjectsNode = "";
+let firebaseZoneNode = "";
 let firebaseClientRequestNode = "";
 let firebaseEventsNode = "";
 
@@ -60,7 +60,7 @@ const requestAButton = document.querySelector("#request-a-button");
 const requestBButton = document.querySelector("#request-b-button");
 const requestXButton = document.querySelector("#request-x-button");
 const requestYButton = document.querySelector("#request-y-button");
-const addObjectButton = document.querySelector("#add-object-button");
+const addObjectButton = document.querySelector("#add-zone-button");
 const clearAllLogsButton = document.querySelector("#clear-all-logs-button");
 const objectList = document.querySelector("#object-list");
 const editorForm = document.querySelector("#editor-form");
@@ -84,9 +84,9 @@ const addStatButton = document.querySelector("#add-stat-button");
 const statsSection = document.querySelector(".stats-section");
 
 // Events drawer DOM references
-const eventsResultsDrawer = document.querySelector("#events-results-drawer");
-const eventsResultsDrawerToggle = document.querySelector("#events-results-drawer-toggle");
-const eventsResultsDrawerClose = document.querySelector("#events-results-drawer-close");
+const eventsDrawer = document.querySelector("#events-drawer");
+const eventsDrawerToggle = document.querySelector("#events-drawer-toggle");
+const eventsDrawerClose = document.querySelector("#events-drawer-close");
 const eventsList = document.querySelector("#events-list");
 const eventEditorForm = document.querySelector("#event-editor-form");
 const eventEditorEmptyState = document.querySelector("#event-editor-empty-state");
@@ -97,7 +97,7 @@ const triggerCriteriaList = document.querySelector("#trigger-criteria-list");
 const addTriggerCriterionButton = document.querySelector("#add-trigger-criterion-button");
 const targetCriteriaList = document.querySelector("#target-criteria-list");
 const addTargetCriterionButton = document.querySelector("#add-target-criterion-button");
-const eventResultsList = document.querySelector("#event-results-list");
+const resultsList = document.querySelector("#event-list");
 const addResultButton = document.querySelector("#add-result-button");
 const addEventButton = document.querySelector("#add-event-button");
 
@@ -382,7 +382,7 @@ if (messageModalOk) {
 // Criteria editor functions
 // ---------------------------------------------------------------------------
 
-function normalizeNonGeoEntry(key, entry) {
+function normalizeNonZoneEntry(key, entry) {
   if (!entry || typeof entry !== "object") return null;
   const properties = entry.properties && typeof entry.properties === "object" ? entry.properties : {};
   return {
@@ -478,7 +478,7 @@ function getRequestCoordinates() {
 }
 
 // ---------------------------------------------------------------------------
-// Event results system
+// Event system
 // ---------------------------------------------------------------------------
 
 function buildDefaultResultData(componentName) {
@@ -546,14 +546,14 @@ function renderResultValueField(componentName, data) {
     </label>`;
 }
 
-function renderEventResultsEditor(results) {
-  if (!eventResultsList) return;
-  const entries = Object.entries(results || {});
+function renderEventsEditor(events) {
+  if (!resultsList) return;
+  const entries = Object.entries(events || {});
   if (!entries.length) {
-    eventResultsList.innerHTML = '<div class="stats-empty">No results yet. Add one to define actions.</div>';
+    resultsList.innerHTML = '<div class="stats-empty">No events yet. Add one to define actions.</div>';
     return;
   }
-  eventResultsList.innerHTML = entries
+  resultsList.innerHTML = entries
     .map(([name, data], index) => {
       return `
         <article class="stat-row" data-result-index="${index}" data-result-name="${escapeHtml(name)}">
@@ -579,13 +579,13 @@ function addEmptyResultRow() {
     RESULT_COMPONENT_OPTIONS.find((opt) => !Object.prototype.hasOwnProperty.call(nextResults, opt)) ??
     RESULT_COMPONENT_OPTIONS[0];
   nextResults[nextKey] = buildDefaultResultData(nextKey);
-  renderEventResultsEditor(nextResults);
+  renderEventsEditor(nextResults);
   applyEventEditorPermissions();
 }
 
 function collectResultsFromEditor() {
-  const rows = Array.from(eventResultsList?.querySelectorAll(".stat-row") || []);
-  const results = {};
+  const rows = Array.from(resultsList?.querySelectorAll(".stat-row") || []);
+  const events = {};
   for (const row of rows) {
     const name = row.querySelector('[data-field="name"]')?.value?.trim() || "";
     const valueEl = row.querySelector('[data-field="value"]');
@@ -605,9 +605,9 @@ function collectResultsFromEditor() {
     } else {
       parsedValue = rawValue;
     }
-    results[name] = { [config.fieldName]: parsedValue };
+    events[name] = { [config.fieldName]: parsedValue };
   }
-  return results;
+  return events;
 }
 
 function renderEventList() {
@@ -637,17 +637,17 @@ function selectEvent(id) {
   state.selectedEventId = id;
   populateEventEditor(id);
   renderEventList();
-  setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, true);
+  setDrawerOpen(eventsDrawer, eventsDrawerToggle, true);
 }
 
 
-function extractEventResults(properties) {
+function extractEvents(properties) {
   if (!properties || typeof properties !== "object") return {};
-  const results = properties.Results;
-  if (!results || typeof results !== "object") return {};
+  const events = properties.Results;
+  if (!events || typeof events !== "object") return {};
   const knownNames = new Set(RESULT_COMPONENT_OPTIONS);
   const out = {};
-  for (const [key, value] of Object.entries(results)) {
+  for (const [key, value] of Object.entries(events)) {
     if (knownNames.has(key) && value && typeof value === "object") {
       out[key] = value;
     }
@@ -664,14 +664,14 @@ function populateEventEditor(id) {
   const displayName = entry.properties?.displayName || "";
   const triggerComponents = extractCriteriaComponents(entry.properties?.Triggers, TRIGGER_COMPONENT_OPTIONS);
   const targetComponents = extractCriteriaComponents(entry.properties?.Targets, TARGET_COMPONENT_OPTIONS);
-  const results = extractEventResults(entry.properties);
+  const events = extractEvents(entry.properties);
   eventEditorForm.hidden = false;
   eventEditorForm.classList.remove("is-collapsed");
   eventEditorEmptyState.textContent = `Editing ${displayName || id}`;
   eventFieldName.value = displayName;
   renderCriterionRowsInto(triggerCriteriaList, triggerComponents, TRIGGER_COMPONENT_OPTIONS);
   renderCriterionRowsInto(targetCriteriaList, targetComponents, TARGET_COMPONENT_OPTIONS);
-  renderEventResultsEditor(results);
+  renderEventsEditor(events);
   applyEventEditorPermissions();
 }
 
@@ -684,7 +684,7 @@ function showEmptyEventEditor() {
   if (eventSaveStatus) eventSaveStatus.textContent = "";
   renderCriterionRowsInto(triggerCriteriaList, {}, TRIGGER_COMPONENT_OPTIONS);
   renderCriterionRowsInto(targetCriteriaList, {}, TARGET_COMPONENT_OPTIONS);
-  renderEventResultsEditor({});
+  renderEventsEditor({});
   applyEventEditorPermissions();
 }
 
@@ -710,7 +710,7 @@ function applyEventEditorPermissions() {
   if (addTargetCriterionButton) {
     addTargetCriterionButton.disabled = !isEditable || !isFormVisible;
   }
-  eventResultsList?.querySelectorAll("input, select, button").forEach((el) => {
+  resultsList?.querySelectorAll("input, select, button").forEach((el) => {
     el.disabled = !isEditable || !isFormVisible;
   });
   triggerCriteriaList?.querySelectorAll("input, select, button").forEach((el) => {
@@ -722,7 +722,7 @@ function applyEventEditorPermissions() {
 }
 
 function handleEventSnapshot(nextEvents) {
-  state.events = normalizeCollection(nextEvents, normalizeNonGeoEntry);
+  state.events = normalizeCollection(nextEvents, normalizeNonZoneEntry);
   renderEventList();
 
   if (state.selectedEventId && !state.events[state.selectedEventId]) {
@@ -782,7 +782,7 @@ async function init() {
   RESULT_COMPONENT_OPTIONS = Object.keys(RESULT_COMPONENT_FIELD_CONFIG);
   const { nodes, defaultSessionName, updateLocationInterval, mapLayer, ...fbSdkConfig } = await fbConfigRes.json();
   firebaseConfig = fbSdkConfig;
-  firebaseGeoObjectsNode = nodes.geoObjects;
+  firebaseZoneNode = nodes.zones;
   firebaseClientRequestNode = nodes.clientRequests;
   firebaseEventsNode = nodes.events;
   state.sessionName = defaultSessionName || "testBed";
@@ -859,7 +859,7 @@ function bindUi() {
     void submitRequest({ requestId: "request Y", requestType: "button_click", successMessage: "request Y sent" });
   });
   addObjectButton?.addEventListener("click", () => {
-    void submitRequest({ requestId: "add_object", requestType: "button_click", successMessage: "add object sent" });
+    void submitRequest({ requestId: "add_object", requestType: "button_click", successMessage: "add zone sent" });
   });
   clearAllLogsButton?.addEventListener("click", async () => {
     if (!canEditObjects()) {
@@ -899,10 +899,10 @@ function bindUi() {
   });
 
   // Events drawer bindings
-  eventsResultsDrawerToggle?.addEventListener("click", () => {
-    setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, !eventsResultsDrawer?.classList.contains("is-open"));
+  eventsDrawerToggle?.addEventListener("click", () => {
+    setDrawerOpen(eventsDrawer, eventsDrawerToggle, !eventsDrawer?.classList.contains("is-open"));
   });
-  eventsResultsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsResultsDrawer, eventsResultsDrawerToggle, false));
+  eventsDrawerClose?.addEventListener("click", () => setDrawerOpen(eventsDrawer, eventsDrawerToggle, false));
   addEventButton?.addEventListener("click", () => {
     void submitAddEventRequest();
   });
@@ -929,16 +929,16 @@ function bindUi() {
   addResultButton?.addEventListener("click", () => {
     addEmptyResultRow();
   });
-  eventResultsList?.addEventListener("click", (event) => {
+  resultsList?.addEventListener("click", (event) => {
     const button = event.target.closest('button[data-action="remove-result"]');
     if (!button) return;
     button.closest(".stat-row")?.remove();
-    if (!eventResultsList.querySelector(".stat-row")) {
-      renderEventResultsEditor({});
+    if (!resultsList.querySelector(".stat-row")) {
+      renderEventsEditor({});
     }
     applyEventEditorPermissions();
   });
-  eventResultsList?.addEventListener("change", (event) => {
+  resultsList?.addEventListener("change", (event) => {
     const select = event.target.closest('select[data-field="name"]');
     if (!select) return;
     const row = select.closest(".stat-row");
@@ -954,7 +954,7 @@ function bindUi() {
         nextResults[k] = v;
       }
     }
-    renderEventResultsEditor(nextResults);
+    renderEventsEditor(nextResults);
     applyEventEditorPermissions();
   });
   eventsList?.addEventListener("click", (event) => {
@@ -976,7 +976,7 @@ function bindUi() {
       name: eventFieldName?.value.trim() || "",
       triggerComponents: collectCriteriaComponentsFrom(triggerCriteriaList),
       targetComponents: collectCriteriaComponentsFrom(targetCriteriaList),
-      results: collectResultsFromEditor(),
+      events: collectResultsFromEditor(),
     };
 
     if (eventSaveStatus) eventSaveStatus.textContent = state.firebaseReady ? "Sending edit request..." : "Saving...";
@@ -1240,8 +1240,8 @@ function promptUserId() {
     state.userPass = normalizedPassword;
     state.sessionName = sessionName;
 
-    if (eventsResultsDrawerToggle) {
-      eventsResultsDrawerToggle.style.display = state.userPass === "adm1n" ? "" : "none";
+    if (eventsDrawerToggle) {
+      eventsDrawerToggle.style.display = state.userPass === "adm1n" ? "" : "none";
     }
 
     if (sessionInput) {
@@ -1252,7 +1252,7 @@ function promptUserId() {
       drawerTitle.textContent = `${state.userId}'s ${sessionName}`;
     }
 
-    resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
+    resetListener(firebaseZoneNode, "listenerUnsubscribe", handleObjectSnapshot);
     resetListener(firebaseEventsNode, "eventListenerUnsubscribe", handleEventSnapshot);
     modal.hidden = true;
 
@@ -1310,7 +1310,7 @@ function initFirebaseListener() {
   state.database = getDatabase(app);
 
   state.firebaseReady = true;
-  resetListener(firebaseGeoObjectsNode, "listenerUnsubscribe", handleObjectSnapshot);
+  resetListener(firebaseZoneNode, "listenerUnsubscribe", handleObjectSnapshot);
   resetListener(firebaseEventsNode, "eventListenerUnsubscribe", handleEventSnapshot);
 }
 
@@ -1421,7 +1421,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
+      targetPath: `${getFirebasePath(firebaseZoneNode)}/${targetId}`,
     },
     properties: {
       formData,
@@ -1442,7 +1442,7 @@ async function submitDeletedObjectRequest(targetId) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
+      targetPath: `${getFirebasePath(firebaseZoneNode)}/${targetId}`,
     },
     successMessage: `Delete request for ${targetId} sent`,
   });
@@ -1460,7 +1460,7 @@ async function submitClearLogsRequest(targetId) {
     coordinates,
     clientRequestPayload: {
       targetId,
-      targetPath: `${getFirebasePath(firebaseGeoObjectsNode)}/${targetId}`,
+      targetPath: `${getFirebasePath(firebaseZoneNode)}/${targetId}`,
     },
     successMessage: `Clear logs request for ${targetId} sent`,
   });

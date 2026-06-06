@@ -1,13 +1,13 @@
 import copy
 import esper
 import math
-import ecs_comps_geo
+import ecs_comps_zone
 import ecs_comps_event
 import ecs_comps_client_request
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
 from session_db_state import SessionState
-from session_db_state import GEO_OBJECTS_NODE, multi_path_patch
+from session_db_state import ZONE_OBJECTS_NODE, multi_path_patch
 
 
 class ApplyClientRequests(esper.Processor):
@@ -54,16 +54,16 @@ class CheckZoneEntryExit(esper.Processor):
         self.session_state = session_state
 
     def process(self) -> None:
-        all_geo_entities = list(esper.get_components(
-            ecs_comps_geo.Geometry,
-            ecs_comps_geo.ID,
-            ecs_comps_geo.Appearance,
+        all_zone_entities = list(esper.get_components(
+            ecs_comps_zone.Geometry,
+            ecs_comps_zone.ID,
+            ecs_comps_zone.Appearance,
         ))
         transformer_cache: dict = {}
 
-        for entity_id, (geometry, id_component, _) in all_geo_entities:
+        for entity_id, (geometry, id_component, _) in all_zone_entities:
             current_zones = set()
-            for zone_entity_id, (zone_geometry, zone_id_component, zone_appearance) in all_geo_entities:
+            for zone_entity_id, (zone_geometry, zone_id_component, zone_appearance) in all_zone_entities:
                 if zone_entity_id == entity_id:
                     continue
                 if id_component.id == zone_id_component.id:
@@ -79,32 +79,32 @@ class CheckZoneEntryExit(esper.Processor):
                 ):
                     current_zones.add(str(zone_id_component.id))
 
-            previous_within = esper.try_component(entity_id, ecs_comps_geo.WithinZones)
+            previous_within = esper.try_component(entity_id, ecs_comps_zone.WithinZones)
             previous_zones = set(previous_within.zone_ids) if previous_within else set()
 
             entered_zones = current_zones - previous_zones
             exited_zones = previous_zones - current_zones
 
             if entered_zones or exited_zones:
-                display_name_comp = esper.try_component(entity_id, ecs_comps_geo.DisplayName)
+                display_name_comp = esper.try_component(entity_id, ecs_comps_zone.DisplayName)
                 entity_display_name = display_name_comp.display_name if display_name_comp else id_component.id
 
             if entered_zones:
                 zone_names = self._get_zone_names(entered_zones)
-                esper.add_component(entity_id, ecs_comps_geo.EnteredZones(zone_ids=list(entered_zones)))
+                esper.add_component(entity_id, ecs_comps_zone.EnteredZones(zone_ids=list(entered_zones)))
                 print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' entered zones: {zone_names}")
             if exited_zones:
                 zone_names = self._get_zone_names(exited_zones)
-                esper.add_component(entity_id, ecs_comps_geo.ExitedZones(zone_ids=list(exited_zones)))
+                esper.add_component(entity_id, ecs_comps_zone.ExitedZones(zone_ids=list(exited_zones)))
                 print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' exited zones: {zone_names}")
 
     def _get_zone_names(self, zone_ids: set[str]) -> list[str]:
         """Convert zone IDs to display names for logging."""
         names = []
         for zone_id in zone_ids:
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            zone_eid = self.session_state.ZoneEntityIds.get(zone_id)
             if zone_eid is not None:
-                display_name_comp = esper.try_component(zone_eid, ecs_comps_geo.DisplayName)
+                display_name_comp = esper.try_component(zone_eid, ecs_comps_zone.DisplayName)
                 if display_name_comp:
                     names.append(display_name_comp.display_name)
                 else:
@@ -207,8 +207,8 @@ class RemoveZoneEntryExit(esper.Processor):
     def process(self) -> None:
         # Dispatcher: (component_type, set_operation, log_component_type)
         zone_updates = [
-            (ecs_comps_geo.EnteredZones, lambda before, change: before | change, ecs_comps_geo.ZoneEntryLog),
-            (ecs_comps_geo.ExitedZones, lambda before, change: before - change, ecs_comps_geo.ZoneExitLog),
+            (ecs_comps_zone.EnteredZones, lambda before, change: before | change, ecs_comps_zone.ZoneEntryLog),
+            (ecs_comps_zone.ExitedZones, lambda before, change: before - change, ecs_comps_zone.ZoneExitLog),
         ]
 
         for component_type, set_operation, log_component_type in zone_updates:
@@ -216,15 +216,15 @@ class RemoveZoneEntryExit(esper.Processor):
                 zone_set = set(zone_component.zone_ids)
 
                 # Update WithinZones
-                within = esper.try_component(entity_id, ecs_comps_geo.WithinZones)
+                within = esper.try_component(entity_id, ecs_comps_zone.WithinZones)
                 before_zones = set(within.zone_ids) if within else set()
                 within_zones = set_operation(before_zones, zone_set)
 
                 if within_zones:
-                    esper.add_component(entity_id, ecs_comps_geo.WithinZones(zone_ids=list(within_zones)))
+                    esper.add_component(entity_id, ecs_comps_zone.WithinZones(zone_ids=list(within_zones)))
                 else:
                     try:
-                        esper.remove_component(entity_id, ecs_comps_geo.WithinZones)
+                        esper.remove_component(entity_id, ecs_comps_zone.WithinZones)
                     except KeyError:
                         pass
 
@@ -236,7 +236,7 @@ class RemoveZoneEntryExit(esper.Processor):
                     log.zone_ids.extend(zone_component.zone_ids)
 
                 # Mark entity as dirty to sync log to database
-                esper.add_component(entity_id, ecs_comps_geo.GeoObjectDirty())
+                esper.add_component(entity_id, ecs_comps_zone.ZoneObjectDirty())
 
                 # Remove temporary component
                 try:
@@ -260,7 +260,7 @@ class CriteriaProcessor(esper.Processor):
         }
 
     def process(self) -> None:
-        geo_entity_ids = list(self.session_state.GeoObjectEntityIds.values())
+        zone_entity_ids = list(self.session_state.ZoneEntityIds.values())
         event_entity_ids = list(self.session_state.EventResultEntityIds.values())
 
         for event_entity_id in event_entity_ids:
@@ -269,16 +269,16 @@ class CriteriaProcessor(esper.Processor):
             trigger_checks = []
             for comp_type, handler in self._trigger_dispatch.items():
                 if comp := esper.try_component(event_entity_id, comp_type):
-                    trigger_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
+                    trigger_checks.append(lambda zone_eid, c=comp, h=handler: h(zone_eid, c))
 
             trigger_passed_any: set[int] = set()
             trigger_failed_any: set[int] = set()
-            for geo_eid in geo_entity_ids:
+            for zone_eid in zone_entity_ids:
                 for check in trigger_checks:
-                    if check(geo_eid):
-                        trigger_passed_any.add(geo_eid)
+                    if check(zone_eid):
+                        trigger_passed_any.add(zone_eid)
                     else:
-                        trigger_failed_any.add(geo_eid)
+                        trigger_failed_any.add(zone_eid)
 
             all_trigger = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTriggerCriteria)
             if all_trigger:
@@ -291,16 +291,16 @@ class CriteriaProcessor(esper.Processor):
             target_checks = []
             for comp_type, handler in self._target_dispatch.items():
                 if comp := esper.try_component(event_entity_id, comp_type):
-                    target_checks.append(lambda geo_eid, c=comp, h=handler: h(geo_eid, c))
+                    target_checks.append(lambda zone_eid, c=comp, h=handler: h(zone_eid, c))
 
             target_passed_any: set[int] = set()
             target_failed_any: set[int] = set()
-            for geo_eid in geo_entity_ids:
+            for zone_eid in zone_entity_ids:
                 for check in target_checks:
-                    if check(geo_eid):
-                        target_passed_any.add(geo_eid)
+                    if check(zone_eid):
+                        target_passed_any.add(zone_eid)
                     else:
-                        target_failed_any.add(geo_eid)
+                        target_failed_any.add(zone_eid)
 
             all_target = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTargetCriteria)
             if all_target:
@@ -311,116 +311,116 @@ class CriteriaProcessor(esper.Processor):
 
     def _get_entity_tags(self, eid: int) -> set[str]:
         tags: set[str] = set()
-        if dn := esper.try_component(eid, ecs_comps_geo.DisplayName):
+        if dn := esper.try_component(eid, ecs_comps_zone.DisplayName):
             tags.add(dn.display_name)
-        if traits := esper.try_component(eid, ecs_comps_geo.Traits):
+        if traits := esper.try_component(eid, ecs_comps_zone.Traits):
             tags.update(traits.traits)
-        if stats := esper.try_component(eid, ecs_comps_geo.Stats):
+        if stats := esper.try_component(eid, ecs_comps_zone.Stats):
             if stats.items:
                 tags.update(stats.items.keys())
         return tags
 
 
-    def _check_has_tags(self, geo_eid: int, component) -> bool:
-        return any(tag in self._get_entity_tags(geo_eid) for tag in component.tags)
+    def _check_has_tags(self, zone_eid: int, component) -> bool:
+        return any(tag in self._get_entity_tags(zone_eid) for tag in component.tags)
 
-    def _check_lacks_tags(self, geo_eid: int, component) -> bool:
-        return not self._check_has_tags(geo_eid, component)
+    def _check_lacks_tags(self, zone_eid: int, component) -> bool:
+        return not self._check_has_tags(zone_eid, component)
 
 
-    def _check_is_within(self, geo_eid: int, component) -> bool:
-        within = esper.try_component(geo_eid, ecs_comps_geo.WithinZones)
+    def _check_is_within(self, zone_eid: int, component) -> bool:
+        within = esper.try_component(zone_eid, ecs_comps_zone.WithinZones)
         if not within:
             return False
         tag_set = set(component.tags)
         for zone_id in within.zone_ids:
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            zone_eid = self.session_state.ZoneEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
             if self._get_entity_tags(zone_eid) & tag_set:
                 return True
         return False
 
-    def _check_is_not_within(self, geo_eid: int, component) -> bool:
-        return not self._check_is_within(geo_eid, component)
+    def _check_is_not_within(self, zone_eid: int, component) -> bool:
+        return not self._check_is_within(zone_eid, component)
 
 
-    def _check_just_in_zone(self, geo_eid: int, component, temp_component_type) -> bool:
+    def _check_just_in_zone(self, zone_eid: int, component, temp_component_type) -> bool:
         """Helper to check if entity is currently entering/exiting a zone matching component.tags."""
-        temp_component = esper.try_component(geo_eid, temp_component_type)
+        temp_component = esper.try_component(zone_eid, temp_component_type)
         if not temp_component:
             return False
         tag_set = set(component.tags)
         for zone_id in temp_component.zone_ids:
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            zone_eid = self.session_state.ZoneEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
             if self._get_entity_tags(zone_eid) & tag_set:
                 return True
         return False
 
-    def _check_just_entered(self, geo_eid: int, component) -> bool:
-        return self._check_just_in_zone(geo_eid, component, ecs_comps_geo.EnteredZones)
+    def _check_just_entered(self, zone_eid: int, component) -> bool:
+        return self._check_just_in_zone(zone_eid, component, ecs_comps_zone.EnteredZones)
 
-    def _check_just_exited(self, geo_eid: int, component) -> bool:
-        return self._check_just_in_zone(geo_eid, component, ecs_comps_geo.ExitedZones)
+    def _check_just_exited(self, zone_eid: int, component) -> bool:
+        return self._check_just_in_zone(zone_eid, component, ecs_comps_zone.ExitedZones)
 
 
-    def _check_first_in_zone(self, geo_eid: int, component, temp_component_type, log_component_type) -> bool:
+    def _check_first_in_zone(self, zone_eid: int, component, temp_component_type, log_component_type) -> bool:
         """Helper to check if entity is currently entering/exiting a zone for the first time.
         Must run BEFORE RemoveZoneEntryExit appends to the log.
         """
-        temp_component = esper.try_component(geo_eid, temp_component_type)
+        temp_component = esper.try_component(zone_eid, temp_component_type)
         if not temp_component:
             return False
         
         tag_set = set(component.tags)
-        log = esper.try_component(geo_eid, log_component_type)
+        log = esper.try_component(zone_eid, log_component_type)
         existing_zones = set(log.zone_ids) if log else set()
         
         # Check if any currently changed zone matches tags and is NOT in the historical log
         for zone_id in temp_component.zone_ids:
             if zone_id in existing_zones:
                 continue  # Already in log (not first time)
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            zone_eid = self.session_state.ZoneEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
             if self._get_entity_tags(zone_eid) & tag_set:
                 return True
         return False
 
-    def _check_first_entered(self, geo_eid: int, component) -> bool:
-        return self._check_first_in_zone(geo_eid, component, ecs_comps_geo.EnteredZones, ecs_comps_geo.ZoneEntryLog)
+    def _check_first_entered(self, zone_eid: int, component) -> bool:
+        return self._check_first_in_zone(zone_eid, component, ecs_comps_zone.EnteredZones, ecs_comps_zone.ZoneEntryLog)
 
-    def _check_first_exited(self, geo_eid: int, component) -> bool:
-        return self._check_first_in_zone(geo_eid, component, ecs_comps_geo.ExitedZones, ecs_comps_geo.ZoneExitLog)
+    def _check_first_exited(self, zone_eid: int, component) -> bool:
+        return self._check_first_in_zone(zone_eid, component, ecs_comps_zone.ExitedZones, ecs_comps_zone.ZoneExitLog)
 
 
-    def _check_ever_in_log(self, geo_eid: int, component, log_component_type) -> bool:
+    def _check_ever_in_log(self, zone_eid: int, component, log_component_type) -> bool:
         """Helper to check if any zone in historical log matches component.tags."""
-        log = esper.try_component(geo_eid, log_component_type)
+        log = esper.try_component(zone_eid, log_component_type)
         if not log or not log.zone_ids:
             return False
         
         tag_set = set(component.tags)
         for zone_id in log.zone_ids:
-            zone_eid = self.session_state.GeoObjectEntityIds.get(zone_id)
+            zone_eid = self.session_state.ZoneEntityIds.get(zone_id)
             if zone_eid is None:
                 continue
             if self._get_entity_tags(zone_eid) & tag_set:
                 return True
         return False
 
-    def _check_ever_entered(self, geo_eid: int, component) -> bool:
-        return self._check_ever_in_log(geo_eid, component, ecs_comps_geo.ZoneEntryLog)
+    def _check_ever_entered(self, zone_eid: int, component) -> bool:
+        return self._check_ever_in_log(zone_eid, component, ecs_comps_zone.ZoneEntryLog)
 
-    def _check_ever_exited(self, geo_eid: int, component) -> bool:
-        return self._check_ever_in_log(geo_eid, component, ecs_comps_geo.ZoneExitLog)
+    def _check_ever_exited(self, zone_eid: int, component) -> bool:
+        return self._check_ever_in_log(zone_eid, component, ecs_comps_zone.ZoneExitLog)
 
 
-    def _check_recently_in_log(self, geo_eid: int, component, log_component_type) -> bool:
+    def _check_recently_in_log(self, zone_eid: int, component, log_component_type) -> bool:
         """Helper to check if the last zone in a log matches component.tags."""
-        log = esper.try_component(geo_eid, log_component_type)
+        log = esper.try_component(zone_eid, log_component_type)
         if not log or not log.zone_ids:
             return False
         
@@ -432,27 +432,27 @@ class CriteriaProcessor(esper.Processor):
         # Get the most recent zone (last item in the log)
         last_zone_id = log.zone_ids[-1]
         
-        zone_eid = self.session_state.GeoObjectEntityIds.get(last_zone_id)
+        zone_eid = self.session_state.ZoneEntityIds.get(last_zone_id)
         if zone_eid is None:
             return False  # Zone was deleted or doesn't exist
         
         return bool(self._get_entity_tags(zone_eid) & tag_set)
 
-    def _check_recently_entered(self, geo_eid: int, component) -> bool:
-        return self._check_recently_in_log(geo_eid, component, ecs_comps_geo.ZoneEntryLog)
+    def _check_recently_entered(self, zone_eid: int, component) -> bool:
+        return self._check_recently_in_log(zone_eid, component, ecs_comps_zone.ZoneEntryLog)
 
-    def _check_recently_exited(self, geo_eid: int, component) -> bool:
-        return self._check_recently_in_log(geo_eid, component, ecs_comps_geo.ZoneExitLog)
+    def _check_recently_exited(self, zone_eid: int, component) -> bool:
+        return self._check_recently_in_log(zone_eid, component, ecs_comps_zone.ZoneExitLog)
 
 
-    def _check_is_visible(self, geo_eid: int, component) -> bool:
-        appearance = esper.try_component(geo_eid, ecs_comps_geo.Appearance)
+    def _check_is_visible(self, zone_eid: int, component) -> bool:
+        appearance = esper.try_component(zone_eid, ecs_comps_zone.Appearance)
         if not appearance:
             return False
         return any(tag in appearance.visible_to for tag in component.tags)
 
-    def _check_is_not_visible(self, geo_eid: int, component) -> bool:
-        return not self._check_is_visible(geo_eid, component)
+    def _check_is_not_visible(self, zone_eid: int, component) -> bool:
+        return not self._check_is_visible(zone_eid, component)
 
 
 
@@ -480,7 +480,7 @@ class EventProcessor(esper.Processor):
             if not target_comp or not target_comp.object_ids:
                 continue
 
-            # Apply this event's result components to each qualifying target geo object
+            # Apply this event's result components to each qualifying target zone object
             for target_entity_id in target_comp.object_ids:
 
                 results_to_apply = []
@@ -492,22 +492,22 @@ class EventProcessor(esper.Processor):
                     result(target_entity_id)
 
                 if results_to_apply:
-                    esper.add_component(target_entity_id, ecs_comps_geo.GeoObjectDirty())
+                    esper.add_component(target_entity_id, ecs_comps_zone.ZoneObjectDirty())
 
     def _grant_visibility(self, target_entity_id: int, component: ecs_comps_event.ResultGrantVisibility) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             for tag in component.tags:
                 if tag not in appearance.visible_to:
                     appearance.visible_to.append(tag)
 
     def _revoke_visibility(self, target_entity_id: int, component: ecs_comps_event.ResultRevokeVisibility) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             for tag in component.tags:
                 if tag in appearance.visible_to:
                     appearance.visible_to.remove(tag)
 
     def _toggle_visibility(self, target_entity_id: int, component: ecs_comps_event.ResultToggleVisibility) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             for tag in component.tags:
                 if tag in appearance.visible_to:
                     appearance.visible_to.remove(tag)
@@ -515,36 +515,36 @@ class EventProcessor(esper.Processor):
                     appearance.visible_to.append(tag)
 
     def _set_color(self, target_entity_id: int, component: ecs_comps_event.ResultSetColor) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.color = component.color
 
     def _set_radius(self, target_entity_id: int, component: ecs_comps_event.ResultSetRadius) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.radius = component.radius
 
     def _change_radius(self, target_entity_id: int, component: ecs_comps_event.ResultChangeRadius) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_geo.Appearance):
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.radius += component.change
 
     def _grant_traits(self, target_entity_id: int, component: ecs_comps_event.ResultGrantTraits) -> None:
-        traits = esper.try_component(target_entity_id, ecs_comps_geo.Traits)
+        traits = esper.try_component(target_entity_id, ecs_comps_zone.Traits)
         if traits is None:
-            esper.add_component(target_entity_id, ecs_comps_geo.Traits(traits=list(component.tags)))
+            esper.add_component(target_entity_id, ecs_comps_zone.Traits(traits=list(component.tags)))
         else:
             for trait in component.tags: #preserves order and avoids duplicates
                 if trait not in traits.traits:
                     traits.traits.append(trait)
 
     def _revoke_traits(self, target_entity_id: int, component: ecs_comps_event.ResultRevokeTraits) -> None:
-        if traits := esper.try_component(target_entity_id, ecs_comps_geo.Traits):
+        if traits := esper.try_component(target_entity_id, ecs_comps_zone.Traits):
             for trait in component.tags:
                 if trait in traits.traits:
                     traits.traits.remove(trait)
 
     def _toggle_traits(self, target_entity_id: int, component: ecs_comps_event.ResultToggleTraits) -> None:
-        traits = esper.try_component(target_entity_id, ecs_comps_geo.Traits)
+        traits = esper.try_component(target_entity_id, ecs_comps_zone.Traits)
         if traits is None:
-            esper.add_component(target_entity_id, ecs_comps_geo.Traits(traits=list(component.tags)))
+            esper.add_component(target_entity_id, ecs_comps_zone.Traits(traits=list(component.tags)))
         else:
             for trait in component.tags:
                 if trait in traits.traits:
@@ -553,7 +553,7 @@ class EventProcessor(esper.Processor):
                     traits.traits.append(trait)
 
     def _revoke_stats(self, target_entity_id: int, component) -> None:
-        if stats := esper.try_component(target_entity_id, ecs_comps_geo.Stats):
+        if stats := esper.try_component(target_entity_id, ecs_comps_zone.Stats):
             if stats.items:
                 for stat_to_remove in component.tags:
                     if stat_to_remove in stats.items:
@@ -561,16 +561,16 @@ class EventProcessor(esper.Processor):
 
     def _toggle_stats_to_values(self, target_entity_id: int, component: ecs_comps_event.ResultToggleStatsWithValue) -> None:
         '''Toggle stats on/off with a specified value. If stat doesn't exist, add it with the value. If stat exists, remove it regardless of value.'''
-        stats = esper.try_component(target_entity_id, ecs_comps_geo.Stats)
+        stats = esper.try_component(target_entity_id, ecs_comps_zone.Stats)
         if stats and stats.items and any(key in stats.items for key in component.stats_to_values.keys()):
             self._revoke_stats(target_entity_id, component)
         else:
             self._set_stats_to_values(target_entity_id, component)
 
     def _set_stats_to_values(self, target_entity_id: int, component) -> None:
-        stats = esper.try_component(target_entity_id, ecs_comps_geo.Stats)
+        stats = esper.try_component(target_entity_id, ecs_comps_zone.Stats)
         if not stats:
-            stats = ecs_comps_geo.Stats(items={})
+            stats = ecs_comps_zone.Stats(items={})
             esper.add_component(target_entity_id, stats)
         if stats.items is None:
             stats.items = {}
@@ -585,7 +585,7 @@ class EventProcessor(esper.Processor):
             stats.items[key] = stat_item
 
     def _change_stats_by_values(self, target_entity_id: int, component: ecs_comps_event.ResultChangeStatsByValues) -> None:
-        if stats := esper.try_component(target_entity_id, ecs_comps_geo.Stats):
+        if stats := esper.try_component(target_entity_id, ecs_comps_zone.Stats):
             if stats.items:
                 for key, delta in component.stats_to_values.items():
                     if key in stats.items:
@@ -597,29 +597,29 @@ class EventProcessor(esper.Processor):
                         stat_item["value"] = max(min_value, min(max_value, current_value + delta_value))
 
     def _popup_message(self, target_entity_id: int, component: ecs_comps_event.ResultPopupMessage) -> None:
-        messages = esper.try_component(target_entity_id, ecs_comps_geo.Messages)
+        messages = esper.try_component(target_entity_id, ecs_comps_zone.Messages)
         if messages is None:
-            esper.add_component(target_entity_id, ecs_comps_geo.Messages(messages=[component.text]))
+            esper.add_component(target_entity_id, ecs_comps_zone.Messages(messages=[component.text]))
         else:
             messages.messages.append(component.text)
 
 
 
-class SyncGeoObjectsToDatabase(esper.Processor):
+class SyncZonesToDatabase(esper.Processor):
     def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
         self._cache: dict[int, dict] = {}
 
     def process(self) -> None:
-        geo_by_entity = {entity_id: key for key, entity_id in self.session_state.GeoObjectEntityIds.items()}
+        zone_by_entity = {entity_id: key for key, entity_id in self.session_state.ZoneEntityIds.items()}
         multi_path_payload: dict = {}
 
-        for entity_id, _ in list(esper.get_component(ecs_comps_geo.GeoObjectDirty)):
-            key = geo_by_entity.get(entity_id)
+        for entity_id, _ in list(esper.get_component(ecs_comps_zone.ZoneObjectDirty)):
+            key = zone_by_entity.get(entity_id)
             if key is None:
                 try:
-                    esper.remove_component(entity_id, ecs_comps_geo.GeoObjectDirty)
+                    esper.remove_component(entity_id, ecs_comps_zone.ZoneObjectDirty)
                 except KeyError:
                     pass
                 continue
@@ -627,11 +627,11 @@ class SyncGeoObjectsToDatabase(esper.Processor):
             fields = self._build_properties_payload(entity_id)
             if self._cache.get(entity_id) != fields:
                 for field_path, value in fields.items():
-                    multi_path_payload[f"{GEO_OBJECTS_NODE}/{key}/{field_path}"] = value
+                    multi_path_payload[f"{ZONE_OBJECTS_NODE}/{key}/{field_path}"] = value
                 self._cache[entity_id] = copy.deepcopy(fields)
 
             try:
-                esper.remove_component(entity_id, ecs_comps_geo.GeoObjectDirty)
+                esper.remove_component(entity_id, ecs_comps_zone.ZoneObjectDirty)
             except KeyError:
                 pass
 
@@ -645,7 +645,7 @@ class SyncGeoObjectsToDatabase(esper.Processor):
     def _build_properties_payload(self, entity_id: int) -> dict:
         payload = {}
 
-        appearance = esper.try_component(entity_id, ecs_comps_geo.Appearance)
+        appearance = esper.try_component(entity_id, ecs_comps_zone.Appearance)
         if appearance is not None:
             payload["properties/appearance"] = {
                 "color": appearance.color,
@@ -654,22 +654,22 @@ class SyncGeoObjectsToDatabase(esper.Processor):
                 "visibleTo": appearance.visible_to,
             }
 
-        traits = esper.try_component(entity_id, ecs_comps_geo.Traits)
+        traits = esper.try_component(entity_id, ecs_comps_zone.Traits)
         if traits is not None:
             payload["properties/traits"] = list(traits.traits)
 
-        stats = esper.try_component(entity_id, ecs_comps_geo.Stats)
+        stats = esper.try_component(entity_id, ecs_comps_zone.Stats)
         if stats is not None and stats.items:
             payload["properties/stats"] = dict(stats.items)
 
-        messages = esper.try_component(entity_id, ecs_comps_geo.Messages)
+        messages = esper.try_component(entity_id, ecs_comps_zone.Messages)
         payload["properties/messages"] = list(messages.messages) if (messages is not None and messages.messages) else None
 
-        zone_entry_log = esper.try_component(entity_id, ecs_comps_geo.ZoneEntryLog)
+        zone_entry_log = esper.try_component(entity_id, ecs_comps_zone.ZoneEntryLog)
         if zone_entry_log is not None and zone_entry_log.zone_ids:
             payload["properties/zoneEntryLog"] = list(zone_entry_log.zone_ids)
 
-        zone_exit_log = esper.try_component(entity_id, ecs_comps_geo.ZoneExitLog)
+        zone_exit_log = esper.try_component(entity_id, ecs_comps_zone.ZoneExitLog)
         if zone_exit_log is not None and zone_exit_log.zone_ids:
             payload["properties/zoneExitLog"] = list(zone_exit_log.zone_ids)
 

@@ -42,15 +42,15 @@
       </button>
 
       <button
-        id="events-results-drawer-toggle"
-        class="events-results-drawer-toggle"
+        id="events-drawer-toggle"
+        class="events-drawer-toggle"
         type="button"
         aria-expanded="false"
-        aria-controls="events-results-drawer"
-        aria-label="Open event results editor"
+        aria-controls="events-drawer"
+        aria-label="Open event events editor"
       >E</button>
 
-      <aside id="drawer" class="drawer" aria-label="GeoJSON objects">
+      <aside id="drawer" class="drawer" aria-label="zones">
         <div class="drawer-header">
           <div>
             <p class="eyebrow">User Session</p>
@@ -66,9 +66,9 @@
           <section class="panel-section">
             <div class="editor-header">
               <div class="section-actions">
-                <button id="add-object-button" class="text-button" type="button" aria-label="Add new geo object at current location">Add object</button>
+                <button id="add-zone-button" class="text-button" type="button" aria-label="Add new zone at current location">Add zone</button>
               </div>
-              <button id="clear-all-logs-button" class="text-button" type="button" aria-label="Clear zone logs for all geo objects">Clear logs</button>
+              <button id="clear-all-logs-button" class="text-button" type="button" aria-label="Clear zone logs for all zones">Clear logs</button>
             </div>
             <ul id="object-list" class="object-list"></ul>
             <div class="editor-bottom-spacer" aria-hidden="true"></div>
@@ -155,14 +155,14 @@
         </div>
       </aside>
 
-      <aside id="events-results-drawer" class="drawer events-results-drawer" aria-label="Event editor">
+      <aside id="events-drawer" class="drawer events-drawer" aria-label="Event editor">
         <div class="drawer-header">
           <div>
             <p class="eyebrow">Event System</p>
             <h1>Events</h1>
           </div>
           <div class="drawer-header-actions">
-            <button id="events-results-drawer-close" class="text-button" type="button">Close</button>
+            <button id="events-drawer-close" class="text-button" type="button">Close</button>
           </div>
         </div>
 
@@ -207,14 +207,14 @@
                 <div id="target-criteria-list" class="stats-list"></div>
               </section>
 
-              <section class="event-results-section" aria-labelledby="event-results-heading">
+              <section class="event-section" aria-labelledby="event-heading">
                 <div class="stats-header">
-                  <h3 id="event-results-heading">Results</h3>
+                  <h3 id="event-heading">Results</h3>
                   <div class="section-actions">
                     <button id="add-result-button" class="text-button" type="button">Add result</button>
                   </div>
                 </div>
-                <div id="event-results-list" class="stats-list"></div>
+                <div id="results-list" class="stats-list"></div>
               </section>
 
               <div class="editor-actions">

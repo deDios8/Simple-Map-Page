@@ -2,15 +2,15 @@ import json
 import esper
 import pathlib
 from dataclasses import dataclass
-from ecs_comps_geo import ID, DisplayName
+from ecs_comps_zone import ID, DisplayName
 
 
 # ---------------------------------------------------------------------------
 # Components for constructing events
 # ---------------------------------------------------------------------------
 '''
-One entity is the trigger. It has name, criteria, which geo objects meet criteria.
-One entity is the target. It has name, criteria, which geo objects meet criteria.
+One entity is the trigger. It has name, criteria, which zone objects meet criteria.
+One entity is the target. It has name, criteria, which zone objects meet criteria.
 One entity is the event result. It specifies, by name, which trigger and target entities it is associated with, and what to do to the target when the trigger conditions are met.
 '''
 

@@ -2,7 +2,7 @@ import esper
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
-# Components for GeoObjects
+# Components for Zones
 # ---------------------------------------------------------------------------
 @dataclass
 class ID:
@@ -22,7 +22,7 @@ class Appearance:
 @dataclass
 class Geometry:
     coordinates: list
-    type: str = "Point"  # Assuming all geo objects are points for simplicity; can be extended to support other types
+    type: str = "Point"  # Assuming all zone objects are points for simplicity; can be extended to support other types
 
 @dataclass
 class Stat:
@@ -56,7 +56,7 @@ class ZoneExitLog:
 
 
 ## Entity
-class GeoObject:
+class Zone:
     def __init__(self, id: str, geometry: dict, properties: dict) -> None:
         new_entity_id = esper.create_entity()
         self.entity_id = new_entity_id
@@ -97,7 +97,7 @@ class ExitedZones:
     zone_ids: list
 
 @dataclass
-class GeoObjectDirty:
+class ZoneObjectDirty:
     '''Marker component to indicate that zone borders need to be uploaded to the db.'''
     is_dirty: bool = True
 

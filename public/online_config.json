@@ -8,9 +8,9 @@
   "appId":             "1:554186481304:web:35df4f22e9539a991b3aed",
 
   "nodes": {
-    "geoObjects":               "geoObjects",
-    "clientRequests":           "z_clientRequests",
-    "clientRequestsProcessed":  "z_clientRequests_processed",
+    "zones":                    "zones",
+    "clientRequests":           "zzz_clientRequests",
+    "clientRequestsProcessed":  "zzz_clientRequests_processed",
     "eventCriteria":            "eventCriteria",
     "events":                   "events"
   },
