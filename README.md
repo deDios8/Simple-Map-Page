@@ -10,6 +10,8 @@
 - Slow down tick rate for server event processing and separate that from db_updates
 - Stat editor for drop-down stat addition.
 - Test stat value checker triggers
+- searching for object and Object to do replacement
+
 
 
 # Dependencies
