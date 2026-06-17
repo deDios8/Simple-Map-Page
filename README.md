@@ -10,7 +10,9 @@
 - Slow down tick rate for server event processing and separate that from db_updates
 - Stat editor for drop-down stat addition.
 - Test stat value checker triggers
-- searching for object and Object to do replacement
+- searching for 'object' and 'Object' to do replacement to 'zone' and 'Zone' careful of duplicate variable names
+- hasTags isn't noticing a Stat name
+- dismissMessage should remove all messages with the same text
 
 
 

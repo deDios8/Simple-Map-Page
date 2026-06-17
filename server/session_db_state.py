@@ -1002,7 +1002,7 @@ class SessionState:
             return
 
         messages = esper.try_component(target_entity_id, ecs_comps_zone.Messages)
-        if messages is not None and dismiss.message in messages.messages:
+        while messages is not None and dismiss.message in messages.messages:
             messages.messages.remove(dismiss.message)
             esper.add_component(target_entity_id, ecs_comps_zone.ZoneObjectDirty())
 
