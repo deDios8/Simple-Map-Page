@@ -256,11 +256,11 @@ body {
 
 .text-button,
 .primary-button,
-.object-list button {
+.zone-list button {
   font: inherit;
 }
 
-.object-list {
+.zone-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -268,7 +268,7 @@ body {
   gap: 6px;
 }
 
-.object-list button {
+.zone-list button {
   width: 100%;
   display: flex;
   align-items: center;
@@ -288,7 +288,7 @@ body {
   box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
 }
 
-.object-list button.is-selected {
+.zone-list button.is-selected {
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, white);
 }
 

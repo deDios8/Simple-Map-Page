@@ -22,7 +22,7 @@ class Appearance:
 @dataclass
 class Geometry:
     coordinates: list
-    type: str = "Point"  # Assuming all zone objects are points for simplicity; can be extended to support other types
+    type: str = "Point"  # Assuming all zones are points for simplicity; can be extended to support other types
 
 @dataclass
 class Stat:

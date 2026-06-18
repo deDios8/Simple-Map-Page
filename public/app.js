@@ -32,7 +32,7 @@ const state = {
   geoJsonLayer: null,
   database: null,
   firebaseReady: false,
-  objects: {},
+  zones: {},
   selectedId: null,
   userLocation: null,
   userId: null,
@@ -62,14 +62,14 @@ const requestXButton = document.querySelector("#request-x-button");
 const requestYButton = document.querySelector("#request-y-button");
 const addObjectButton = document.querySelector("#add-zone-button");
 const clearAllLogsButton = document.querySelector("#clear-all-logs-button");
-const objectList = document.querySelector("#object-list");
+const zoneList = document.querySelector("#zone-list");
 const editorForm = document.querySelector("#editor-form");
 const editorPanel = document.querySelector("#editor-panel");
 const editorCancelButton = document.querySelector("#editor-cancel-button");
 const editorCancelBottomButton = document.querySelector("#editor-cancel-bottom-button");
 const editorEmptyState = document.querySelector("#editor-empty-state");
 const saveStatus = document.querySelector("#save-status");
-const deleteObjectButton = document.querySelector("#delete-object-button");
+const deleteZoneButton = document.querySelector("#delete-zone-button");
 const clearLogsButton = document.querySelector("#clear-logs-button");
 const fieldName = document.querySelector("#field-name");
 const fieldColor = document.querySelector("#field-color");
@@ -322,7 +322,7 @@ init();
 
 function checkForUserMessages() {
   if (!state.userId || !messageModal) return;
-  const userObj = state.objects[state.userId];
+  const userObj = state.zones[state.userId];
   const messages = userObj?.properties?.messages;
   if (!Array.isArray(messages) || messages.length === 0) return;
 
@@ -363,7 +363,7 @@ if (messageModalOk) {
     // Optimistically remove from local state so the next check won't re-show it
     // before the DB update echoes back.
     state.dismissedMessages.add(message);
-    const userObj = state.objects[state.userId];
+    const userObj = state.zones[state.userId];
     if (userObj?.properties?.messages) {
       const idx = userObj.properties.messages.indexOf(message);
       if (idx !== -1) {
@@ -859,7 +859,7 @@ function bindUi() {
     void submitRequest({ requestId: "request Y", requestType: "button_click", successMessage: "request Y sent" });
   });
   addObjectButton?.addEventListener("click", () => {
-    void submitRequest({ requestId: "add_object", requestType: "button_click", successMessage: "add zone sent" });
+    void submitRequest({ requestId: "add_zone", requestType: "button_click", successMessage: "add zone sent" });
   });
   clearAllLogsButton?.addEventListener("click", async () => {
     if (!canEditObjects()) {
@@ -1012,7 +1012,7 @@ function bindUi() {
     }
   });
 
-  objectList.addEventListener("click", (event) => {
+  zoneList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-id]");
     if (!button) {
       return;
@@ -1033,8 +1033,8 @@ function bindUi() {
       return;
     }
 
-    const objectEntry = state.objects[state.selectedId];
-    if (!objectEntry) {
+    const zoneEntry = state.zones[state.selectedId];
+    if (!zoneEntry) {
       return;
     }
 
@@ -1047,21 +1047,21 @@ function bindUi() {
       return;
     }
     
-    const currentCoordinates = objectEntry.geometry?.coordinates;
+    const currentCoordinates = zoneEntry.geometry?.coordinates;
     const fallbackLatitude = Array.isArray(currentCoordinates) ? currentCoordinates[1] : null;
     const fallbackLongitude = Array.isArray(currentCoordinates) ? currentCoordinates[0] : null;
-    const fallbackRadius = Number.isFinite(objectEntry.properties?.appearance?.radius)
-      ? objectEntry.properties.appearance.radius
+    const fallbackRadius = Number.isFinite(zoneEntry.properties?.appearance?.radius)
+      ? zoneEntry.properties.appearance.radius
       : null;
     
     const nextLatitude = Number.isFinite(parsedLatitude) ? Math.round(parsedLatitude * 100000) / 100000 : fallbackLatitude;
     const nextLongitude = Number.isFinite(parsedLongitude) ? Math.round(parsedLongitude * 100000) / 100000 : fallbackLongitude;
     const nextRadius = Number.isFinite(parsedRadius) ? parsedRadius : fallbackRadius;
 
-    let nextGeometry = objectEntry.geometry;
-    if (objectEntry.geometry?.type === "Point" && Number.isFinite(nextLatitude) && Number.isFinite(nextLongitude)) {
+    let nextGeometry = zoneEntry.geometry;
+    if (zoneEntry.geometry?.type === "Point" && Number.isFinite(nextLatitude) && Number.isFinite(nextLongitude)) {
       nextGeometry = {
-        ...objectEntry.geometry,
+        ...zoneEntry.geometry,
         coordinates: [nextLongitude, nextLatitude],
       };
     }
@@ -1069,13 +1069,13 @@ function bindUi() {
 
     const nextStats = collectedStats.stats;
     const nextEntry = {
-      ...objectEntry,
+      ...zoneEntry,
       geometry: nextGeometry,
       properties: {
-        ...objectEntry.properties,
-        displayName: fieldName.value.trim() || objectEntry.properties?.displayName || state.selectedId,
+        ...zoneEntry.properties,
+        displayName: fieldName.value.trim() || zoneEntry.properties?.displayName || state.selectedId,
         appearance: {
-          ...objectEntry.properties?.appearance,
+          ...zoneEntry.properties?.appearance,
           color: fieldColor.value,
           visibleTo: parseVisibleList(fieldVisible.value),
           radius: nextRadius,
@@ -1098,14 +1098,14 @@ function bindUi() {
     }
   });
 
-  deleteObjectButton.addEventListener("click", async () => {
+  deleteZoneButton.addEventListener("click", async () => {
     if (!canEditObjects()) {
       saveStatus.textContent = "Read-only mode: deleting requires gm password.";
       return;
     }
 
-    if (!state.selectedId || !state.objects[state.selectedId]) {
-      saveStatus.textContent = "Delete failed: no object selected.";
+    if (!state.selectedId || !state.zones[state.selectedId]) {
+      saveStatus.textContent = "Delete failed: no zone selected.";
       return;
     }
 
@@ -1115,7 +1115,7 @@ function bindUi() {
     try {
       await submitDeletedObjectRequest(deletingId);
       saveStatus.textContent = state.firebaseReady
-        ? "Delete request sent. Server will remove the object shortly."
+        ? "Delete request sent. Server will remove the zone shortly."
         : "Deleted locally. Add Firebase config to sync remotely.";
     } catch (error) {
       console.error(error);
@@ -1129,8 +1129,8 @@ function bindUi() {
       return;
     }
 
-    if (!state.selectedId || !state.objects[state.selectedId]) {
-      saveStatus.textContent = "Clear logs failed: no object selected.";
+    if (!state.selectedId || !state.zones[state.selectedId]) {
+      saveStatus.textContent = "Clear logs failed: no zone selected.";
       return;
     }
 
@@ -1170,7 +1170,7 @@ function locateUser() {
       ];
       state.userLocation = latLng;
 
-      if (state.userId && !state.objects[state.userId] && !state.pendingUserSetup) {
+      if (state.userId && !state.zones[state.userId] && !state.pendingUserSetup) {
         startCoordinateTracking();
       }
       if (state.userId && !state.trackingInterval && !state.pendingUserSetup) {
@@ -1275,7 +1275,7 @@ function startCoordinateTracking() {
 
     const [lat, lng] = state.userLocation;
 
-    const existing = state.objects[state.userId];
+    const existing = state.zones[state.userId];
     if (existing) {
       const updated = {
         ...existing,
@@ -1285,7 +1285,7 @@ function startCoordinateTracking() {
         },
       };
 
-      state.objects[state.userId] = updated;
+      state.zones[state.userId] = updated;
       renderLayer();
     }
 
@@ -1417,7 +1417,7 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
 
   await submitRequest({
     requestId: `edit-${targetId}`,
-    requestType: "edited_object",
+    requestType: "edited_zone",
     coordinates,
     clientRequestPayload: {
       targetId,
@@ -1431,14 +1431,14 @@ async function submitEditedObjectRequest(targetId, nextEntry) {
 }
 
 async function submitDeletedObjectRequest(targetId) {
-  const selected = state.objects[targetId];
+  const selected = state.zones[targetId];
   const coordinates = Array.isArray(selected?.geometry?.coordinates)
     ? selected.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
 
   await submitRequest({
     requestId: `delete-${targetId}`,
-    requestType: "deleted_object",
+    requestType: "deleted_zone",
     coordinates,
     clientRequestPayload: {
       targetId,
@@ -1449,7 +1449,7 @@ async function submitDeletedObjectRequest(targetId) {
 }
 
 async function submitClearLogsRequest(targetId) {
-  const selected = state.objects[targetId];
+  const selected = state.zones[targetId];
   const coordinates = Array.isArray(selected?.geometry?.coordinates)
     ? selected.geometry.coordinates
     : (Array.isArray(state.userLocation) ? [state.userLocation[1], state.userLocation[0]] : null);
@@ -1470,25 +1470,25 @@ async function submitClearAllLogsRequest() {
   await submitRequest({
     requestId: "clear-logs-all",
     requestType: "clear_logs_all",
-    successMessage: "Clear logs request for all objects sent",
+    successMessage: "Clear logs request for all  sent",
   });
 }
 
 function handleObjectSnapshot(nextObjects) {
-  state.objects = normalizeObjects(nextObjects);
+  state.zones = normalizeObjects(nextObjects);
   renderLayer();
   renderObjectList();
 
   if (state.pendingUserSetup && state.userId && state.userLocation) {
     state.pendingUserSetup = false;
-    if (!state.objects[state.userId]) {
+    if (!state.zones[state.userId]) {
       startCoordinateTracking();
     } else {
       startCoordinateTracking();
     }
   }
 
-  if (state.selectedId && !state.objects[state.selectedId]) {
+  if (state.selectedId && !state.zones[state.selectedId]) {
     closeEditorPanel();
   } else if (state.selectedId) {
     populateEditor(state.selectedId);
@@ -1502,7 +1502,7 @@ function handleObjectSnapshot(nextObjects) {
   // Clear dismissed-message tracking for messages that were removed from the DB,
   // then check whether any new messages arrived for the current user.
   if (state.userId) {
-    const currentMessages = new Set(state.objects[state.userId]?.properties?.messages ?? []);
+    const currentMessages = new Set(state.zones[state.userId]?.properties?.messages ?? []);
     for (const msg of state.dismissedMessages) {
       if (!currentMessages.has(msg)) {
         state.dismissedMessages.delete(msg);
@@ -1589,12 +1589,12 @@ function parseVisibleList(value) {
 }
 
 function isVisibleToCurrentUser(feature) {
-  // Admins can always see every object
+  // Admins can always see every zone
   if (state.userPass === "adm1n") return true;
 
   const visibleTo = feature.properties?.appearance?.visibleTo;
   if (!Array.isArray(visibleTo) || visibleTo.length === 0) return false;
-  const userTraits = state.objects[state.userId]?.properties?.traits || [];
+  const userTraits = state.zones[state.userId]?.properties?.traits || [];
   const userTraitSet = new Set(
     (Array.isArray(userTraits) ? userTraits : [])
       .map((t) => (typeof t === "string" ? t.toUpperCase() : null))
@@ -1608,7 +1608,7 @@ function renderLayer() {
     state.geoJsonLayer.remove();
   }
 
-  const visibleFeatures = Object.values(state.objects).filter((feature) => isVisibleToCurrentUser(feature));
+  const visibleFeatures = Object.values(state.zones).filter((feature) => isVisibleToCurrentUser(feature));
 
   state.geoJsonLayer = L.geoJSON(visibleFeatures, {
     pointToLayer: (feature, latlng) => L.circle(latlng, pointStyle(feature)),
@@ -1652,15 +1652,15 @@ function buildPopupMarkup(feature) {
 
   return `
     <div>
-      <strong>${escapeHtml(properties.displayName || properties.id || "Untitled object")}</strong>
+      <strong>${escapeHtml(properties.displayName || properties.id || "Untitled zone")}</strong>
     </div>
   `;
 }
 
 function renderObjectList() {
-  const visibleFeatures = Object.values(state.objects).filter((feature) => isVisibleToCurrentUser(feature));
+  const visibleFeatures = Object.values(state.zones).filter((feature) => isVisibleToCurrentUser(feature));
 
-  objectList.innerHTML = visibleFeatures.length
+  zoneList.innerHTML = visibleFeatures.length
     ? visibleFeatures
         .map((feature) => {
           const id = feature.properties?.id;
@@ -1668,7 +1668,7 @@ function renderObjectList() {
           const traitsList = feature.properties?.traits;
           const traits = Array.isArray(traitsList) && traitsList.length > 0 ? traitsList.join(", ") : "--";
           const selectedClass = state.selectedId === id ? "is-selected" : "";
-          const name = escapeHtml(feature.properties?.displayName || id || "Unnamed object");
+          const name = escapeHtml(feature.properties?.displayName || id || "Unnamed zone");
 
           return `
             <li>
@@ -1680,11 +1680,11 @@ function renderObjectList() {
           `;
         })
         .join("")
-    : "<li>No GeoJSON objects found.</li>";
+    : "<li>No GeoJSON  found.</li>";
 }
 
 function selectObject(id, options = {}) {
-  const feature = state.objects[id];
+  const feature = state.zones[id];
   if (!feature) {
     return;
   }
@@ -1721,7 +1721,7 @@ function focusFeature(feature) {
 }
 
 function populateEditor(id) {
-  const feature = state.objects[id];
+  const feature = state.zones[id];
   if (!feature) {
     showEmptyEditor();
     return;
@@ -1748,7 +1748,7 @@ function populateEditor(id) {
 function showEmptyEditor() {
   editorForm.hidden = true;
   setEditorFormCollapsed(true);
-  editorEmptyState.textContent = "Select an object from the list.";
+  editorEmptyState.textContent = "Select an zone from the list.";
   saveStatus.textContent = "";
   renderStatsEditor({});
   applyEditorPermissions();
@@ -1783,7 +1783,7 @@ function applyEditorPermissions() {
       setCoordPickMode(false);
     }
   }
-  deleteObjectButton.disabled = !isEditable || !isFormVisible;
+  deleteZoneButton.disabled = !isEditable || !isFormVisible;
   if (clearLogsButton) {
     clearLogsButton.disabled = !isEditable || !isFormVisible;
   }

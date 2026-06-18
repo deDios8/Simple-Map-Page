@@ -225,8 +225,8 @@ class SessionDebugConsole:
             "[DEBUG][event] "
             f"key={key} entity={entity_id} "
             f"id={id_component.id} display_name={display_name_comp.display_name!r} "
-            f"triggerObjectsAll={trigger_all.object_ids if trigger_all is not None else []} "
-            f"targetObjectsAll={target_all.object_ids if target_all is not None else []} "
+            f"triggerObjectsAll={trigger_all.zone_ids if trigger_all is not None else []} "
+            f"targetObjectsAll={target_all.zone_ids if target_all is not None else []} "
             f"events={active_events}"
         )
         return True

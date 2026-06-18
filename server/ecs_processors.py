@@ -7,7 +7,7 @@ import ecs_comps_client_request
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
 from session_db_state import SessionState
-from session_db_state import ZONE_OBJECTS_NODE, multi_path_patch
+from session_db_state import ZONE_NODE, multi_path_patch
 
 
 class ApplyClientRequests(esper.Processor):
@@ -20,13 +20,13 @@ class ApplyClientRequests(esper.Processor):
             self.session_state.apply_new_location_request(entity_id)
 
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.AddObject)):
-            self.session_state.apply_add_object_request(entity_id)
+            self.session_state.apply_add_zone_request(entity_id)
 
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.EditedObject)):
-            self.session_state.apply_edited_object_request(entity_id)
+            self.session_state.apply_edited_zone_request(entity_id)
 
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.DeletedObject)):
-            self.session_state.apply_deleted_object_request(entity_id)
+            self.session_state.apply_deleted_zone_request(entity_id)
 
         for entity_id, _ in list(esper.get_component(ecs_comps_client_request.AddEvent)):
             self.session_state.apply_add_event_request(entity_id)
@@ -113,9 +113,9 @@ class CheckZoneEntryExit(esper.Processor):
                 names.append(zone_id)
         return names
 
-    def is_within_zone_distance(self, object_coordinates: list, zone: dict) -> bool:
+    def is_within_zone_distance(self, focal_coordinates: list, zone: dict) -> bool:
         # Expected format for Point coordinates is [longitude, latitude].
-        if not isinstance(object_coordinates, list) or len(object_coordinates) < 2:
+        if not isinstance(focal_coordinates, list) or len(focal_coordinates) < 2:
             return False
         geometry = zone.get("geometry") if isinstance(zone, dict) else None
         properties = zone.get("properties") if isinstance(zone, dict) else None
@@ -130,15 +130,15 @@ class CheckZoneEntryExit(esper.Processor):
         if not isinstance(appearance, dict):
             appearance = {}
 
-        object_radius_value = 0
+        zone_radius_value = 0
         zone_radius_value = appearance.get("radius", 0)
 
         try:
-            obj_lon = float(object_coordinates[0])
-            obj_lat = float(object_coordinates[1])
+            obj_lon = float(focal_coordinates[0])
+            obj_lat = float(focal_coordinates[1])
             zone_lon = float(zone_coordinates[0])
             zone_lat = float(zone_coordinates[1])
-            object_radius_m = float(object_radius_value)
+            zone_radius_m = float(zone_radius_value)
             zone_radius_m = float(zone_radius_value)
         except (TypeError, ValueError):
             return False
@@ -157,21 +157,21 @@ class CheckZoneEntryExit(esper.Processor):
         c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
         distance_m = earth_radius_m * c
 
-        combined_radius_m = max(0.0, object_radius_m) + max(0.0, zone_radius_m)
+        combined_radius_m = max(0.0, zone_radius_m) + max(0.0, zone_radius_m)
         return distance_m <= combined_radius_m
 
-    def is_within_zone_intersect(self, object_coordinates: list, zone_coordinates: list, zone_radius_value: float, transformer_cache: dict) -> bool:
-        if not isinstance(object_coordinates, list) or len(object_coordinates) < 2:
+    def is_within_zone_intersect(self, focal_coordinates: list, zone_coordinates: list, zone_radius_value: float, transformer_cache: dict) -> bool:
+        if not isinstance(focal_coordinates, list) or len(focal_coordinates) < 2:
             return False
         if not isinstance(zone_coordinates, list) or len(zone_coordinates) < 2:
             return False
 
         try:
-            obj_lon = float(object_coordinates[0])
-            obj_lat = float(object_coordinates[1])
+            obj_lon = float(focal_coordinates[0])
+            obj_lat = float(focal_coordinates[1])
             zone_lon = float(zone_coordinates[0])
             zone_lat = float(zone_coordinates[1])
-            object_radius_m = 0.0
+            zone_radius_m = 0.0
             zone_radius_m = max(0.0, float(zone_radius_value))
         except (TypeError, ValueError):
             return False
@@ -188,15 +188,15 @@ class CheckZoneEntryExit(esper.Processor):
         obj_x, obj_y = transformer.transform(obj_lon, obj_lat)
         zone_x, zone_y = transformer.transform(zone_lon, zone_lat)
 
-        object_point = Point(obj_x, obj_y)
+        zone_point = Point(obj_x, obj_y)
         zone_center = Point(zone_x, zone_y)
         zone_area = zone_center.buffer(zone_radius_m)
 
-        if object_radius_m <= 0.0:
-            return object_point.within(zone_area) or object_point.touches(zone_area)
+        if zone_radius_m <= 0.0:
+            return zone_point.within(zone_area) or zone_point.touches(zone_area)
 
-        object_area = object_point.buffer(object_radius_m)
-        return object_area.intersects(zone_area)
+        zone_area = zone_point.buffer(zone_radius_m)
+        return zone_area.intersects(zone_area)
 
 
 
@@ -282,10 +282,10 @@ class CriteriaProcessor(esper.Processor):
 
             all_trigger = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTriggerCriteria)
             if all_trigger:
-                all_trigger.object_ids = list(trigger_passed_any - trigger_failed_any)
+                all_trigger.zone_ids = list(trigger_passed_any - trigger_failed_any)
             any_trigger = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAnyTriggerCriteria)
             if any_trigger:
-                any_trigger.object_ids = list(trigger_passed_any)
+                any_trigger.zone_ids = list(trigger_passed_any)
 
             # --- Target criteria ---
             target_checks = []
@@ -304,10 +304,10 @@ class CriteriaProcessor(esper.Processor):
 
             all_target = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTargetCriteria)
             if all_target:
-                all_target.object_ids = list(target_passed_any - target_failed_any)
+                all_target.zone_ids = list(target_passed_any - target_failed_any)
             any_target = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAnyTargetCriteria)
             if any_target:
-                any_target.object_ids = list(target_passed_any)
+                any_target.zone_ids = list(target_passed_any)
 
     def _get_entity_tags(self, eid: int) -> set[str]:
         tags: set[str] = set()
@@ -473,15 +473,15 @@ class EventProcessor(esper.Processor):
 
             # Read trigger/target results computed by CriteriaProcessor
             trigger_comp = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTriggerCriteria)
-            if not trigger_comp or not trigger_comp.object_ids:
+            if not trigger_comp or not trigger_comp.zone_ids:
                 continue
 
             target_comp = esper.try_component(event_entity_id, ecs_comps_event.ObjectsThatMetAllTargetCriteria)
-            if not target_comp or not target_comp.object_ids:
+            if not target_comp or not target_comp.zone_ids:
                 continue
 
-            # Apply this event's result components to each qualifying target zone object
-            for target_entity_id in target_comp.object_ids:
+            # Apply this event's result components to each qualifying target zone
+            for target_entity_id in target_comp.zone_ids:
 
                 results_to_apply = []
                 for comp_type, handler in self._result_dispatch.items():
@@ -627,7 +627,7 @@ class SyncZonesToDatabase(esper.Processor):
             fields = self._build_properties_payload(entity_id)
             if self._cache.get(entity_id) != fields:
                 for field_path, value in fields.items():
-                    multi_path_payload[f"{ZONE_OBJECTS_NODE}/{key}/{field_path}"] = value
+                    multi_path_payload[f"{ZONE_NODE}/{key}/{field_path}"] = value
                 self._cache[entity_id] = copy.deepcopy(fields)
 
             try:

@@ -26,7 +26,7 @@ _online_config: dict = json.loads((_PUBLIC_DIR / "online_config.json").read_text
 _nodes: dict = _online_config["nodes"]
 
 DEFAULT_DATABASE_URL = _online_config["databaseURL"]
-ZONE_OBJECTS_NODE = _nodes["zones"]
+ZONE_NODE = _nodes["zones"]
 CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
 EVENT_CRITERIA_NODE = _nodes["eventCriteria"]
@@ -389,7 +389,7 @@ def _sync_feature_index(
 
 
 def put_db_entry(
-    database_url: str, session_name: str, key: str, db_entry: dict[str, Any], NODE: str = ZONE_OBJECTS_NODE
+    database_url: str, session_name: str, key: str, db_entry: dict[str, Any], NODE: str = ZONE_NODE
 ) -> None:
     """Write (overwrite) a single Zone entry by key."""
     url = build_node_url(database_url, session_name, NODE, key)
@@ -400,7 +400,7 @@ def put_db_entry(
 
 
 def patch_db_entry(
-    database_url: str, session_name: str, key: str, fields: dict[str, Any], node: str = ZONE_OBJECTS_NODE
+    database_url: str, session_name: str, key: str, fields: dict[str, Any], node: str = ZONE_NODE
 ) -> None:
     """Merge-update specific fields of a database entry by key."""
 
@@ -427,7 +427,7 @@ def multi_path_patch(
 
 
 def delete_db_entry(
-    database_url: str, session_name: str, key: str, node: str = ZONE_OBJECTS_NODE) -> None:
+    database_url: str, session_name: str, key: str, node: str = ZONE_NODE) -> None:
     """Delete a Zone entry by key."""
     url = build_node_url(database_url, session_name, node, key)
     req = Request(url, method="DELETE")
@@ -663,7 +663,7 @@ class SessionState:
 
     def _initialize_from_snapshot(self) -> None:
         _nodes = [
-            (ZONE_OBJECTS_NODE,    ZoneObjectEntry,    self._upsert_zone_entity),
+            (ZONE_NODE,    ZoneObjectEntry,    self._upsert_zone_entity),
             (CLIENT_REQUESTS_NODE, ClientRequestEntry, self._upsert_client_request_entity),
             (EVENTS_NODE,          EventEntry,   self._upsert_event_entity),
         ]
@@ -679,8 +679,8 @@ class SessionState:
         if not segments:
             return ""
 
-        if ZONE_OBJECTS_NODE in segments:
-            index = segments.index(ZONE_OBJECTS_NODE)
+        if ZONE_NODE in segments:
+            index = segments.index(ZONE_NODE)
             if index + 1 < len(segments):
                 return segments[index + 1]
 
@@ -795,7 +795,7 @@ class SessionState:
                 self.session_name,
                 target_key,
                 new_user_entry,
-                NODE=ZONE_OBJECTS_NODE,
+                NODE=ZONE_NODE,
             )
             target_entity_id = self._upsert_zone_entity(target_key, ZoneObjectEntry(new_user_entry))
 
@@ -808,11 +808,11 @@ class SessionState:
             self.session_name,
             target_key,
             {"geometry/coordinates": [lon, lat]},
-            node=ZONE_OBJECTS_NODE,
+            node=ZONE_NODE,
         )
         self._consume_client_request(request_entity_id)
 
-    def apply_add_object_request(self, request_entity_id: int) -> None:
+    def apply_add_zone_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_comps_zone.Geometry)
         request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
         if request_geometry is None or request_props is None:
@@ -836,19 +836,19 @@ class SessionState:
             self._consume_client_request(request_entity_id)
             return
 
-        new_object_key = f"Zone{self._random_string()}"
-        if new_object_key in self.ZoneEntityIds:
-            new_object_key = f"{new_object_key}_{self._random_string(3)}"
+        new_zone_key = f"Zone{self._random_string()}"
+        if new_zone_key in self.ZoneEntityIds:
+            new_zone_key = f"{new_zone_key}_{self._random_string(3)}"
 
-        new_object_entry = {
+        new_zone_entry = {
             "type": "Feature",
             "geometry": {
                 "type": "Point",
                 "coordinates": [lon, lat],
             },
             "properties": {
-                "id": new_object_key,
-                "displayName": f"{new_object_key}",
+                "id": new_zone_key,
+                "displayName": f"{new_zone_key}",
                 "appearance": {
                     "color": "#0b8f87",
                     "visibleTo": ["USER"],
@@ -862,14 +862,14 @@ class SessionState:
         put_db_entry(
             self.database_url,
             self.session_name,
-            new_object_key,
-            new_object_entry,
-            NODE=ZONE_OBJECTS_NODE,
+            new_zone_key,
+            new_zone_entry,
+            NODE=ZONE_NODE,
         )
-        self._upsert_zone_entity(new_object_key, ZoneObjectEntry(new_object_entry))
+        self._upsert_zone_entity(new_zone_key, ZoneObjectEntry(new_zone_entry))
         self._consume_client_request(request_entity_id)
 
-    def apply_edited_object_request(self, request_entity_id: int) -> None:
+    def apply_edited_zone_request(self, request_entity_id: int) -> None:
         edited = esper.try_component(request_entity_id, ecs_comps_client_request.EditedObject)
         if edited is None:
             self._consume_client_request(request_entity_id)
@@ -932,7 +932,7 @@ class SessionState:
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
             },
-            node=ZONE_OBJECTS_NODE,
+            node=ZONE_NODE,
         )
 
         # Mirror the patched values into the stream's local state so that the
@@ -962,7 +962,7 @@ class SessionState:
 
         self._consume_client_request(request_entity_id)
 
-    def apply_deleted_object_request(self, request_entity_id: int) -> None:
+    def apply_deleted_zone_request(self, request_entity_id: int) -> None:
         deleted = esper.try_component(request_entity_id, ecs_comps_client_request.DeletedObject)
         if deleted is None:
             self._consume_client_request(request_entity_id)
@@ -981,7 +981,7 @@ class SessionState:
             self.database_url,
             self.session_name,
             target_key,
-            node=ZONE_OBJECTS_NODE,
+            node=ZONE_NODE,
         )
         self._consume_client_request(request_entity_id)
 
@@ -1042,7 +1042,7 @@ class SessionState:
                 "properties/zoneEntryLog": None,
                 "properties/zoneExitLog": None,
             },
-            node=ZONE_OBJECTS_NODE,
+            node=ZONE_NODE,
         )
 
         stream_obj = self.stream.zone_state.get(target_key)
@@ -1076,7 +1076,7 @@ class SessionState:
                     "properties/zoneEntryLog": None,
                     "properties/zoneExitLog": None,
                 },
-                node=ZONE_OBJECTS_NODE,
+                node=ZONE_NODE,
             )
 
             stream_obj = self.stream.zone_state.get(target_key)
@@ -1140,11 +1140,11 @@ class SessionState:
     ) -> None:
         if requested_action == "new_location":
             esper.add_component(entity_id, ecs_comps_client_request.NewLocation(requester_id=requester_id))
-        elif requested_action == "add_object":
+        elif requested_action == "add_zone":
             esper.add_component(entity_id, ecs_comps_client_request.AddObject(requester_id=requester_id))
-        elif request_type == "edited_object":
+        elif request_type == "edited_zone":
             esper.add_component(entity_id, ecs_comps_client_request.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
-        elif request_type == "deleted_object":
+        elif request_type == "deleted_zone":
             esper.add_component(entity_id, ecs_comps_client_request.DeletedObject(target_id=target_id, target_path=target_path))
         elif requested_action == "add_event":
             esper.add_component(entity_id, ecs_comps_client_request.AddEvent(requester_id=requester_id))
@@ -1542,7 +1542,7 @@ class SessionState:
                     elif change.action == "delete":
                         if change.stream_name == CLIENT_REQUESTS_NODE:
                             self._delete_tracked_entity(self.ClientRequestEntityIds, self.ClientRequests, change.key)
-                        elif change.stream_name == ZONE_OBJECTS_NODE:
+                        elif change.stream_name == ZONE_NODE:
                             self._delete_tracked_entity(self.ZoneEntityIds, self.Zones, change.key)
                         elif change.stream_name == EVENTS_NODE:
                             self._delete_tracked_entity(self.EventResultEntityIds, self.Events, change.key)

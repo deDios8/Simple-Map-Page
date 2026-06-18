@@ -1,5 +1,5 @@
 # TODO
-- Make the dropdowns for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
+- Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
 - Allow triggers to assign targets reflexively targeting the zone the triggered
 
 - Wishlist: would like a way to move a user using keybindings on pc (overriding gps)
@@ -12,7 +12,7 @@
 - Test stat value checker triggers
 - searching for 'object' and 'Object' to do replacement to 'zone' and 'Zone' careful of duplicate variable names
 - hasTags isn't noticing a Stat name
-- dismissMessage should remove all messages with the same text
+- ?? dismissMessage should remove all messages with the same text
 
 
 

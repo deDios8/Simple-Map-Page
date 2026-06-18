@@ -9,8 +9,8 @@ from ecs_comps_zone import ID, DisplayName
 # Components for constructing events
 # ---------------------------------------------------------------------------
 '''
-One entity is the trigger. It has name, criteria, which zone objects meet criteria.
-One entity is the target. It has name, criteria, which zone objects meet criteria.
+One entity is the trigger. It has name, criteria, which zones meet criteria.
+One entity is the target. It has name, criteria, which zones meet criteria.
 One entity is the event result. It specifies, by name, which trigger and target entities it is associated with, and what to do to the target when the trigger conditions are met.
 '''
 
@@ -131,19 +131,19 @@ class TargetNotVisibleTo:
 
 @dataclass
 class ObjectsThatMetAllTriggerCriteria:
-    object_ids: list
+    zone_ids: list
 
 @dataclass
 class ObjectsThatMetAllTargetCriteria:
-    object_ids: list
+    zone_ids: list
 
 @dataclass
 class ObjectsThatMetAnyTriggerCriteria:
-    object_ids: list
+    zone_ids: list
 
 @dataclass
 class ObjectsThatMetAnyTargetCriteria:
-    object_ids: list
+    zone_ids: list
 
 
 # ---------------------------------------------------------------------------
@@ -215,10 +215,10 @@ class Event:
         self.entity_id = new_entity_id
         esper.add_component(new_entity_id, ID(id=id))
         esper.add_component(new_entity_id, DisplayName(display_name=name))
-        esper.add_component(new_entity_id, ObjectsThatMetAllTriggerCriteria(object_ids=[]))
-        esper.add_component(new_entity_id, ObjectsThatMetAllTargetCriteria(object_ids=[]))
-        esper.add_component(new_entity_id, ObjectsThatMetAnyTriggerCriteria(object_ids=[]))
-        esper.add_component(new_entity_id, ObjectsThatMetAnyTargetCriteria(object_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAllTriggerCriteria(zone_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAllTargetCriteria(zone_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAnyTriggerCriteria(zone_ids=[]))
+        esper.add_component(new_entity_id, ObjectsThatMetAnyTargetCriteria(zone_ids=[]))
 
 
 
