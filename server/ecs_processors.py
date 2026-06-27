@@ -250,6 +250,7 @@ class CriteriaProcessor(esper.Processor):
     def __init__(self, session_state: SessionState) -> None:
         super().__init__()
         self.session_state = session_state
+        self._current_event_entity_id: int | None = None
         self._trigger_dispatch: dict = {
             comp_type: getattr(self, ecs_comps_event.TRIGGER_COMPONENT_HANDLER_NAMES[name])
             for name, comp_type in ecs_comps_event.TRIGGER_COMPONENT_MAP.items()
@@ -287,6 +288,9 @@ class CriteriaProcessor(esper.Processor):
             if any_trigger:
                 any_trigger.zone_ids = list(trigger_passed_any)
 
+            # Track current event for target criteria evaluation
+            self._current_event_entity_id = event_entity_id
+
             # --- Target criteria ---
             target_checks = []
             for comp_type, handler in self._target_dispatch.items():
@@ -320,6 +324,16 @@ class CriteriaProcessor(esper.Processor):
                 tags.update(stats.items.keys())
         return tags
 
+
+    def _check_was_trigger(self, zone_eid: int, component) -> bool:
+        # Check if this zone was one that met all trigger criteria
+        if self._current_event_entity_id is None:
+            return False
+        trigger_comp = esper.try_component(self._current_event_entity_id, ecs_comps_event.ObjectsThatMetAllTriggerCriteria)
+        if not trigger_comp:
+            return False
+        return zone_eid in trigger_comp.zone_ids
+    
 
     def _check_has_tags(self, zone_eid: int, component) -> bool:
         return any(tag in self._get_entity_tags(zone_eid) for tag in component.tags)

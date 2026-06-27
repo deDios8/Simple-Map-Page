@@ -1,7 +1,8 @@
 {
+  "TargetWasTrigger":        { "handler": "_check_was_trigger",        "role": "target"  },
   "TriggerHasTags":          { "handler": "_check_has_tags",           "role": "trigger" },
   "TargetHasTags":           { "handler": "_check_has_tags",           "role": "target"  },
-  "TriggerLacksTags":        { "handler": "_check_lacks_tags",        "role": "trigger"  },
+  "TriggerLacksTags":        { "handler": "_check_lacks_tags",         "role": "trigger"  },
   "TargetLacksTags":         { "handler": "_check_lacks_tags",         "role": "target"  },
   "TriggerIsWithin":         { "handler": "_check_is_within",          "role": "trigger" },
   "TargetIsWithin":          { "handler": "_check_is_within",          "role": "target"  },

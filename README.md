@@ -13,6 +13,7 @@
 - searching for 'object' and 'Object' to do replacement to 'zone' and 'Zone' careful of duplicate variable names
 - hasTags isn't noticing a Stat name
 - ?? dismissMessage should remove all messages with the same text
+- consolidate Target and Trigger entries and components?
 
 
 
