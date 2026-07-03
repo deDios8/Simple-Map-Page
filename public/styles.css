@@ -10,6 +10,12 @@
   --border: rgba(20, 48, 42, 0.12);
   --shadow: 0 18px 48px rgba(14, 43, 36, 0.18);
   --safe-bottom: max(env(safe-area-inset-bottom), 16px);
+  --card: rgba(255, 255, 255, 0.55);
+  --card-border: rgba(20, 48, 42, 0.1);
+  --field-bg: rgba(255, 255, 255, 0.94);
+  --field-border: rgba(20, 48, 42, 0.16);
+  --focus-ring: 0 0 0 3px rgba(11, 143, 135, 0.26);
+  --radius: 16px;
   font-family: "Segoe UI", "Aptos", sans-serif;
 }
 
@@ -163,6 +169,13 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.drawer-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
 .drawer-header-actions {
   display: flex;
   gap: 8px;
@@ -170,17 +183,19 @@ body {
 }
 
 .listener-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
   height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.6);
   color: var(--accent-dark);
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 200ms ease;
 }
@@ -231,8 +246,9 @@ body {
 
 .editor-panel-header h2 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -272,29 +288,46 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.72);
   text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+
+.zone-list button:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--card-border));
+}
+
+.zone-list button:active {
+  transform: scale(0.99);
 }
 
 .list-color-dot {
   flex-shrink: 0;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(0, 0, 0, 0.12);
 }
 
 .zone-list button.is-selected {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, white);
+  border-color: transparent;
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--accent) 10%, white);
 }
 
 .list-meta {
   color: var(--muted);
   font-size: 0.82rem;
+  font-weight: 500;
 }
 
 .editor-header {
@@ -302,6 +335,15 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.editor-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section-actions {
@@ -343,9 +385,12 @@ body {
 
 .appearance-row label input[type="color"] {
   flex: none;
-  width: 24px;
-  min-height: 30px;
-  padding: 3px 4px;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 3px;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .name-row label {
@@ -427,9 +472,15 @@ label.traits-label input[type="text"] {
   align-items: center;
 }
 
-.stats-section {
+.stats-section,
+.criteria-components-section,
+.event-section {
   display: grid;
   gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  background: var(--card);
 }
 
 .stats-header {
@@ -437,11 +488,17 @@ label.traits-label input[type="text"] {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .stats-header h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
 }
 
 .stats-list {
@@ -452,16 +509,16 @@ label.traits-label input[type="text"] {
 .stat-row {
   display: grid;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(20, 48, 42, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--card-border);
 }
 
 .stat-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -482,12 +539,23 @@ label.traits-label input[type="text"] {
 }
 
 .stat-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 999px;
   background: rgba(216, 61, 69, 0.12);
   color: #8a1920;
-  padding: 7px 10px;
+  font-size: 0.85rem;
   font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.stat-remove-button:hover {
+  background: rgba(216, 61, 69, 0.22);
 }
 
 .stats-empty {
@@ -568,6 +636,13 @@ label.traits-label input[type="text"] {
   color: var(--accent);
   padding: 10px 14px;
   font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.text-button:hover:not(:disabled) {
+  background: rgba(9, 83, 77, 0.18);
+  color: var(--accent-dark);
 }
 
 .text-button:disabled,
@@ -587,13 +662,30 @@ label.traits-label input[type="text"] {
 .editor-form input[type="text"],
 .editor-form input[type="number"],
 .editor-form input[type="color"],
-.editor-form textarea {
+.editor-form textarea,
+.editor-form select {
   width: 100%;
-  border: 1px solid rgba(20, 48, 42, 0.18);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.88);
-  padding: 12px 14px;
+  border: 1px solid var(--field-border);
+  border-radius: 12px;
+  background: var(--field-bg);
+  padding: 10px 12px;
   color: var(--text);
+  font: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.editor-form input[type="text"]:focus,
+.editor-form input[type="number"]:focus,
+.editor-form textarea:focus,
+.editor-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.editor-form input::placeholder,
+.editor-form textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
 .editor-form.is-collapsed > :not(.editor-bottom-spacer) {
@@ -622,6 +714,19 @@ label.traits-label input[type="text"] {
   color: #fbfff8;
   padding: 12px 18px;
   font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(9, 83, 77, 0.28);
+  transition: transform 120ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 8px 20px rgba(9, 83, 77, 0.34);
+}
+
+.primary-button:active:not(:disabled),
+.danger-button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .danger-button {
@@ -631,6 +736,12 @@ label.traits-label input[type="text"] {
   color: #fff8f8;
   padding: 12px 18px;
   font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 150ms ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  filter: brightness(1.06);
 }
 
 .primary-button:disabled,
@@ -651,6 +762,11 @@ label.traits-label input[type="text"] {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.editor-action-buttons .primary-button {
+  flex: 1 1 auto;
 }
 
 .save-status {
