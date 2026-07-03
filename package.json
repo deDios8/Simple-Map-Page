@@ -1,0 +1,37 @@
+{
+  "name": "v0-project",
+  "version": "1.0.0",
+  "description": "- Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server - Allow triggers to assign targets reflexively targeting the zone the triggered",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deDios8/Simple-Map-Page.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/deDios8/Simple-Map-Page/issues"
+  },
+  "homepage": "https://github.com/deDios8/Simple-Map-Page#readme",
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-leaflet": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3"
+  }
+}
