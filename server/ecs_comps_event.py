@@ -18,7 +18,7 @@ One entity is the event result. It specifies, by name, which trigger and target 
 # Components for trigger/target criteria
 # ---------------------------------------------------------------------------
 @dataclass
-class TriggerWasTrigger:
+class TargetWasTrigger:
     tags: list
 
 @dataclass
