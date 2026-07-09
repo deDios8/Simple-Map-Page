@@ -21,6 +21,17 @@
         <p id="location-status">Requesting GPS access...</p>
       </section>
 
+      <div id="sim-controls" class="sim-controls" hidden>
+        <div class="sim-row">
+          <button id="sim-up-button" class="sim-button" type="button" aria-label="Move up">↑</button>
+          <button id="sim-down-button" class="sim-button" type="button" aria-label="Move down">↓</button>
+        </div>
+        <div class="sim-row">
+          <button id="sim-left-button" class="sim-button" type="button" aria-label="Move left">←</button>    
+          <button id="sim-right-button" class="sim-button" type="button" aria-label="Move right">→</button>
+        </div>
+      </div>
+
       <div class="request-actions" aria-label="Client requests">
         <button id="request-a-button" class="request-action-button" type="button" aria-label="Send request A">A</button>
         <button id="request-b-button" class="request-action-button" type="button" aria-label="Send request B">B</button>
@@ -57,6 +68,7 @@
             <h1 id="drawer-session-title">Session</h1>
           </div>
           <div class="drawer-header-actions">
+            <button id="gps-toggle" class="gps-toggle" type="button" aria-label="Toggle GPS/Sim mode" title="Toggle between GPS and Simulation mode" data-mode="gps">GPS</button>
             <button id="listener-toggle" class="listener-toggle" type="button" aria-label="Pause/Resume Firebase listener" title="Pause/Resume Firebase listener" data-state="active">pause db</button>
             <button id="drawer-close" class="text-button" type="button">Close</button>
           </div>

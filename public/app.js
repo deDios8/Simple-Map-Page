@@ -47,6 +47,8 @@ const state = {
   events: {},
   eventListenerUnsubscribe: null,
   dismissedMessages: new Set(),
+  gpsMode: true,
+  watchPositionId: null,
 };
 
 
@@ -56,6 +58,12 @@ const drawerTitle = document.querySelector("#drawer-session-title");
 const drawerToggle = document.querySelector("#drawer-toggle");
 const drawerClose = document.querySelector("#drawer-close");
 const listenerToggle = document.querySelector("#listener-toggle");
+const gpsToggle = document.querySelector("#gps-toggle");
+const simControls = document.querySelector("#sim-controls");
+const simUpButton = document.querySelector("#sim-up-button");
+const simDownButton = document.querySelector("#sim-down-button");
+const simLeftButton = document.querySelector("#sim-left-button");
+const simRightButton = document.querySelector("#sim-right-button");
 const requestAButton = document.querySelector("#request-a-button");
 const requestBButton = document.querySelector("#request-b-button");
 const requestXButton = document.querySelector("#request-x-button");
@@ -846,6 +854,11 @@ function bindUi() {
   drawerToggle.addEventListener("click", () => setDrawerOpen(drawer, drawerToggle, !drawer.classList.contains("is-open")));
   drawerClose.addEventListener("click", () => { setDrawerOpen(drawer, drawerToggle, false); closeEditorPanel(); });
   listenerToggle.addEventListener("click", toggleListener);
+  gpsToggle?.addEventListener("click", toggleGpsMode);
+  simUpButton?.addEventListener("click", () => moveSimulatedLocation(0, 0.00003));
+  simDownButton?.addEventListener("click", () => moveSimulatedLocation(0, -0.00003));
+  simLeftButton?.addEventListener("click", () => moveSimulatedLocation(-0.00003, 0));
+  simRightButton?.addEventListener("click", () => moveSimulatedLocation(0.00003, 0));
   requestAButton.addEventListener("click", () => {
     void submitRequest({ requestId: "request A", requestType: "button_click", successMessage: "request A sent" });
   });
@@ -1162,7 +1175,7 @@ function locateUser() {
 
   locationStatus.textContent = "Waiting for location fix...";
 
-  navigator.geolocation.watchPosition(
+  state.watchPositionId = navigator.geolocation.watchPosition(
     ({ coords }) => {
       const latLng = [
         Math.round(coords.latitude * 100000) / 100000,
@@ -1202,6 +1215,90 @@ function locateUser() {
       timeout: 15000,
     },
   );
+}
+
+function toggleGpsMode() {
+  state.gpsMode = !state.gpsMode;
+  
+  if (gpsToggle) {
+    gpsToggle.textContent = state.gpsMode ? "GPS" : "Sim";
+    gpsToggle.setAttribute("data-mode", state.gpsMode ? "gps" : "sim");
+  }
+  
+  if (simControls) {
+    simControls.hidden = state.gpsMode;
+  }
+  
+  if (state.gpsMode) {
+    // Switching to GPS mode - start watching position
+    if (!state.watchPositionId) {
+      locateUser();
+    }
+  } else {
+    // Switching to Sim mode - stop watching position
+    if (state.watchPositionId) {
+      navigator.geolocation.clearWatch(state.watchPositionId);
+      state.watchPositionId = null;
+    }
+    // Use current location as starting point for simulation
+    if (state.userLocation) {
+      locationStatus.textContent = `Sim: ${state.userLocation[0].toFixed(5)}, ${state.userLocation[1].toFixed(5)}`;
+    } else {
+      // Default location if no GPS fix yet
+      state.userLocation = [48.21224, -101.31304];
+      locationStatus.textContent = `Sim: ${state.userLocation[0].toFixed(5)}, ${state.userLocation[1].toFixed(5)}`;
+      
+      if (!state.userMarker) {
+        state.userMarker = L.circleMarker(state.userLocation, {
+          radius: 2,
+          color: "#12413a",
+          weight: 2,
+          fillColor: "#f9fffd",
+          fillOpacity: 0.95,
+        }).addTo(state.map);
+        state.map.setView(state.userLocation, 16);
+      }
+    }
+  }
+}
+
+function moveSimulatedLocation(deltaLng, deltaLat) {
+  if (state.gpsMode) {
+    return; // Only works in Sim mode
+  }
+  
+  if (!state.userLocation) {
+    state.userLocation = [48.21224, -101.31304];
+  }
+  
+  const newLat = Math.round((state.userLocation[0] + deltaLat) * 100000) / 100000;
+  const newLng = Math.round((state.userLocation[1] + deltaLng) * 100000) / 100000;
+  const latLng = [newLat, newLng];
+  
+  state.userLocation = latLng;
+  
+  if (!state.userMarker) {
+    state.userMarker = L.circleMarker(latLng, {
+      radius: 2,
+      color: "#12413a",
+      weight: 2,
+      fillColor: "#f9fffd",
+      fillOpacity: 0.95,
+    }).addTo(state.map);
+    state.map.setView(latLng, 16);
+  } else {
+    state.userMarker.setLatLng(latLng);
+  }
+  
+  locationStatus.textContent = `Sim: ${newLat.toFixed(5)}, ${newLng.toFixed(5)}`;
+  
+  // Trigger coordinate tracking if needed
+  if (state.userId && !state.zones[state.userId] && !state.pendingUserSetup) {
+    startCoordinateTracking();
+  }
+  if (state.userId && !state.trackingInterval && !state.pendingUserSetup) {
+    startCoordinateTracking();
+  }
 }
 
 function promptUserId() {

@@ -14,7 +14,7 @@
 - hasTags isn't noticing a Stat name
 - ?? dismissMessage should remove all messages with the same text
 - consolidate Target and Trigger entries and components?
-
+- !! enter and exit zone is not updating properly
 
 
 # Dependencies
