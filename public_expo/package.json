@@ -1,0 +1,29 @@
+{
+  "name": "public_expo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "homepage": "https://deDios8.github.io/Simple-Map-Page",
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.6",
+    "expo": "~57.0.7",
+    "firebase": "^12.16.0",
+    "leaflet": "^1.9.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-leaflet": "^5.0.0",
+    "react-native": "0.86.0",
+    "react-native-web": "^0.21.2"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "predeploy": "npx expo export:web",
+    "deploy": "gh-pages -d web-build -b react-expo-trial"
+  },
+  "private": true,
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}

@@ -46,3 +46,5 @@ http://localhost:8080/index.html
 ## Server Virtual Environment:
 python server/main.py
 
+Expo Local Test:
+npx expo start --web

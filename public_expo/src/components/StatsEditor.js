@@ -1,0 +1,57 @@
+// Renders one editable row per zone stat (name + value), reused by ZoneEditor.
+export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange }) {
+  return (
+    <section className="stats-section" aria-labelledby="stats-heading">
+      <div className="stats-header">
+        <h3 id="stats-heading">Stats</h3>
+        <div className="section-actions">
+          <button className="text-button" type="button" disabled={disabled} onClick={onAdd}>
+            Add stat
+          </button>
+        </div>
+      </div>
+      <div className="stats-list">
+        {rows.length === 0 ? (
+          <div className="stats-empty">No stats yet. Add one to track custom values.</div>
+        ) : (
+          rows.map((row, index) => (
+            <article className="stat-row" key={row.key || index}>
+              <div className="stat-row-grid">
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    placeholder="Health"
+                    value={row.name}
+                    disabled={disabled}
+                    onChange={(event) => onChange(index, "name", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Value
+                  <input
+                    type="number"
+                    step="any"
+                    title={`Valid range: ${row.min_value} to ${row.max_value}`}
+                    value={row.value}
+                    disabled={disabled}
+                    onChange={(event) => onChange(index, "value", event.target.value)}
+                  />
+                </label>
+                <button
+                  className="stat-remove-button"
+                  type="button"
+                  aria-label="Remove stat"
+                  disabled={disabled}
+                  onClick={() => onRemove(index)}
+                >
+                  ✕
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
