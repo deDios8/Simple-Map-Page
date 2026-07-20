@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { isVisibleToUser, inferGeometryType } from '../utils/zoneUtils';
 
 export default function MapView({ 
   location, 
@@ -9,6 +10,7 @@ export default function MapView({
   coordPickMode = false,
   selectedId = null,
   userId = null,
+  userPass = null,
   mapLayer = '',
   mapLayerAttribution = ''
 }) {
@@ -97,22 +99,19 @@ export default function MapView({
 
     // Convert zones to GeoJSON features
     const features = Object.entries(zones)
-      .filter(([_, zone]) => zone && zone.coordinates)
+      .filter(([_, zone]) => zone && zone.geometry && zone.geometry.coordinates)
       .map(([id, zone]) => {
-        const visible = isVisibleToUser(zone, userId);
+        const visible = isVisibleToUser(zone, userId, userPass);
         if (!visible) return null;
 
         return {
           type: 'Feature',
           id: id,
           properties: {
-            ...zone,
+            ...zone.properties,
             id: id,
           },
-          geometry: {
-            type: inferGeometryType(zone.coordinates),
-            coordinates: zone.coordinates,
-          },
+          geometry: zone.geometry,
         };
       })
       .filter(Boolean);
@@ -123,25 +122,27 @@ export default function MapView({
       { type: 'FeatureCollection', features },
       {
         pointToLayer: (feature, latlng) => {
-          const radius = feature.properties.radius || 50;
+          const radius = feature.properties?.appearance?.radius || 50;
+          const color = feature.properties?.appearance?.color || '#0b8f87';
           return L.circle(latlng, {
             radius: radius,
-            fillColor: feature.properties.color || '#0b8f87',
+            fillColor: color,
             fillOpacity: 0.3,
-            color: feature.properties.color || '#0b8f87',
+            color: color,
             weight: 2,
           });
         },
         style: (feature) => {
+          const color = feature.properties?.appearance?.color || '#0b8f87';
           return {
-            fillColor: feature.properties.color || '#0b8f87',
+            fillColor: color,
             fillOpacity: 0.3,
-            color: feature.properties.color || '#0b8f87',
+            color: color,
             weight: 2,
           };
         },
         onEachFeature: (feature, layer) => {
-          const name = feature.properties.name || feature.id;
+          const name = feature.properties?.appearance?.displayName || feature.id;
           layer.bindPopup(`<strong>${name}</strong>`);
           
           layer.on('click', () => {
@@ -160,38 +161,7 @@ export default function MapView({
     ).addTo(map);
 
     geoJsonLayerRef.current = geoJsonLayer;
-  }, [zones, selectedId, userId]);
+  }, [zones, selectedId, userId, userPass]);
 
   return <div ref={mapRef} id="map" aria-label="Interactive map" />;
-}
-
-function inferGeometryType(coordinates) {
-  if (!Array.isArray(coordinates) || coordinates.length === 0) {
-    return 'Point';
-  }
-  if (typeof coordinates[0] === 'number') {
-    return 'Point';
-  }
-  if (coordinates.length === 2 && typeof coordinates[0] === 'number') {
-    return 'Point';
-  }
-  return 'Polygon';
-}
-
-function isVisibleToUser(zone, userId) {
-  if (!zone.visible) return false;
-  
-  const visibleList = parseVisibleList(zone.visible);
-  if (visibleList.includes('*')) return true;
-  if (userId && visibleList.includes(userId)) return true;
-  
-  return false;
-}
-
-function parseVisibleList(value) {
-  if (!value) return [];
-  return String(value)
-    .split(',')
-    .map((v) => v.trim())
-    .filter(Boolean);
 }

@@ -1,0 +1,233 @@
+{
+  "testBed": {
+    "events": {
+      "Event4K": {
+        "properties": {
+          "displayName": "Event4K",
+          "id": "Event4K"
+        },
+        "type": "Feature"
+      },
+      "EventDR": {
+        "properties": {
+          "Results": {
+            "ResultPopupMessage": {
+              "text": "Should add stat."
+            },
+            "ResultSetStatsToValues": {
+              "stats_to_values": {
+                "supplies": 50
+              }
+            }
+          },
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "USER"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerFirstEntered": {
+              "tags": [
+                "ZONE"
+              ]
+            },
+            "TriggerHasTags": {
+              "tags": [
+                "USER"
+              ]
+            }
+          },
+          "displayName": "StatGrant",
+          "id": "EventDR"
+        },
+        "type": "Feature"
+      },
+      "EventJB": {
+        "properties": {
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            },
+            "TriggerIsWithin": {
+              "tags": [
+                "ZONE"
+              ]
+            }
+          },
+          "displayName": "StatChange",
+          "id": "EventJB"
+        },
+        "type": "Feature"
+      },
+      "EventP2": {
+        "properties": {
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            },
+            "TriggerNotWithin": {
+              "tags": [
+                "ZONE"
+              ]
+            }
+          },
+          "displayName": "StatDecline",
+          "id": "EventP2"
+        },
+        "type": "Feature"
+      }
+    },
+    "zones": {
+      "GM": {
+        "geometry": {
+          "coordinates": [
+            -101.31304,
+            48.21276
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#d4ff00",
+            "radius": 2,
+            "shape": ""
+          },
+          "displayName": "GM",
+          "id": "GM",
+          "zoneEntryLog": [
+            "test",
+            "ZoneA1"
+          ]
+        },
+        "type": "Feature"
+      },
+      "ZoneA1": {
+        "geometry": {
+          "coordinates": [
+            -101.3131,
+            48.21286
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#f9e401",
+            "radius": 7,
+            "shape": "",
+            "visibleTo": [
+              "USER"
+            ]
+          },
+          "displayName": "TestZone",
+          "id": "ZoneA1",
+          "traits": [
+            "ZONE"
+          ],
+          "zoneEntryLog": [
+            "test",
+            "GM"
+          ]
+        },
+        "type": "Feature"
+      },
+      "test": {
+        "geometry": {
+          "coordinates": [
+            -101.3131,
+            48.21282
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#000000",
+            "radius": 2,
+            "shape": "",
+            "visibleTo": [
+              "USER"
+            ]
+          },
+          "displayName": "test",
+          "id": "test",
+          "messages": [
+            "Should add stat.",
+            "Should add stat."
+          ],
+          "stats": {
+            "supplies": {
+              "max_value": 100,
+              "min_value": 0,
+              "name": "supplies",
+              "value": 50
+            }
+          },
+          "traits": [
+            "USER"
+          ],
+          "zoneEntryLog": [
+            "ZoneA1",
+            "GM"
+          ]
+        },
+        "type": "Feature"
+      }
+    }
+  },
+  "zzz_clientRequests": {
+    "dad": {
+      "testBed": {
+        "1784562581379-dad-edit-zone-1784562581379": {
+          "geometry": {
+            "coordinates": [
+              -101.31326975415017,
+              48.21294440769056
+            ],
+            "type": "Point"
+          },
+          "properties": {
+            "clientRequestPayload": {
+              "requestedAction": "edit-zone-1784562581379",
+              "requesterId": "dad",
+              "targetId": "zone-1784562581379",
+              "targetPath": "zones/dad/testBed/zone-1784562581379",
+              "timestamp": "2026-07-20T15:49:41.379Z",
+              "type": "edited_zone"
+            },
+            "formData": {
+              "appearance": {
+                "color": "#0b8f87",
+                "displayName": "New Zone",
+                "radius": 50,
+                "visibleTo": [
+                  "*"
+                ]
+              }
+            },
+            "id": "1784562581379-dad-edit-zone-1784562581379"
+          },
+          "type": "Feature"
+        }
+      }
+    }
+  }
+}

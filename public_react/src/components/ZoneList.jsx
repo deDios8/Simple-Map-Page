@@ -13,8 +13,8 @@ export default function ZoneList({ zones, selectedId, onSelect }) {
     <ul id="zone-list" className="zone-list">
       {zoneEntries.map(([id, zone]) => {
         const isSelected = id === selectedId;
-        const name = zone.name || id;
-        const color = zone.color || '#0b8f87';
+        const name = zone.properties?.appearance?.displayName || zone.properties?.id || id;
+        const color = zone.properties?.appearance?.color || '#0b8f87';
 
         return (
           <li

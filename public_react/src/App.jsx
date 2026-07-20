@@ -3,6 +3,7 @@ import { ref, update } from 'firebase/database';
 import { initializeFirebase, getFirebasePath } from './firebase';
 import { useFirebaseData } from './hooks/useFirebaseData';
 import { useGeolocation } from './hooks/useGeolocation';
+import { normalizeZones } from './utils/zoneUtils';
 import MapView from './components/MapView';
 import StatusCard from './components/StatusCard';
 import SimControls from './components/SimControls';
@@ -46,8 +47,11 @@ function App() {
     : null;
 
   // Firebase data
-  const { data: zones } = useFirebaseData(database, zonesPath, listenerActive);
+  const { data: rawZones } = useFirebaseData(database, zonesPath, listenerActive);
   const { data: events } = useFirebaseData(database, eventsPath, listenerActive);
+
+  // Normalize zones from Firebase
+  const zones = normalizeZones(rawZones);
 
   // Initialize Firebase
   useEffect(() => {
@@ -81,6 +85,38 @@ function App() {
       setSimulatedLocation(gpsLocation);
     }
   }, [gpsLocation]);
+
+  // Start coordinate tracking when user is set and location is available
+  useEffect(() => {
+    if (!database || !config || !userId || !currentLocation) return;
+
+    const trackingInterval = setInterval(async () => {
+      const timestamp = new Date().toISOString();
+      const requestKey = `${Date.now()}-${userId}-location_update`;
+      const zonePath = getFirebasePath(config.firebaseZoneNode, { userId, sessionName });
+      
+      const locationFeature = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [currentLocation.lng, currentLocation.lat],
+        },
+        properties: {
+          id: userId,
+          timestamp,
+          traits: [],
+        },
+      };
+
+      try {
+        await update(ref(database, `${zonePath}/${userId}`), locationFeature);
+      } catch (error) {
+        console.error('Failed to update location:', error);
+      }
+    }, config.updateLocationInterval || 2000);
+
+    return () => clearInterval(trackingInterval);
+  }, [database, config, userId, sessionName, currentLocation]);
 
   const promptUserCredentials = () => {
     const id = prompt('Enter User ID:');
@@ -120,17 +156,28 @@ function App() {
     }
 
     const requestPath = getFirebasePath(config.firebaseClientRequestNode, { userId, sessionName });
-    const requestData = {
-      type: requestType,
-      timestamp: Date.now(),
-      location: currentLocation,
-      userId: userId,
+    const timestamp = new Date().toISOString();
+    const requestKey = `${Date.now()}-${userId}-${requestType}`.replace(/\s+/g, '-');
+    
+    const requestFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [currentLocation.lng, currentLocation.lat],
+      },
+      properties: {
+        id: requestKey,
+        clientRequestPayload: {
+          requesterId: userId,
+          timestamp,
+          type: requestType,
+          requestedAction: requestType,
+        },
+      },
     };
 
     try {
-      await update(ref(database, requestPath), {
-        [Date.now()]: requestData,
-      });
+      await update(ref(database, `${requestPath}/${requestKey}`), requestFeature);
       console.log('Request sent:', requestType);
     } catch (error) {
       console.error('Failed to send request:', error);
@@ -146,12 +193,13 @@ function App() {
 
     const newZoneId = `zone-${Date.now()}`;
     const newZone = {
-      name: 'New Zone',
-      color: '#0b8f87',
-      visible: '*',
-      coordinates: [currentLocation.lng, currentLocation.lat],
-      radius: 50,
-      traits: '',
+      appearance: {
+        displayName: 'New Zone',
+        color: '#0b8f87',
+        visibleTo: ['*'],
+        radius: 50,
+      },
+      traits: [],
       stats: {},
     };
 
@@ -160,52 +208,139 @@ function App() {
   };
 
   const handleEditZone = async (zoneId, zoneData) => {
-    if (!database || !zonesPath) return;
+    if (!database || !config || !userId || !sessionName || !currentLocation) return;
+
+    const requestPath = getFirebasePath(config.firebaseClientRequestNode, { userId, sessionName });
+    const timestamp = new Date().toISOString();
+    const requestKey = `${Date.now()}-${userId}-edit-${zoneId}`;
+    
+    const requestFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [currentLocation.lng, currentLocation.lat],
+      },
+      properties: {
+        id: requestKey,
+        clientRequestPayload: {
+          requesterId: userId,
+          timestamp,
+          type: 'edited_zone',
+          requestedAction: `edit-${zoneId}`,
+          targetId: zoneId,
+          targetPath: `${zonesPath}/${zoneId}`,
+        },
+        formData: zoneData,
+      },
+    };
 
     try {
-      await update(ref(database, `${zonesPath}/${zoneId}`), zoneData);
-      console.log('Zone updated:', zoneId);
+      await update(ref(database, `${requestPath}/${requestKey}`), requestFeature);
+      console.log('Edit request sent for zone:', zoneId);
     } catch (error) {
-      console.error('Failed to update zone:', error);
-      alert('Failed to update zone');
+      console.error('Failed to send edit request:', error);
+      alert('Failed to send edit request');
     }
   };
 
   const handleDeleteZone = async (zoneId) => {
-    if (!database || !zonesPath) return;
+    if (!database || !config || !userId || !sessionName || !currentLocation) return;
+
+    const requestPath = getFirebasePath(config.firebaseClientRequestNode, { userId, sessionName });
+    const timestamp = new Date().toISOString();
+    const requestKey = `${Date.now()}-${userId}-delete-${zoneId}`;
+    
+    const requestFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [currentLocation.lng, currentLocation.lat],
+      },
+      properties: {
+        id: requestKey,
+        clientRequestPayload: {
+          requesterId: userId,
+          timestamp,
+          type: 'deleted_zone',
+          requestedAction: `delete-${zoneId}`,
+          targetId: zoneId,
+          targetPath: `${zonesPath}/${zoneId}`,
+        },
+      },
+    };
 
     try {
-      await update(ref(database, `${zonesPath}/${zoneId}`), null);
-      console.log('Zone deleted:', zoneId);
+      await update(ref(database, `${requestPath}/${requestKey}`), requestFeature);
+      console.log('Delete request sent for zone:', zoneId);
     } catch (error) {
-      console.error('Failed to delete zone:', error);
-      alert('Failed to delete zone');
+      console.error('Failed to send delete request:', error);
+      alert('Failed to send delete request');
     }
   };
 
   const handleClearLogs = async (zoneId) => {
-    if (!database || !zonesPath) return;
+    if (!database || !config || !userId || !sessionName || !currentLocation) return;
+
+    const requestPath = getFirebasePath(config.firebaseClientRequestNode, { userId, sessionName });
+    const timestamp = new Date().toISOString();
+    const requestKey = `${Date.now()}-${userId}-clear-logs-${zoneId}`;
+    
+    const requestFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [currentLocation.lng, currentLocation.lat],
+      },
+      properties: {
+        id: requestKey,
+        clientRequestPayload: {
+          requesterId: userId,
+          timestamp,
+          type: 'clear_logs',
+          requestedAction: `clear-logs-${zoneId}`,
+          targetId: zoneId,
+          targetPath: `${zonesPath}/${zoneId}`,
+        },
+      },
+    };
 
     try {
-      await update(ref(database, `${zonesPath}/${zoneId}/logs`), null);
-      console.log('Logs cleared for zone:', zoneId);
+      await update(ref(database, `${requestPath}/${requestKey}`), requestFeature);
+      console.log('Clear logs request sent for zone:', zoneId);
     } catch (error) {
-      console.error('Failed to clear logs:', error);
+      console.error('Failed to send clear logs request:', error);
     }
   };
 
   const handleClearAllLogs = async () => {
-    if (!database || !zonesPath || !zones) return;
+    if (!database || !config || !userId || !sessionName || !currentLocation) return;
+
+    const requestPath = getFirebasePath(config.firebaseClientRequestNode, { userId, sessionName });
+    const timestamp = new Date().toISOString();
+    const requestKey = `${Date.now()}-${userId}-clear-logs-all`;
+    
+    const requestFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [currentLocation.lng, currentLocation.lat],
+      },
+      properties: {
+        id: requestKey,
+        clientRequestPayload: {
+          requesterId: userId,
+          timestamp,
+          type: 'clear_logs_all',
+          requestedAction: 'clear-logs-all',
+        },
+      },
+    };
 
     try {
-      const updates = {};
-      Object.keys(zones).forEach(zoneId => {
-        updates[`${zoneId}/logs`] = null;
-      });
-      await update(ref(database, zonesPath), updates);
-      console.log('All logs cleared');
+      await update(ref(database, `${requestPath}/${requestKey}`), requestFeature);
+      console.log('Clear all logs request sent');
     } catch (error) {
-      console.error('Failed to clear all logs:', error);
+      console.error('Failed to send clear all logs request:', error);
     }
   };
 
@@ -217,14 +352,15 @@ function App() {
   };
 
   return (
-    <main className="app-shell">
+    <main className="app">
       <MapView
         location={currentLocation}
-        zones={zones || {}}
+        zones={zones}
         onMapClick={handleMapClick}
         coordPickMode={coordPickMode}
         selectedId={selectedZoneId}
         userId={userId}
+        userPass={userPass}
         mapLayer={config?.mapLayer || ''}
         mapLayerAttribution={config?.mapLayerAttribution || ''}
       />
@@ -253,7 +389,7 @@ function App() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sessionName={sessionName}
-        zones={zones || {}}
+        zones={zones}
         selectedId={selectedZoneId}
         onSelectZone={setSelectedZoneId}
         onAddZone={handleAddZone}

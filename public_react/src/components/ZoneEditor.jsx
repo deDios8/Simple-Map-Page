@@ -21,15 +21,18 @@ export default function ZoneEditor({
   const [coordPickMode, setCoordPickMode] = useState(false);
 
   useEffect(() => {
-    if (zone) {
+    if (zone && zone.properties) {
+      const appearance = zone.properties.appearance || {};
+      const coords = zone.geometry?.coordinates || [];
+      
       setFormData({
-        name: zone.name || '',
-        color: zone.color || '#0b8f87',
-        visible: zone.visible || '*',
-        traits: zone.traits || '',
-        radius: zone.radius || 50,
-        coordinates: zone.coordinates || [],
-        stats: zone.stats || {},
+        name: appearance.displayName || zone.properties.id || '',
+        color: appearance.color || '#0b8f87',
+        visible: Array.isArray(appearance.visibleTo) ? appearance.visibleTo.join(',') : '*',
+        traits: Array.isArray(zone.properties.traits) ? zone.properties.traits.join(',') : '',
+        radius: appearance.radius || 50,
+        coordinates: coords,
+        stats: zone.properties.stats || {},
       });
     }
   }, [zone, zoneId]);
@@ -40,7 +43,20 @@ export default function ZoneEditor({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Format data for Firebase with proper structure
+    const zoneData = {
+      appearance: {
+        displayName: formData.name,
+        color: formData.color,
+        visibleTo: formData.visible.split(',').map(v => v.trim()).filter(Boolean),
+        radius: formData.radius,
+      },
+      traits: formData.traits.split(',').map(v => v.trim()).filter(Boolean),
+      stats: formData.stats,
+    };
+    
+    onSave(zoneData);
   };
 
   const handleUseCurrentLocation = () => {
