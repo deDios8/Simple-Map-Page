@@ -149,7 +149,7 @@ class SessionDebugConsole:
         print(
             "[DEBUG][world] "
             f"entities={len(all_entities)} "
-            f"id={id_count} display_name={display_name_count} appearance={appearance_count} zonemetry={zonemetry_count} "
+            f"id={id_count} display_name={display_name_count} appearance={appearance_count} geometry={geometry_count} "
             f"requestParameters={request_count}"
         )
 
