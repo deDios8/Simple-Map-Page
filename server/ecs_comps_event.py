@@ -230,7 +230,7 @@ class Event:
 # Single-source registries: maps component name → class
 # Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
-_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
+_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public_react/public"
 
 _criteria_json: dict = json.loads((_PUBLIC_DIR / "map_criteria_components.json").read_text())
 TRIGGER_COMPONENT_NAMES: frozenset[str] = frozenset(
