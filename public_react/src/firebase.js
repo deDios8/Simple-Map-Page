@@ -9,10 +9,33 @@ export async function initializeFirebase() {
     const response = await fetch('/online_config.json');
     const config = await response.json();
     
-    firebaseApp = initializeApp(config.firebase);
+    // Firebase config is at root level in online_config.json
+    const firebaseConfig = {
+      apiKey: config.apiKey,
+      authDomain: config.authDomain,
+      databaseURL: config.databaseURL,
+      projectId: config.projectId,
+      storageBucket: config.storageBucket,
+      messagingSenderId: config.messagingSenderId,
+      appId: config.appId,
+    };
+    
+    firebaseApp = initializeApp(firebaseConfig);
     database = getDatabase(firebaseApp);
     
-    return { database, config };
+    // Return database and processed config
+    return { 
+      database, 
+      config: {
+        ...config,
+        firebaseZoneNode: config.nodes?.zones || 'zones',
+        firebaseClientRequestNode: config.nodes?.clientRequests || 'zzz_clientRequests',
+        firebaseEventsNode: config.nodes?.events || 'events',
+        mapLayer: config.mapLayer?.default?.url || '',
+        mapLayerAttribution: config.mapLayer?.default?.attribution || '',
+        updateLocationInterval: config.updateLocationInterval || 0,
+      }
+    };
   } catch (error) {
     console.error('Failed to initialize Firebase:', error);
     throw error;
