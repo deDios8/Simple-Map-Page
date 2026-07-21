@@ -50,3 +50,5 @@ python server/main.py
 npx expo start --web
 ## Expo GitHub Pages Deploy:
 cd public_expo && npm run deploy
+# Note for bad cached on gh-pages:
+If you ever see the same fatal: a branch named 'gh-pages' already exists error again, the fix is identical: delete public_expo/node_modules/.cache/gh-pages and rerun npm run deploy.

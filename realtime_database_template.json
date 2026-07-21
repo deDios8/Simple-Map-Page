@@ -1,13 +1,6 @@
 {
   "testBed": {
     "events": {
-      "Event4K": {
-        "properties": {
-          "displayName": "Event4K",
-          "id": "Event4K"
-        },
-        "type": "Feature"
-      },
       "EventDR": {
         "properties": {
           "Results": {
