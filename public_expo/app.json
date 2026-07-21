@@ -18,8 +18,10 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "baseUrl": "/"
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "baseUrl": "/Simple-Map-Page"
     }
   }
 }

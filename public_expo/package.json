@@ -19,8 +19,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "predeploy": "npx expo export:web",
-    "deploy": "gh-pages -d web-build -b react-expo-trial"
+    "predeploy": "expo export -p web",
+    "deploy": "gh-pages --nojekyll -d dist"
   },
   "private": true,
   "devDependencies": {
