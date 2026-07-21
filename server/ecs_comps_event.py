@@ -230,9 +230,9 @@ class Event:
 # Single-source registries: maps component name → class
 # Import these instead of repeating the lists in db_stream, main, or debug_console.
 # ---------------------------------------------------------------------------
-_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public"
+_PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public_expo/config"
 
-_criteria_json: dict = json.loads((_PUBLIC_DIR / "map_criteria_components.json").read_text())
+_criteria_json: dict = json.loads((_PUBLIC_DIR / "mapCriteriaComponents.json").read_text())
 TRIGGER_COMPONENT_NAMES: frozenset[str] = frozenset(
     name for name, meta in _criteria_json.items() if meta.get("role") == "trigger")
 TARGET_COMPONENT_NAMES: frozenset[str] = frozenset(
@@ -244,7 +244,7 @@ TRIGGER_COMPONENT_HANDLER_NAMES: dict[str, str] = {
 TARGET_COMPONENT_HANDLER_NAMES: dict[str, str] = {
     name: meta["handler"] for name, meta in _criteria_json.items() if meta.get("role") == "target"}
 
-_result_json: dict = json.loads((_PUBLIC_DIR / "map_result_components.json").read_text())
+_result_json: dict = json.loads((_PUBLIC_DIR / "mapResultComponents.json").read_text())
 EVENT_RESULT_COMPONENT_NAMES: frozenset[str] = frozenset(_result_json.keys())
 EVENT_RESULT_COMPONENT_MAP: dict[str, type] = {name: globals()[name] for name in EVENT_RESULT_COMPONENT_NAMES}
 EVENT_RESULT_COMPONENT_HANDLER_NAMES: dict[str, str] = {name: meta["handler"] for name, meta in _result_json.items()}
