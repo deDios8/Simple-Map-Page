@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "$sessionName": {
+      "zones": {
+        ".read": true,
+        ".write": true
+      },
+      "events": {
+        ".read": true,
+        ".write": true
+      },
+      "eventCriteria": {
+        ".read": true,
+        ".write": true
+      },
+
+      "zzz_clientRequests": {
+        ".read": false,
+        "$requestKey": {
+          ".write": "auth != null || !newData.exists()"
+        }
+      },
+      "zzz_clientRequests_processed": {
+        ".read": false,
+        ".write": true
+      }
+    },
+
+    ".read": false,
+    ".write": false
+  }
+}
