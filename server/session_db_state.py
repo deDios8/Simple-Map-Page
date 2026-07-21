@@ -29,7 +29,6 @@ DEFAULT_DATABASE_URL = _online_config["databaseURL"]
 ZONE_NODE = _nodes["zones"]
 CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
-EVENT_CRITERIA_NODE = _nodes["eventCriteria"]
 EVENTS_NODE = _nodes["events"]
 
 

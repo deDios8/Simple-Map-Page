@@ -11,7 +11,6 @@
     "zones":                    "zones",
     "clientRequests":           "zzz_clientRequests",
     "clientRequestsProcessed":  "zzz_clientRequests_processed",
-    "eventCriteria":            "eventCriteria",
     "events":                   "events"
   },
 
