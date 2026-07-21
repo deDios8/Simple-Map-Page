@@ -19,6 +19,7 @@ from urllib.parse import quote
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from debug_console import SessionDebugConsole
+from firebase_auth import auth_headers
 
 
 _PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public_expo/config"
@@ -222,7 +223,7 @@ def _normalize_objects(raw: Any) -> dict[str, dict[str, Any]]:
 def fetch_node(database_url: str, session_name: str, node: str) -> dict[str, dict[str, Any]]:
     url = build_node_url(database_url, session_name, node)
     try:
-        with urlopen(url) as response:
+        with urlopen(Request(url, headers=auth_headers())) as response:
             payload = response.read().decode("utf-8")
     except HTTPError as error:
         raise RuntimeError(f"Firebase HTTP error {error.code} for URL: {url}") from error
@@ -393,7 +394,7 @@ def put_db_entry(
     """Write (overwrite) a single Zone entry by key."""
     url = build_node_url(database_url, session_name, NODE, key)
     data = json.dumps(db_entry).encode("utf-8")
-    req = Request(url, data=data, method="PUT", headers={"Content-Type": "application/json"})
+    req = Request(url, data=data, method="PUT", headers={"Content-Type": "application/json", **auth_headers()})
     with urlopen(req) as response:
         response.read()
 
@@ -405,7 +406,7 @@ def patch_db_entry(
 
     url = build_node_url(database_url, session_name, node, key)
     data = json.dumps(fields).encode("utf-8")
-    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
+    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json", **auth_headers()})
     with urlopen(req) as response:
         response.read()
 
@@ -420,7 +421,7 @@ def multi_path_patch(
     """
     url = build_node_url(database_url, session_name)
     data = json.dumps(multi_path_payload).encode("utf-8")
-    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json"})
+    req = Request(url, data=data, method="PATCH", headers={"Content-Type": "application/json", **auth_headers()})
     with urlopen(req) as response:
         response.read()
 
@@ -429,7 +430,7 @@ def delete_db_entry(
     database_url: str, session_name: str, key: str, node: str = ZONE_NODE) -> None:
     """Delete a Zone entry by key."""
     url = build_node_url(database_url, session_name, node, key)
-    req = Request(url, method="DELETE")
+    req = Request(url, method="DELETE", headers=auth_headers())
     with urlopen(req) as response:
         response.read()
 
@@ -441,7 +442,7 @@ def delete_db_entry(
 
 def _iter_stream_from_url(url: str):
     """Yield StreamEvent objects from a Firebase REST SSE endpoint."""
-    request = Request(url, headers={"Accept": "text/event-stream"})
+    request = Request(url, headers={"Accept": "text/event-stream", **auth_headers()})
     with urlopen(request) as response:
         if response.status != 200:
             raise RuntimeError(f"Stream listener failed with HTTP status {response.status}.")

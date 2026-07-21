@@ -3,26 +3,24 @@
     "$sessionName": {
       "zones": {
         ".read": true,
-        ".write": true
+        ".write": false
       },
       "events": {
         ".read": true,
-        ".write": true
+        ".write": false
       },
       "eventCriteria": {
         ".read": true,
-        ".write": true
+        ".write": false
       },
 
       "zzz_clientRequests": {
         ".read": false,
-        "$requestKey": {
-          ".write": "auth != null || !newData.exists()"
-        }
+        ".write": "auth != null"
       },
       "zzz_clientRequests_processed": {
         ".read": false,
-        ".write": true
+        ".write": false
       }
     },
 

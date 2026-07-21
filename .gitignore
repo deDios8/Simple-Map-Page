@@ -14,6 +14,10 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
+# Firebase service account key - grants full admin access to the database,
+# must never be committed
+server/serviceAccountKey.json
+
 # Firebase config
 
 # Uncomment this if you'd like others to create their own Firebase project.
