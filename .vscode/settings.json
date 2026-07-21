@@ -1,0 +1,15 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.venv": true,
+        "**/skills-lock.json": true,
+        "**/.agents": true,
+        "**/.firebaserc": true,
+        "**/firebase.json": true,
+        "**/.gitignore": true,
+    },
+    "chat.tools.terminal.autoApprove": {
+        "/Users/aaron.klingbeil/Documents/Simple-Map-Page/.venv/bin/python": true
+    }
+}
