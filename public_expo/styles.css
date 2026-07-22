@@ -104,6 +104,12 @@ body {
   bottom: var(--safe-bottom);
   z-index: 900;
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request-actions > div {
+  display: flex;
   gap: 10px;
 }
 
