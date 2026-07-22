@@ -49,16 +49,23 @@ body {
   top: 16px;
   left: 16px;
   z-index: 600;
-  width: min(280px, calc(100vw - 32px));
+  width: min(240px, calc(100vw - 32px));
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--panel);
+  background: rgba(20, 48, 42, 0.3);
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
 }
 
-.status-label,
+@media (max-width: 720px) {
+  .status-card {
+    top: 12px;
+    left: 12px;
+    width: min(240px, calc(100vw - 24px));
+  }
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--muted);
@@ -68,7 +75,11 @@ body {
   text-transform: uppercase;
 }
 
-#location-status,
+#location-status {
+  margin: 0;
+  color: #f6f7f2;
+}
+
 .drawer h1,
 .drawer h2,
 .drawer p {
@@ -153,6 +164,17 @@ body {
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
+}
+
+@media (max-width: 720px) {
+  .drawer {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 78vh;
+    border-radius: 24px 24px 0 0;
+  }
 }
 
 .drawer-header,
@@ -782,21 +804,6 @@ body {
 }
 
 @media (max-width: 720px) {
-  .status-card {
-    top: 12px;
-    left: 12px;
-    width: min(260px, calc(100vw - 24px));
-  }
-
-  .drawer {
-    right: 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    max-height: 78vh;
-    border-radius: 24px 24px 0 0;
-  }
-
   .zone-drawer-toggle {
     right: 14px;
   }
