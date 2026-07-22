@@ -105,13 +105,9 @@ body {
   left: 18px;
   bottom: var(--safe-bottom);
   z-index: 900;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.request-actions > div {
-  display: flex;
+  display: grid;
+  grid-template-columns: 62px 62px;
+  grid-template-rows: 62px 62px;
   gap: 10px;
 }
 
@@ -258,24 +254,24 @@ body {
   display: none;
 }
 
-.sim-button.sim-up {
+.sim-button.sim-up-right {
   grid-column: 2;
   grid-row: 1;
 }
 
-.sim-button.sim-left {
+.sim-button.sim-up-left {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.sim-button.sim-down-right {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.sim-button.sim-down-left {
   grid-column: 1;
   grid-row: 2;
-}
-
-.sim-button.sim-right {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.sim-button.sim-down {
-  grid-column: 2;
-  grid-row: 3;
 }
 
 .sim-button {
@@ -559,6 +555,13 @@ body {
   font-size: 0.95rem;
 }
 
+@media (max-width: 760px) {
+  .stats-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .stats-list {
   display: grid;
   gap: 8px;
@@ -629,6 +632,13 @@ body {
   gap: 12px;
 }
 
+@media (max-width: 760px) {
+  .statuses-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .statuses-header h3 {
   margin: 0;
   font-size: 0.95rem;
@@ -690,13 +700,6 @@ body {
 .status-remove-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-@media (max-width: 760px) {
-  .statuses-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }
 
 .editor-form input[type="text"],
@@ -776,13 +779,6 @@ body {
 
 .editor-bottom-spacer {
   height: calc(62px + var(--safe-bottom));
-}
-
-@media (max-width: 760px) {
-  .stats-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }
 
 @media (max-width: 720px) {

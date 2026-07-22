@@ -15,8 +15,7 @@ export default function RequestButtons() {
 
   return (
     <div className="request-actions" aria-label="Client requests">
-      <div>
-      {["X", "Y"].map((label) => (
+      {["X", "Y", "A", "B"].map((label) => (
         <button
           key={label}
           className="request-action-button"
@@ -27,20 +26,6 @@ export default function RequestButtons() {
           {label}
         </button>
       ))}
-      </div>
-      <div>
-            {["A", "B"].map((label) => (
-        <button
-          key={label}
-          className="request-action-button"
-          type="button"
-          aria-label={`Send request ${label}`}
-          onClick={() => send(label)}
-        >
-          {label}
-        </button>
-      ))}
-      </div>
     </div>
   );
 }
