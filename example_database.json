@@ -1,0 +1,201 @@
+{
+  "testBed": {
+    "events": {
+      "EventDR": {
+        "properties": {
+          "Results": {
+            "ResultPopupMessage": {
+              "text": "Should add stat."
+            },
+            "ResultSetStatsToValues": {
+              "stats_to_values": {
+                "supplies": 50
+              }
+            }
+          },
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "USER"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerFirstEntered": {
+              "tags": [
+                "ZONE"
+              ]
+            },
+            "TriggerHasTags": {
+              "tags": [
+                "USER"
+              ]
+            }
+          },
+          "displayName": "StatGrant",
+          "id": "EventDR"
+        },
+        "type": "Feature"
+      },
+      "EventJB": {
+        "properties": {
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            },
+            "TriggerIsWithin": {
+              "tags": [
+                "ZONE"
+              ]
+            }
+          },
+          "displayName": "StatChange",
+          "id": "EventJB"
+        },
+        "type": "Feature"
+      },
+      "EventP2": {
+        "properties": {
+          "Targets": {
+            "TargetHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            }
+          },
+          "Triggers": {
+            "TriggerHasTags": {
+              "tags": [
+                "supplies"
+              ]
+            },
+            "TriggerNotWithin": {
+              "tags": [
+                "ZONE"
+              ]
+            }
+          },
+          "displayName": "StatDecline",
+          "id": "EventP2"
+        },
+        "type": "Feature"
+      }
+    },
+    "zones": {
+      "GM": {
+        "geometry": {
+          "coordinates": [
+            -101.31309,
+            48.21288
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#75766f",
+            "radius": 2,
+            "shape": ""
+          },
+          "displayName": "GM",
+          "id": "GM",
+          "zoneEntryLog": [
+            "ZoneA1",
+            "dad"
+          ],
+          "zoneExitLog": [
+            "ZoneZW",
+            "Zone28"
+          ]
+        },
+        "type": "Feature"
+      },
+      "ZoneA1": {
+        "geometry": {
+          "coordinates": [
+            -101.31333,
+            48.21276
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#f9e401",
+            "radius": 7,
+            "opacity": 0.5,
+            "shape": "",
+            "visibleTo": [
+              "User"
+            ]
+          },
+          "displayName": "TestZone",
+          "id": "ZoneA1",
+          "traits": [
+            "ZONE"
+          ],
+          "zoneEntryLog": [
+            "dad",
+            "GM"
+          ],
+          "zoneExitLog": [
+            "ZoneZW",
+            "Zone28"
+          ]
+        },
+        "type": "Feature"
+      },
+      "dad": {
+        "geometry": {
+          "coordinates": [
+            -101.31313,
+            48.21278
+          ],
+          "type": "Point"
+        },
+        "properties": {
+          "appearance": {
+            "color": "#000000",
+            "radius": 2,
+            "shape": "",
+            "visibleTo": [
+              "USER"
+            ]
+          },
+          "displayName": "dad",
+          "id": "dad",
+          "messages": [
+            "Should add stat."
+          ],
+          "stats": {
+            "supplies": {
+              "max_value": 100,
+              "min_value": 0,
+              "name": "supplies",
+              "value": 50
+            }
+          },
+          "traits": [
+            "USER"
+          ],
+          "zoneEntryLog": [
+            "ZoneA1",
+            "GM"
+          ],
+          "zoneExitLog": [
+            "ZoneZW",
+            "Zone28"
+          ]
+        },
+        "type": "Feature"
+      }
+    }
+  }
+}

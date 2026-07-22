@@ -79,6 +79,7 @@ class ZoneObjectEntry(DBEntry):
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
+        self.opacity = self.appearance.get("opacity", 0.5) if isinstance(self.appearance, dict) else 0.5
         self.visible_to = normalize_string_list(self.appearance.get("visibleTo", [])) if isinstance(self.appearance, dict) else []
 
         self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
@@ -898,6 +899,7 @@ class SessionState:
 
         appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
+        appearance.opacity = to_float(form_data.get("opacity"), float(appearance.opacity))
 
         appearance.visible_to = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else []
 
@@ -927,6 +929,7 @@ class SessionState:
                 "properties/displayName": display_name_comp.display_name,
                 "properties/appearance/color": appearance.color,
                 "properties/appearance/radius": appearance.radius,
+                "properties/appearance/opacity": appearance.opacity,
                 "properties/appearance/visibleTo": appearance.visible_to,
                 "properties/traits": next_traits,
                 "properties/data": extra_data,
@@ -952,6 +955,7 @@ class SessionState:
                 if isinstance(appr, dict):
                     appr["color"] = appearance.color
                     appr["radius"] = appearance.radius
+                    appr["opacity"] = appearance.opacity
                     appr["visibleTo"] = appearance.visible_to
                 props["traits"] = next_traits
                 props["data"] = extra_data
@@ -1118,6 +1122,7 @@ class SessionState:
         appearance.color = appearance_data.get("color", "")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
+        appearance.opacity = appearance_data.get("opacity", 0.5)
         appearance.visible_to = normalize_string_list(appearance_data.get("visibleTo", []))
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_comps_zone.Geometry)
@@ -1319,6 +1324,11 @@ class SessionState:
                     value = int(raw or 0)
                 except (TypeError, ValueError):
                     value = 0
+            elif field_type == "float":
+                try:
+                    value = float(raw or 0)
+                except (TypeError, ValueError):
+                    value = 0.0
             elif field_type == "json":
                 value = raw if isinstance(raw, dict) else {}
             else:  # "text"

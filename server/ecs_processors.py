@@ -540,6 +540,14 @@ class EventProcessor(esper.Processor):
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.radius += component.change
 
+    def _set_opacity(self, target_entity_id: int, component: ecs_comps_event.ResultSetOpacity) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.opacity = component.opacity
+
+    def _change_opacity(self, target_entity_id: int, component: ecs_comps_event.ResultChangeOpacity) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.opacity += component.change
+
     def _grant_traits(self, target_entity_id: int, component: ecs_comps_event.ResultGrantTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_comps_zone.Traits)
         if traits is None:
@@ -665,6 +673,7 @@ class SyncZonesToDatabase(esper.Processor):
                 "color": appearance.color,
                 "shape": appearance.shape,
                 "radius": appearance.radius,
+                "opacity": appearance.opacity,
                 "visibleTo": appearance.visible_to,
             }
 

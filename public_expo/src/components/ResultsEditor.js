@@ -76,7 +76,7 @@ function ResultValueField({ config, value, disabled, onChange }) {
     );
   }
 
-  if (fieldType === "number") {
+  if (fieldType === "number" || fieldType === "float") {
     return (
       <label>
         {label}

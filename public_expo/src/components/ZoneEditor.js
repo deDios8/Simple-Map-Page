@@ -22,6 +22,7 @@ export default function ZoneEditor() {
   const [name, setName] = useState("");
   const [color, setColor] = useState("#0b8f87");
   const [radius, setRadius] = useState("");
+  const [opacity, setOpacity] = useState("0.5");
   const [visibleTo, setVisibleTo] = useState("");
   const [traits, setTraits] = useState("");
   const [lat, setLat] = useState(null);
@@ -40,6 +41,7 @@ export default function ZoneEditor() {
         ? String(selectedFeature.properties.appearance.radius)
         : "",
     );
+    setOpacity(Number.isFinite(selectedFeature.properties?.appearance?.opacity) ? String(selectedFeature.properties.appearance.opacity) : "");
     setVisibleTo((selectedFeature.properties?.appearance?.visibleTo || []).join(", "));
     setTraits((selectedFeature.properties?.traits || []).join(", "));
     const coordinates = selectedFeature.geometry?.coordinates;
@@ -122,6 +124,7 @@ export default function ZoneEditor() {
     const formData = {
       name: name.trim(),
       color,
+      opacity,
       visibleTo: parseVisibleList(visibleTo),
       traits: parseVisibleList(traits),
       latitude: String(nextLat ?? ""),
@@ -207,7 +210,22 @@ export default function ZoneEditor() {
 
           <div className="appearance-row">
             <label>
-              <input type="color" value={color} disabled={!isAdmin} onChange={(event) => setColor(event.target.value)} />
+              Fill
+              <input 
+                type="color" 
+                value={color} 
+                disabled={!isAdmin} 
+                onChange={(event) => setColor(event.target.value)}
+              />
+            </label>
+            <label>
+              Border
+              <input 
+                type="color" 
+                value={color} 
+                disabled={!isAdmin} 
+                onChange={(event) => setColor(event.target.value)}
+              />
             </label>
             <label>
               Radius
@@ -217,6 +235,29 @@ export default function ZoneEditor() {
                 value={radius}
                 disabled={!isAdmin}
                 onChange={(event) => setRadius(event.target.value)}
+              />
+            </label>
+            <label>
+              Opacity
+              <textarea
+                rows={1}
+                placeholder="0.5"
+                value={opacity}
+                disabled={!isAdmin}
+                onChange={(event) => setOpacity(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="trait-row">
+            <label>
+              Traits
+              <input
+                type="text"
+                placeholder="ZONE, USER, etc."
+                value={traits}
+                disabled={!isAdmin}
+                onChange={(event) => setTraits(event.target.value)}
               />
             </label>
             <label>
@@ -230,17 +271,6 @@ export default function ZoneEditor() {
               />
             </label>
           </div>
-
-          <label className="traits-label">
-            Traits
-            <input
-              type="text"
-              placeholder="ZONE, USER, etc."
-              value={traits}
-              disabled={!isAdmin}
-              onChange={(event) => setTraits(event.target.value)}
-            />
-          </label>
 
           <StatsEditor
             rows={statsRows}

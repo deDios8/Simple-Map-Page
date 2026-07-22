@@ -178,6 +178,14 @@ class ResultChangeRadius:
     change: int
 
 @dataclass
+class ResultSetOpacity:
+    opacity: float
+
+@dataclass
+class ResultChangeOpacity:
+    change: float
+
+@dataclass
 class ResultGrantTraits:
     tags: list
 

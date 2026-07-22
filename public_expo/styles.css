@@ -417,9 +417,25 @@ body {
   min-width: 0;
 }
 
+.name-row label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.name-row label input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 4px 8px;
+}
+
 .appearance-row {
   display: grid;
-  grid-template-columns: auto 0.5fr 1fr;
+  grid-template-columns: auto auto 0.25fr 0.25fr 0.5fr;
   gap: 8px;
   align-items: center;
 }
@@ -443,12 +459,19 @@ body {
 
 .appearance-row label input[type="color"] {
   flex: none;
-  width: 24px;
+  width: 36px;
   min-height: 30px;
   padding: 3px 4px;
 }
 
-.name-row label {
+.trait-row {
+  display: grid;
+  grid-template-columns: 0.5fr 0.5fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.trait-row label {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -457,23 +480,7 @@ body {
   min-width: 0;
 }
 
-.name-row label input[type="text"] {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  padding: 4px 8px;
-}
-
-label.traits-label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  min-width: 0;
-}
-
-label.traits-label input[type="text"] {
+.trait-row label input[type="text"] {
   flex: 1;
   min-width: 0;
   width: auto;

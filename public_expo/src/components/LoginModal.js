@@ -36,7 +36,7 @@ export default function LoginModal() {
             />
           </label>
           <label className="modal-field-row">
-            <span className="modal-field-label">User ID</span>
+            <span className="modal-field-label">User Name</span>
             <input
               type="text"
               placeholder="Your identifier"

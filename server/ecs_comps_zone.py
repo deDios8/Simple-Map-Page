@@ -17,6 +17,7 @@ class Appearance:
     color: str
     shape: str
     radius: int
+    opacity: float
     visible_to: list
 
 @dataclass
@@ -76,6 +77,7 @@ class Zone:
                 color=appearance.get("color", ""),
                 shape=appearance.get("shape", ""),
                 radius=appearance.get("radius", 0),
+                opacity=appearance.get("opacity", 0.5),
                 visible_to=appearance.get("visibleTo", []),
             ),
         )

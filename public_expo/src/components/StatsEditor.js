@@ -3,7 +3,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
   return (
     <section className="stats-section" aria-labelledby="stats-heading">
       <div className="stats-header">
-        <h3 id="stats-heading">Stats</h3>
+        <h2 id="stats-heading">Stats</h2>
         <div className="section-actions">
           <button className="text-button" type="button" disabled={disabled} onClick={onAdd}>
             Add stat

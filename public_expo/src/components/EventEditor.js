@@ -20,7 +20,7 @@ function rawValueFromResultData(name, data) {
   if (!config) return "";
   const raw = data?.[config.fieldName];
   if (config.fieldType === "bool") return raw === false ? "false" : "true";
-  if (config.fieldType === "number") return raw != null ? String(raw) : "0";
+  if (config.fieldType === "number" || config.fieldType === "float") return raw != null ? String(raw) : "0";
   if (config.fieldType === "csv") return Array.isArray(raw) ? raw.join(", ") : raw != null ? String(raw) : "";
   if (config.fieldType === "json") {
     if (raw != null && typeof raw === "object") {
@@ -39,7 +39,7 @@ function defaultRawValueForResult(name) {
   const config = RESULT_COMPONENT_FIELD_CONFIG[name];
   if (!config) return "";
   if (config.fieldType === "bool") return "true";
-  if (config.fieldType === "number") return "0";
+  if (config.fieldType === "number" || config.fieldType === "float") return "0";
   if (config.fieldType === "json") return "{}";
   return "";
 }
@@ -51,6 +51,7 @@ function parseResultRawValue(name, rawValue) {
   let parsed;
   if (config.fieldType === "bool") parsed = text === "true";
   else if (config.fieldType === "number") parsed = parseInt(text, 10) || 0;
+  else if (config.fieldType === "float") parsed = parseFloat(text) || 0;
   else if (config.fieldType === "csv") parsed = parseCsv(text);
   else if (config.fieldType === "json") {
     try {
