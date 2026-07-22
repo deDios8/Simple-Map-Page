@@ -27,22 +27,18 @@ export function SimControls() {
   const STEP = 0.00003;
   return (
     <div className="sim-controls">
-      <div className="sim-row">
-        <button className="sim-button" type="button" aria-label="Move up" onClick={() => moveSimulatedLocation(0, STEP)}>
-          ↑
-        </button>
-        <button className="sim-button" type="button" aria-label="Move down" onClick={() => moveSimulatedLocation(0, -STEP)}>
-          ↓
-        </button>
-      </div>
-      <div className="sim-row">
-        <button className="sim-button" type="button" aria-label="Move left" onClick={() => moveSimulatedLocation(-STEP, 0)}>
-          ←
-        </button>
-        <button className="sim-button" type="button" aria-label="Move right" onClick={() => moveSimulatedLocation(STEP, 0)}>
-          →
-        </button>
-      </div>
+      <button className="sim-button sim-up" type="button" aria-label="Move up" onClick={() => moveSimulatedLocation(0, STEP)}>
+        ↑
+      </button>
+      <button className="sim-button sim-left" type="button" aria-label="Move left" onClick={() => moveSimulatedLocation(-STEP, 0)}>
+        ←
+      </button>
+      <button className="sim-button sim-right" type="button" aria-label="Move right" onClick={() => moveSimulatedLocation(STEP, 0)}>
+        →
+      </button>
+      <button className="sim-button sim-down" type="button" aria-label="Move down" onClick={() => moveSimulatedLocation(0, -STEP)}>
+        ↓
+      </button>
     </div>
   );
 }

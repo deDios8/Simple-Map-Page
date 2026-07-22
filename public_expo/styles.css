@@ -240,22 +240,34 @@ body {
   left: 16px;
   z-index: 650;
   display: grid;
+  grid-template-columns: 48px 48px 48px;
+  grid-template-rows: 48px 48px 48px;
   gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 
 .sim-controls[hidden] {
   display: none;
 }
 
-.sim-row {
-  display: flex;
-  gap: 6px;
+.sim-button.sim-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.sim-button.sim-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.sim-button.sim-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.sim-button.sim-down {
+  grid-column: 2;
+  grid-row: 3;
 }
 
 .sim-button {
@@ -263,19 +275,21 @@ body {
   height: 48px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.35));
   color: var(--text);
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.75rem;
+  font-weight: 900;
   cursor: pointer;
   transition: all 150ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
 .sim-button:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.45));
   border-color: var(--accent);
   transform: translateY(-1px);
 }
