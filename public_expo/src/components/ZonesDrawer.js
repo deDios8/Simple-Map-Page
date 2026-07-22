@@ -42,16 +42,14 @@ export default function ZonesDrawer() {
   return (
     <>
       <button
-        className="drawer-toggle"
+        className="zone-drawer-toggle"
         type="button"
         aria-expanded={isOpen}
         aria-controls="drawer"
         aria-label="Open zone list"
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        <span />
-        <span />
-        <span />
+        Z
       </button>
 
       <aside id="drawer" className={`drawer${isOpen ? " is-open" : ""}`} aria-label="zones">

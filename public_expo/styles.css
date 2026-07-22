@@ -75,27 +75,29 @@ body {
   margin: 0;
 }
 
-.drawer-toggle {
+.zone-drawer-toggle {
   position: fixed;
   right: 18px;
   bottom: var(--safe-bottom);
   z-index: 900;
-  display: grid;
-  gap: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 62px;
   height: 62px;
-  padding: 17px 14px;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   background: linear-gradient(180deg, #10483f 0%, #0b8f87 100%);
   box-shadow: 0 14px 32px rgba(11, 88, 78, 0.36);
+  color: #f6f7f2;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.drawer-toggle span {
-  display: block;
-  height: 3px;
-  border-radius: 999px;
-  background: #f6f7f2;
+.zone-drawer-toggle:active {
+  transform: scale(0.96);
 }
 
 .request-actions {
@@ -799,8 +801,12 @@ body {
     border-radius: 24px 24px 0 0;
   }
 
-  .drawer-toggle {
+  .zone-drawer-toggle {
     right: 14px;
+  }
+
+  .events-drawer-toggle {
+    right: 86px;
   }
 
   .request-actions {
@@ -897,36 +903,27 @@ body {
 
 .events-drawer-toggle {
   position: fixed;
-  top: 84px;
-  right: 10px;
+  right: 90px;
+  bottom: var(--safe-bottom);
   z-index: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 62px;
+  height: 62px;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  box-shadow: 0 4px 12px rgba(14, 43, 36, 0.15);
-  backdrop-filter: blur(8px);
-  color: var(--accent-dark);
-  font: inherit;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #c97a2a 0%, #8f4f12 100%);
+  box-shadow: 0 14px 32px rgba(143, 79, 18, 0.36);
+  color: #f6f7f2;
+  font-size: 1.1rem;
   font-weight: 700;
-  font-size: 1rem;
   cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease;
 }
 
-.events-drawer-toggle:hover {
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.events-drawer-toggle[aria-expanded="true"] {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent-dark);
+.events-drawer-toggle:active {
+  transform: scale(0.96);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1008,13 +1005,6 @@ body {
   flex: 1;
   min-width: 0;
   padding: 6px 10px;
-}
-
-@media (max-width: 760px) {
-  .events-drawer-toggle {
-    top: 80px;
-    right: 14px;
-  }
 }
 
 /* ---------------------------------------------------------------------------
