@@ -5,7 +5,6 @@ import ecs_comps_zone
 import ecs_comps_event
 import ecs_comps_client_request
 from pyproj import CRS, Transformer
-from shapely.geometry import Point
 from session_db_state import SessionState
 from session_db_state import ZONE_NODE, multi_path_patch
 
@@ -64,10 +63,8 @@ class CheckZoneEntryExit(esper.Processor):
         for entity_id, (geometry, id_component, _) in all_zone_entities:
             current_zones = set()
             for zone_entity_id, (zone_geometry, zone_id_component, zone_appearance) in all_zone_entities:
-                if zone_entity_id == entity_id:
-                    continue
-                if id_component.id == zone_id_component.id:
-                    continue
+                if zone_entity_id == entity_id: continue
+                if id_component.id == zone_id_component.id: continue
 
                 zone_radius = zone_appearance.radius if zone_appearance is not None else 0
 
@@ -88,17 +85,14 @@ class CheckZoneEntryExit(esper.Processor):
             if entered_zones or exited_zones:
                 display_name_comp = esper.try_component(entity_id, ecs_comps_zone.DisplayName)
                 entity_display_name = display_name_comp.display_name if display_name_comp else id_component.id
-
             if entered_zones:
-                zone_names = self._get_zone_names(entered_zones)
                 esper.add_component(entity_id, ecs_comps_zone.EnteredZones(zone_ids=list(entered_zones)))
-                print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' entered zones: {zone_names}")
+                self._terminal_log_border_crossing("entered", entity_display_name, entered_zones)
             if exited_zones:
-                zone_names = self._get_zone_names(exited_zones)
                 esper.add_component(entity_id, ecs_comps_zone.ExitedZones(zone_ids=list(exited_zones)))
-                print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' exited zones: {zone_names}")
+                self._terminal_log_border_crossing("exited", entity_display_name, exited_zones)
 
-    def _get_zone_names(self, zone_ids: set[str]) -> list[str]:
+    def _terminal_log_border_crossing(self, action: str, entity_display_name: str, zone_ids: set[str]) -> None:
         """Convert zone IDs to display names for logging."""
         names = []
         for zone_id in zone_ids:
@@ -111,54 +105,7 @@ class CheckZoneEntryExit(esper.Processor):
                     names.append(zone_id)
             else:
                 names.append(zone_id)
-        return names
-
-    def is_within_zone_distance(self, focal_coordinates: list, zone: dict) -> bool:
-        # Expected format for Point coordinates is [longitude, latitude].
-        if not isinstance(focal_coordinates, list) or len(focal_coordinates) < 2:
-            return False
-        geometry = zone.get("geometry") if isinstance(zone, dict) else None
-        properties = zone.get("properties") if isinstance(zone, dict) else None
-        if not isinstance(geometry, dict) or not isinstance(properties, dict):
-            return False
-
-        zone_coordinates = geometry.get("coordinates")
-        if not isinstance(zone_coordinates, list) or len(zone_coordinates) < 2:
-            return False
-
-        appearance = properties.get("appearance", {})
-        if not isinstance(appearance, dict):
-            appearance = {}
-
-        zone_radius_value = 0
-        zone_radius_value = appearance.get("radius", 0)
-
-        try:
-            obj_lon = float(focal_coordinates[0])
-            obj_lat = float(focal_coordinates[1])
-            zone_lon = float(zone_coordinates[0])
-            zone_lat = float(zone_coordinates[1])
-            zone_radius_m = float(zone_radius_value)
-            zone_radius_m = float(zone_radius_value)
-        except (TypeError, ValueError):
-            return False
-
-        # Haversine distance in meters.
-        earth_radius_m = 6371000.0
-        obj_lat_rad = math.radians(obj_lat)
-        zone_lat_rad = math.radians(zone_lat)
-        delta_lat = math.radians(zone_lat - obj_lat)
-        delta_lon = math.radians(zone_lon - obj_lon)
-
-        a = (
-            math.sin(delta_lat / 2.0) ** 2
-            + math.cos(obj_lat_rad) * math.cos(zone_lat_rad) * math.sin(delta_lon / 2.0) ** 2
-        )
-        c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
-        distance_m = earth_radius_m * c
-
-        combined_radius_m = max(0.0, zone_radius_m) + max(0.0, zone_radius_m)
-        return distance_m <= combined_radius_m
+        print(f"[CheckZoneEntryExit] Entity '{entity_display_name}' {action} zones: {names}")
 
     def is_within_zone_intersect(self, focal_coordinates: list, zone_coordinates: list, zone_radius_value: float, transformer_cache: dict) -> bool:
         if not isinstance(focal_coordinates, list) or len(focal_coordinates) < 2:
@@ -188,15 +135,8 @@ class CheckZoneEntryExit(esper.Processor):
         obj_x, obj_y = transformer.transform(obj_lon, obj_lat)
         zone_x, zone_y = transformer.transform(zone_lon, zone_lat)
 
-        zone_point = Point(obj_x, obj_y)
-        zone_center = Point(zone_x, zone_y)
-        zone_area = zone_center.buffer(zone_radius_m)
-
-        if zone_radius_m <= 0.0:
-            return zone_point.within(zone_area) or zone_point.touches(zone_area)
-
-        zone_area = zone_point.buffer(zone_radius_m)
-        return zone_area.intersects(zone_area)
+        distance_m = math.hypot(obj_x - zone_x, obj_y - zone_y)
+        return distance_m <= zone_radius_m
 
 
 
