@@ -4,16 +4,9 @@ Quick script to delete a specific path on the Firebase Realtime Database.
 """
 
 import sys
-import os
-import pathlib
-import json
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
-
-# Add server directory to path for imports
-sys.path.insert(0, str(pathlib.Path(__file__).parent / "server"))
-
-from server.firebase_auth import auth_headers
+from firebase_auth import auth_headers
 
 # ============================================================================
 # CONFIGURATION - Edit these variables as needed
