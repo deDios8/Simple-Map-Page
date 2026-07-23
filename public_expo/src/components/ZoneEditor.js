@@ -30,8 +30,11 @@ export default function ZoneEditor() {
   const [statsRows, setStatsRows] = useState([]);
   const [saveStatus, setSaveStatus] = useState("");
 
-  // Re-sync the form from the latest server data whenever it changes (this
-  // matches the prototype, which repopulates the editor on every snapshot).
+  // Populate the form when the selected zone changes - but only then. The
+  // `zones` snapshot is re-delivered every couple seconds (e.g. any player's
+  // GPS ping patches the shared zones node), which would otherwise give
+  // `selectedFeature` a new reference on a timer and wipe out any edit the
+  // user hasn't saved yet (including a stat row they just removed).
   useEffect(() => {
     if (!selectedFeature) return;
     setName(selectedFeature.properties?.displayName || "");
@@ -49,7 +52,7 @@ export default function ZoneEditor() {
     setLng(Array.isArray(coordinates) ? coordinates[0] : null);
     const stats = normalizeStats(selectedFeature.properties);
     setStatsRows(Object.entries(stats).map(([key, stat]) => ({ key, ...stat })));
-  }, [selectedFeature]);
+  }, [selectedZoneId]);
 
   // Only clear the save-status message when the selection itself changes -
   // not on every snapshot refresh of the same zone (which would otherwise
