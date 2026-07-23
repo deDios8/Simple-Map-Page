@@ -205,44 +205,65 @@ class RemoveZoneEntryExit(esper.Processor):
         super().__init__()
         
     def process(self) -> None:
-        # Dispatcher: (component_type, set_operation, log_component_type)
-        zone_updates = [
-            (ecs_comps_zone.EnteredZones, lambda before, change: before | change, ecs_comps_zone.ZoneEntryLog),
-            (ecs_comps_zone.ExitedZones, lambda before, change: before - change, ecs_comps_zone.ZoneExitLog),
-        ]
+        for entity_id, entered in list(esper.get_component(ecs_comps_zone.EnteredZones)):
+            self._apply_zone_change(
+                entity_id=entity_id,
+                changed_zone_ids=entered.zone_ids,
+                temp_component_type=ecs_comps_zone.EnteredZones,
+                log_component_type=ecs_comps_zone.ZoneEntryLog,
+                is_entering=True,
+            )
 
-        for component_type, set_operation, log_component_type in zone_updates:
-            for entity_id, zone_component in list(esper.get_component(component_type)):
-                zone_set = set(zone_component.zone_ids)
+        for entity_id, exited in list(esper.get_component(ecs_comps_zone.ExitedZones)):
+            self._apply_zone_change(
+                entity_id=entity_id,
+                changed_zone_ids=exited.zone_ids,
+                temp_component_type=ecs_comps_zone.ExitedZones,
+                log_component_type=ecs_comps_zone.ZoneExitLog,
+                is_entering=False,
+            )
 
-                # Update WithinZones
-                within = esper.try_component(entity_id, ecs_comps_zone.WithinZones)
-                before_zones = set(within.zone_ids) if within else set()
-                within_zones = set_operation(before_zones, zone_set)
+    def _apply_zone_change(
+        self,
+        entity_id: int,
+        changed_zone_ids: list[str],
+        temp_component_type: type,
+        log_component_type: type,
+        is_entering: bool,
+    ) -> None:
+        changed_zones = set(changed_zone_ids)
 
-                if within_zones:
-                    esper.add_component(entity_id, ecs_comps_zone.WithinZones(zone_ids=list(within_zones)))
-                else:
-                    try:
-                        esper.remove_component(entity_id, ecs_comps_zone.WithinZones)
-                    except KeyError:
-                        pass
+        # Update WithinZones
+        within = esper.try_component(entity_id, ecs_comps_zone.WithinZones)
+        before_zones = set(within.zone_ids) if within else set()
+        if is_entering:
+            within_zones = before_zones | changed_zones
+        else:
+            within_zones = before_zones - changed_zones
 
-                # Append to log
-                log = esper.try_component(entity_id, log_component_type)
-                if log is None:
-                    esper.add_component(entity_id, log_component_type(zone_ids=list(zone_component.zone_ids)))
-                else:
-                    log.zone_ids.extend(zone_component.zone_ids)
+        if within_zones:
+            esper.add_component(entity_id, ecs_comps_zone.WithinZones(zone_ids=list(within_zones)))
+        else:
+            try:
+                esper.remove_component(entity_id, ecs_comps_zone.WithinZones)
+            except KeyError:
+                pass
 
-                # Mark entity as dirty to sync log to database
-                esper.add_component(entity_id, ecs_comps_zone.ZoneObjectDirty())
+        # Append to log
+        log = esper.try_component(entity_id, log_component_type)
+        if log is None:
+            esper.add_component(entity_id, log_component_type(zone_ids=list(changed_zone_ids)))
+        else:
+            log.zone_ids.extend(changed_zone_ids)
 
-                # Remove temporary component
-                try:
-                    esper.remove_component(entity_id, component_type)
-                except KeyError:
-                    pass
+        # Mark entity as dirty to sync log to database
+        esper.add_component(entity_id, ecs_comps_zone.ZoneObjectDirty())
+
+        # Remove temporary component
+        try:
+            esper.remove_component(entity_id, temp_component_type)
+        except KeyError:
+            pass
 
 
 
