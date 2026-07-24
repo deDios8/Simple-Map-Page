@@ -246,9 +246,9 @@ body {
   bottom: var(--safe-bottom);
   z-index: 650;
   display: grid;
-  grid-template-columns: 48px 48px 48px;
-  grid-template-rows: 48px 48px 48px;
-  gap: 6px;
+  grid-template-columns: 62px 62px;
+  grid-template-rows: 62px 62px;
+  gap: 10px;
   pointer-events: none;
 }
 
@@ -277,8 +277,8 @@ body {
 }
 
 .sim-button {
-  width: 48px;
-  height: 48px;
+  width: 62px;
+  height: 62px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.35));
