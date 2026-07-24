@@ -101,7 +101,8 @@
         },
         "properties": {
           "appearance": {
-            "color": "#75766f",
+            "fill": "#75766f",
+            "border": "#ffffff",
             "radius": 2,
             "shape": ""
           },
@@ -163,7 +164,8 @@
         },
         "properties": {
           "appearance": {
-            "color": "#000000",
+            "fill": "#000000",
+            "border": "#ffffff",
             "radius": 2,
             "shape": "",
             "visibleTo": [

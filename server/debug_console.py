@@ -184,7 +184,7 @@ class SessionDebugConsole:
             "[DEBUG][zone] "
             f"key={key} entity={entity_id} "
             f"id={id_component.id} display_name={display_name_comp.display_name!r} "
-            f"color={appearance.color!r} "
+            f"fill={appearance.fill!r} border={appearance.border!r} "
             f"shape={appearance.shape!r} radius={appearance.radius} opacity={appearance.opacity} "
             f"coordinates={geometry.coordinates} "
             f"traits={traits.traits if traits is not None else []} "

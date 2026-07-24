@@ -19,7 +19,7 @@ export default function ZoneList() {
     <ul className="zone-list">
       {visibleFeatures.map((feature) => {
         const id = feature.properties?.id;
-        const color = feature.properties?.appearance?.color || "#0b8f87";
+        const fill = feature.properties?.appearance?.fill || "#ffffff";
         const name = feature.properties?.displayName || id || "Unnamed zone";
         return (
           <li key={id}>
@@ -28,7 +28,7 @@ export default function ZoneList() {
               type="button"
               onClick={() => selectZone(id)}
             >
-              <span className="list-color-dot" style={{ background: color }} />
+              <span className="list-color-dot" style={{ background: fill }} />
               <span>{name}</span>
             </button>
           </li>

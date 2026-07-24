@@ -20,7 +20,8 @@ export default function ZoneEditor() {
   const selectedFeature = selectedZoneId ? zones[selectedZoneId] : null;
 
   const [name, setName] = useState("");
-  const [color, setColor] = useState("#0b8f87");
+  const [fill, setFill] = useState("#ffffff");
+  const [border, setBorder] = useState("#ffffff");
   const [radius, setRadius] = useState("");
   const [opacity, setOpacity] = useState("0.5");
   const [visibleTo, setVisibleTo] = useState("");
@@ -38,7 +39,8 @@ export default function ZoneEditor() {
   useEffect(() => {
     if (!selectedFeature) return;
     setName(selectedFeature.properties?.displayName || "");
-    setColor(selectedFeature.properties?.appearance?.color || "#0b8f87");
+    setFill(selectedFeature.properties?.appearance?.fill || "#ffffff");
+    setBorder(selectedFeature.properties?.appearance?.border || "#ffffff");
     setRadius(
       Number.isFinite(selectedFeature.properties?.appearance?.radius)
         ? String(selectedFeature.properties.appearance.radius)
@@ -126,7 +128,8 @@ export default function ZoneEditor() {
 
     const formData = {
       name: name.trim(),
-      color,
+      fill,
+      border,
       opacity,
       visibleTo: parseVisibleList(visibleTo),
       traits: parseVisibleList(traits),
@@ -197,7 +200,19 @@ export default function ZoneEditor() {
                 onChange={(event) => setName(event.target.value)}
               />
             </label>
+            <label>
+              Traits
+              <input
+                type="text"
+                placeholder="ZONE, USER, etc."
+                value={traits}
+                disabled={!isAdmin}
+                onChange={(event) => setTraits(event.target.value)}
+              />
+            </label>
+          </div>
 
+          <div className="trait-row">
             <button
               className={`coord-pick-button${coordPickMode ? " is-active" : ""}`}
               type="button"
@@ -206,30 +221,10 @@ export default function ZoneEditor() {
               title="Tap map to set coordinates"
               onClick={() => setCoordPickMode(!coordPickMode)}
             >
-              <span>Lat: {Number.isFinite(lat) ? lat : "--"}</span>
-              <span>Lng: {Number.isFinite(lng) ? lng : "--"}</span>
+            Change Location
+              {/* <span>Lat: {Number.isFinite(lat) ? lat : "--"}</span>
+              <span>Lng: {Number.isFinite(lng) ? lng : "--"}</span> */}
             </button>
-          </div>
-
-          <div className="appearance-row">
-            <label>
-              Fill
-              <input 
-                type="color" 
-                value={color} 
-                disabled={!isAdmin} 
-                onChange={(event) => setColor(event.target.value)}
-              />
-            </label>
-            <label>
-              Border
-              <input 
-                type="color" 
-                value={color} 
-                disabled={!isAdmin} 
-                onChange={(event) => setColor(event.target.value)}
-              />
-            </label>
             <label>
               Radius
               <textarea
@@ -241,29 +236,6 @@ export default function ZoneEditor() {
               />
             </label>
             <label>
-              Opacity
-              <textarea
-                rows={1}
-                placeholder="0.5"
-                value={opacity}
-                disabled={!isAdmin}
-                onChange={(event) => setOpacity(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="trait-row">
-            <label>
-              Traits
-              <input
-                type="text"
-                placeholder="ZONE, USER, etc."
-                value={traits}
-                disabled={!isAdmin}
-                onChange={(event) => setTraits(event.target.value)}
-              />
-            </label>
-            <label>
               Visible To
               <input
                 type="text"
@@ -271,6 +243,37 @@ export default function ZoneEditor() {
                 value={visibleTo}
                 disabled={!isAdmin}
                 onChange={(event) => setVisibleTo(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="appearance-row">
+            <label>
+              Fill
+              <input
+                type="color"
+                value={fill}
+                disabled={!isAdmin}
+                onChange={(event) => setFill(event.target.value)}
+              />
+            </label>
+            <label>
+              Border
+              <input
+                type="color"
+                value={border}
+                disabled={!isAdmin}
+                onChange={(event) => setBorder(event.target.value)}
+              />
+            </label>
+            <label>
+              Opacity
+              <textarea
+                rows={1}
+                placeholder="0.5"
+                value={opacity}
+                disabled={!isAdmin}
+                onChange={(event) => setOpacity(event.target.value)}
               />
             </label>
           </div>

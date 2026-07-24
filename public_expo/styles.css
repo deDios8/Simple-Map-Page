@@ -443,6 +443,13 @@ body {
   min-width: 0;
 }
 
+.name-row {
+  display: grid;
+  grid-template-columns: 0.35fr 0.65fr;
+  gap: 10px;
+  align-items: center;
+}
+
 .name-row label {
   display: flex;
   flex-direction: row;
@@ -461,7 +468,7 @@ body {
 
 .appearance-row {
   display: grid;
-  grid-template-columns: auto auto 0.25fr 0.25fr 0.5fr;
+  grid-template-columns: 0.3fr 0.3fr 0.4fr;
   gap: 8px;
   align-items: center;
 }
@@ -492,7 +499,7 @@ body {
 
 .trait-row {
   display: grid;
-  grid-template-columns: 0.5fr 0.5fr;
+  grid-template-columns: 0.3fr 0.3fr 0.4fr;
   gap: 8px;
   align-items: center;
 }
@@ -551,13 +558,6 @@ body {
 
 #map.is-coord-picking {
   cursor: crosshair;
-}
-
-.name-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: center;
 }
 
 .stats-section {

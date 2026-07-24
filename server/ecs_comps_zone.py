@@ -14,7 +14,8 @@ class DisplayName:
 
 @dataclass
 class Appearance:
-    color: str
+    fill: str
+    border: str
     shape: str
     radius: int
     opacity: float
@@ -74,7 +75,8 @@ class Zone:
         esper.add_component(
             new_entity_id,
             Appearance(
-                color=appearance.get("color", ""),
+                fill=appearance.get("fill", "#ffffff"),
+                border=appearance.get("border", "#ffffff"),
                 shape=appearance.get("shape", ""),
                 radius=appearance.get("radius", 0),
                 opacity=appearance.get("opacity", 0.5),

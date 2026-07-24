@@ -166,8 +166,12 @@ class ResultToggleVisibility:
     tags: list
 
 @dataclass
-class ResultSetColor:
-    color: str
+class ResultSetFill:
+    fill: str
+
+@dataclass
+class ResultSetBorder:
+    border: str
 
 @dataclass
 class ResultSetRadius:

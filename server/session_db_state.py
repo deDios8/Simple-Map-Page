@@ -78,7 +78,8 @@ class ZoneObjectEntry(DBEntry):
 
         self.appearance = self.properties.get("appearance", {})
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
-        self.color = self.appearance.get("color", "#000000") if isinstance(self.appearance, dict) else "#000000"
+        self.fill = self.appearance.get("fill", "#ffffff") if isinstance(self.appearance, dict) else "#ffffff"
+        self.border = self.appearance.get("border", "#ffffff") if isinstance(self.appearance, dict) else "#ffffff"
         self.opacity = self.appearance.get("opacity", 0.5) if isinstance(self.appearance, dict) else 0.5
         self.visible_to = normalize_string_list(self.appearance.get("visibleTo", [])) if isinstance(self.appearance, dict) else []
 
@@ -783,7 +784,7 @@ class SessionState:
                     "id": requester_id,
                     "displayName": requester_id,
                     "appearance": {
-                        "color": "#000000",
+                        "fill": "#000000",
                         "visibleTo": ["USER"],
                         "radius": 2,
                     },
@@ -851,7 +852,7 @@ class SessionState:
                 "id": new_zone_key,
                 "displayName": f"{new_zone_key}",
                 "appearance": {
-                    "color": "#0b8f87",
+                    "fill": "#0b8f87",
                     "visibleTo": ["USER"],
                     "radius": 5,
                 },
@@ -897,7 +898,8 @@ class SessionState:
 
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
 
-        appearance.color = str(form_data.get("color", appearance.color) or appearance.color)
+        appearance.fill = str(form_data.get("fill", appearance.fill) or appearance.fill)
+        appearance.border = str(form_data.get("border", appearance.border) or appearance.border)
         appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
         appearance.opacity = to_float(form_data.get("opacity"), float(appearance.opacity))
 
@@ -927,7 +929,8 @@ class SessionState:
             {
                 "geometry/coordinates": [lon, lat],
                 "properties/displayName": display_name_comp.display_name,
-                "properties/appearance/color": appearance.color,
+                "properties/appearance/fill": appearance.fill,
+                "properties/appearance/border": appearance.border,
                 "properties/appearance/radius": appearance.radius,
                 "properties/appearance/opacity": appearance.opacity,
                 "properties/appearance/visibleTo": appearance.visible_to,
@@ -953,7 +956,8 @@ class SessionState:
                 props["displayName"] = display_name_comp.display_name
                 appr = props.setdefault("appearance", {})
                 if isinstance(appr, dict):
-                    appr["color"] = appearance.color
+                    appr["fill"] = appearance.fill
+                    appr["border"] = appearance.border
                     appr["radius"] = appearance.radius
                     appr["opacity"] = appearance.opacity
                     appr["visibleTo"] = appearance.visible_to
@@ -1119,7 +1123,8 @@ class SessionState:
 
         appearance = esper.component_for_entity(existing_entity_id, ecs_comps_zone.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
-        appearance.color = appearance_data.get("color", "")
+        appearance.fill = appearance_data.get("fill", "#ffffff")
+        appearance.border = appearance_data.get("border", "#ffffff")
         appearance.shape = appearance_data.get("shape", "")
         appearance.radius = appearance_data.get("radius", 0)
         appearance.opacity = appearance_data.get("opacity", 0.5)

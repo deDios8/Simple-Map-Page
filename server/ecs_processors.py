@@ -489,9 +489,13 @@ class EventProcessor(esper.Processor):
                 else:
                     appearance.visible_to.append(tag)
 
-    def _set_color(self, target_entity_id: int, component: ecs_comps_event.ResultSetColor) -> None:
+    def _set_fill(self, target_entity_id: int, component: ecs_comps_event.ResultSetFill) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
-            appearance.color = component.color
+            appearance.fill = component.fill
+
+    def _set_border(self, target_entity_id: int, component: ecs_comps_event.ResultSetBorder) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.border = component.border
 
     def _set_radius(self, target_entity_id: int, component: ecs_comps_event.ResultSetRadius) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
@@ -631,7 +635,8 @@ class SyncZonesToDatabase(esper.Processor):
         appearance = esper.try_component(entity_id, ecs_comps_zone.Appearance)
         if appearance is not None:
             payload["properties/appearance"] = {
-                "color": appearance.color,
+                "fill": appearance.fill,
+                "border": appearance.border,
                 "shape": appearance.shape,
                 "radius": appearance.radius,
                 "opacity": appearance.opacity,

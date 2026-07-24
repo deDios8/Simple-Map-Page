@@ -52,7 +52,8 @@ export default function MapView() {
 // L.circle usage - distinct from the user's own dot, which is a pixel-radius
 // CircleMarker.
 function ZoneMarker({ feature, onSelect }) {
-  const color = feature.properties?.appearance?.color || "#0b8f87";
+  const fill = feature.properties?.appearance?.fill || "#ffffff";
+  const border = feature.properties?.appearance?.border || "#ffffff";
   const radius = Number.isFinite(feature.properties?.appearance?.radius) ? feature.properties.appearance.radius : 5;
   const opacity = Number.isFinite(feature.properties?.appearance?.opacity) ? feature.properties.appearance.opacity : 0.5;
   const coordinates = feature.geometry?.coordinates;
@@ -63,7 +64,7 @@ function ZoneMarker({ feature, onSelect }) {
     <Circle
       center={[lat, lng]}
       radius={radius}
-      pathOptions={{ color, fillColor: color, fillOpacity: opacity, weight: 2 }}
+      pathOptions={{ color: border, fillColor: fill, fillOpacity: opacity, weight: 2 }}
       eventHandlers={{ click: onSelect }}
     >
       <Popup>{feature.properties?.displayName || feature.properties?.id || "Untitled zone"}</Popup>
