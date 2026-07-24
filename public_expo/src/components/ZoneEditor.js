@@ -297,12 +297,10 @@ export default function ZoneEditor() {
             onChange={updateStatRow}
           />
 
-          <div className="editor-actions">
-            <div className="editor-action-buttons justify-end">
-              <button className="text-button" type="button" disabled={!isAdmin} onClick={handleClearLogs}>
-                Clear logs
-              </button>
-            </div>
+          <div className="editor-action-buttons justify-end">
+            <button className="text-button" type="button" disabled={!isAdmin} onClick={handleClearLogs}>
+              Clear logs
+            </button>
           </div>
         </form>
       </div>

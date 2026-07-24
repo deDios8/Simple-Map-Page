@@ -796,11 +796,6 @@ body {
   opacity: 1;
 }
 
-.editor-actions {
-  display: grid;
-  gap: 8px;
-}
-
 .editor-action-buttons {
   display: flex;
   gap: 10px;
