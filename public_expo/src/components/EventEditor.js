@@ -63,8 +63,8 @@ function parseResultRawValue(name, rawValue) {
   return { [config.fieldName]: parsed };
 }
 
-export default function EventEditor({ onAddEvent }) {
-  const { events, selectedEventId, isAdmin, sessionName, userId, userLocation } = useApp();
+export default function EventEditor() {
+  const { events, selectedEventId, selectEvent, isAdmin, sessionName, userId, userLocation } = useApp();
   const selectedEvent = selectedEventId ? events[selectedEventId] : null;
 
   const [name, setName] = useState("");
@@ -109,19 +109,12 @@ export default function EventEditor({ onAddEvent }) {
     setSaveStatus("");
   }, [selectedEventId]);
 
-  const addEventButton = (
-    <div className="section-actions">
-      <button className="text-button" type="button" aria-label="Add new event" onClick={onAddEvent}>
-        Add event
-      </button>
-    </div>
-  );
-
   if (!selectedEventId || !selectedEvent) {
     return (
-      <div className="editor-header">
-        <h2>Select an event to edit.</h2>
-        {addEventButton}
+      <div className="editor-panel">
+        <div className="editor-panel-header">
+          <h2>Select an event to edit.</h2>
+        </div>
       </div>
     );
   }
@@ -198,86 +191,83 @@ export default function EventEditor({ onAddEvent }) {
   }
 
   return (
-    <>
-      <div className="editor-header">
-        <h2>Editing {name || selectedEventId}</h2>
-        {addEventButton}
+    <div className="editor-panel is-open">
+      <div className="editor-panel-header">
+        <label>
+          <input
+            type="text"
+            placeholder="Event label"
+            value={name}
+            disabled={!isAdmin}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <button className="primary-button" type="submit" form="event-editor-form" disabled={!isAdmin}>
+          Save
+        </button>
+        <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
+          Delete
+        </button>
+        <button className="text-button" type="button" onClick={() => selectEvent(null)}>
+          Cancel
+        </button>
       </div>
-      <form className="editor-form" onSubmit={handleSubmit}>
-        <div className="name-row">
-          <label>
-            Name
-            <input
-              type="text"
-              placeholder="Event label"
-              value={name}
-              disabled={!isAdmin}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-        </div>
+      <div className="editor-panel-body">
+        <form id="event-editor-form" className="editor-form" onSubmit={handleSubmit}>
+          <CriteriaListEditor
+            heading="Trigger If..."
+            addLabel="Add criterion"
+            options={TRIGGER_COMPONENT_OPTIONS}
+            rows={triggerRows}
+            disabled={!isAdmin}
+            onAdd={addTriggerRow}
+            onRemove={(index) => setTriggerRows((prev) => prev.filter((_, i) => i !== index))}
+            onChangeName={(index, value) =>
+              setTriggerRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
+            }
+            onChangeTags={(index, value) =>
+              setTriggerRows((prev) => prev.map((row, i) => (i === index ? { ...row, tagsText: value } : row)))
+            }
+          />
 
-        <CriteriaListEditor
-          heading="Trigger If..."
-          addLabel="Add criterion"
-          options={TRIGGER_COMPONENT_OPTIONS}
-          rows={triggerRows}
-          disabled={!isAdmin}
-          onAdd={addTriggerRow}
-          onRemove={(index) => setTriggerRows((prev) => prev.filter((_, i) => i !== index))}
-          onChangeName={(index, value) =>
-            setTriggerRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
-          }
-          onChangeTags={(index, value) =>
-            setTriggerRows((prev) => prev.map((row, i) => (i === index ? { ...row, tagsText: value } : row)))
-          }
-        />
+          <CriteriaListEditor
+            heading="Then Target..."
+            addLabel="Add criterion"
+            options={TARGET_COMPONENT_OPTIONS}
+            rows={targetRows}
+            disabled={!isAdmin}
+            onAdd={addTargetRow}
+            onRemove={(index) => setTargetRows((prev) => prev.filter((_, i) => i !== index))}
+            onChangeName={(index, value) =>
+              setTargetRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
+            }
+            onChangeTags={(index, value) =>
+              setTargetRows((prev) => prev.map((row, i) => (i === index ? { ...row, tagsText: value } : row)))
+            }
+          />
 
-        <CriteriaListEditor
-          heading="Then Target..."
-          addLabel="Add criterion"
-          options={TARGET_COMPONENT_OPTIONS}
-          rows={targetRows}
-          disabled={!isAdmin}
-          onAdd={addTargetRow}
-          onRemove={(index) => setTargetRows((prev) => prev.filter((_, i) => i !== index))}
-          onChangeName={(index, value) =>
-            setTargetRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
-          }
-          onChangeTags={(index, value) =>
-            setTargetRows((prev) => prev.map((row, i) => (i === index ? { ...row, tagsText: value } : row)))
-          }
-        />
+          <ResultsEditor
+            rows={resultRows}
+            disabled={!isAdmin}
+            onAdd={addResultRow}
+            onRemove={(index) => setResultRows((prev) => prev.filter((_, i) => i !== index))}
+            onChangeName={(index, value) =>
+              setResultRows((prev) =>
+                prev.map((row, i) => (i === index ? { name: value, rawValue: defaultRawValueForResult(value) } : row)),
+              )
+            }
+            onChangeValue={(index, value) =>
+              setResultRows((prev) => prev.map((row, i) => (i === index ? { ...row, rawValue: value } : row)))
+            }
+          />
 
-        <ResultsEditor
-          rows={resultRows}
-          disabled={!isAdmin}
-          onAdd={addResultRow}
-          onRemove={(index) => setResultRows((prev) => prev.filter((_, i) => i !== index))}
-          onChangeName={(index, value) =>
-            setResultRows((prev) =>
-              prev.map((row, i) => (i === index ? { name: value, rawValue: defaultRawValueForResult(value) } : row)),
-            )
-          }
-          onChangeValue={(index, value) =>
-            setResultRows((prev) => prev.map((row, i) => (i === index ? { ...row, rawValue: value } : row)))
-          }
-        />
-
-        <div className="editor-actions">
-          <div className="editor-action-buttons">
-            <button className="primary-button" type="submit" disabled={!isAdmin}>
-              Save changes
-            </button>
-            <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
-              Delete
-            </button>
+          <div className="editor-actions">
+            <p className="save-status" aria-live="polite">
+              {saveStatus}
+            </p>
           </div>
-          <p className="save-status" aria-live="polite">
-            {saveStatus}
-          </p>
-        </div>
-      </form>
-    </>
+        </form>
+      </div>
+    </div>
   );
 }

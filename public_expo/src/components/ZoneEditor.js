@@ -191,7 +191,7 @@ export default function ZoneEditor() {
             onChange={(event) => setName(event.target.value)}
           />
         </label>
-        <button className="primary-button" type="submit" disabled={!isAdmin}>
+        <button className="primary-button" type="submit" form="zone-editor-form" disabled={!isAdmin}>
           Save
         </button>
         <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
@@ -202,7 +202,7 @@ export default function ZoneEditor() {
         </button>
       </div>
       <div className="editor-panel-body">
-        <form className="editor-form" onSubmit={handleSubmit}>
+        <form id="zone-editor-form" className="editor-form" onSubmit={handleSubmit}>
           <div className="name-row">
             <label>
               Traits

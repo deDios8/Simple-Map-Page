@@ -48,13 +48,18 @@ export default function EventsDrawer() {
 
         <div className="drawer-body">
           <section className="panel-section">
+            <div className="editor-header">
+              <div className="section-actions">
+                <button className="text-button" type="button" aria-label="Add new event" onClick={handleAddEvent}>
+                  Add event
+                </button>
+              </div>
+            </div>
             <EventList />
           </section>
-
-          <section className="panel-section">
-            <EventEditor onAddEvent={handleAddEvent} />
-          </section>
         </div>
+
+        <EventEditor />
       </aside>
     </>
   );
