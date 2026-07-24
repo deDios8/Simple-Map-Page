@@ -147,7 +147,7 @@ body {
   top: 12px;
   left: 50%;
   z-index: 950;
-  width: min(420px, calc(100vw - 24px));
+  width: min(480px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   display: grid;
   grid-template-rows: auto 1fr;
@@ -169,6 +169,10 @@ body {
   pointer-events: auto;
 }
 
+.drawer.is-editing {
+  min-height: calc(100vh - 24px);
+}
+
 @media (max-width: 720px) {
   .drawer {
     top: 0;
@@ -181,6 +185,10 @@ body {
 
   .drawer.is-open {
     transform: translateY(0);
+  }
+
+  .drawer.is-editing {
+    min-height: calc(100vh - 12px);
   }
 }
 
@@ -319,6 +327,7 @@ body {
 
 .editor-panel-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -328,6 +337,14 @@ body {
 
 .editor-panel-header button {
   flex-shrink: 0;
+}
+
+.editor-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .editor-panel-header label {

@@ -191,15 +191,17 @@ export default function ZoneEditor() {
             onChange={(event) => setName(event.target.value)}
           />
         </label>
-        <button className="primary-button" type="submit" form="zone-editor-form" disabled={!isAdmin}>
-          Save
-        </button>
-        <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
-          Delete
-        </button>
-        <button className="text-button" type="button" onClick={() => selectZone(null)}>
-          Cancel
-        </button>
+        <div className="editor-panel-header-actions">
+          <button className="primary-button" type="submit" form="zone-editor-form" disabled={!isAdmin}>
+            Save
+          </button>
+          <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
+            Delete
+          </button>
+          <button className="text-button" type="button" onClick={() => selectZone(null)}>
+            Cancel
+          </button>
+        </div>
       </div>
       <div className="editor-panel-body">
         <form id="zone-editor-form" className="editor-form" onSubmit={handleSubmit}>

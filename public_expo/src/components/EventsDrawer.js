@@ -33,7 +33,11 @@ export default function EventsDrawer() {
         E
       </button>
 
-      <aside id="events-drawer" className={`drawer events-drawer${isOpen ? " is-open" : ""}`} aria-label="Event editor">
+      <aside
+        id="events-drawer"
+        className={`drawer events-drawer${isOpen ? " is-open" : ""}${selectedEventId ? " is-editing" : ""}`}
+        aria-label="Event editor"
+      >
         <div className="drawer-header">
           <div>
             <p className="eyebrow">Event System</p>

@@ -49,7 +49,11 @@ export default function ZonesDrawer() {
         Z
       </button>
 
-      <aside id="drawer" className={`drawer${isOpen ? " is-open" : ""}`} aria-label="zones">
+      <aside
+        id="drawer"
+        className={`drawer${isOpen ? " is-open" : ""}${selectedZoneId ? " is-editing" : ""}`}
+        aria-label="zones"
+      >
         <div className="drawer-header">
           <div>
             <p className="eyebrow">{userId ? `${userId}'s ${sessionName}` : "Session"}</p>
