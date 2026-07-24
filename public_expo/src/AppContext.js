@@ -16,13 +16,12 @@ export function AppProvider({ children }) {
   const [userPass, setUserPass] = useState(null);
   const [selectedZoneId, setSelectedZoneId] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
-  const [listenerActive, setListenerActive] = useState(true);
   const [dismissedMessages, setDismissedMessages] = useState(() => new Set());
   const [coordPickMode, setCoordPickMode] = useState(false);
   const [pickedCoordinates, setPickedCoordinates] = useState(null);
 
-  const [zones, setZones] = useFirebaseCollection(sessionName, NODES.zones, normalizeObjects, listenerActive);
-  const [events] = useFirebaseCollection(sessionName, NODES.events, normalizeEvents, listenerActive);
+  const [zones, setZones] = useFirebaseCollection(sessionName, NODES.zones, normalizeObjects);
+  const [events] = useFirebaseCollection(sessionName, NODES.events, normalizeEvents);
 
   const location = useUserLocation();
   const { userLocation } = location;
@@ -112,10 +111,6 @@ export function AppProvider({ children }) {
     return { ok: true };
   }
 
-  function toggleListener() {
-    setListenerActive((prev) => !prev);
-  }
-
   // Map click-to-pick-coordinates: MapView reads coordPickMode/pickCoordinates;
   // ZoneEditor starts pick mode and consumes pickedCoordinates when they land.
   function pickCoordinates(lat, lng) {
@@ -137,9 +132,6 @@ export function AppProvider({ children }) {
     selectZone: setSelectedZoneId,
     selectedEventId,
     selectEvent: setSelectedEventId,
-
-    listenerActive,
-    toggleListener,
 
     userLocation: location.userLocation,
     gpsMode: location.gpsMode,

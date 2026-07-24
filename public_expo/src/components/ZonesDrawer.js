@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../AppContext";
-import { GpsToggleButton } from "./GpsSimControls";
 import ZoneList from "./ZoneList";
 import ZoneEditor from "./ZoneEditor";
 import { submitAddZoneRequest, submitClearAllLogsRequest } from "../requests";
@@ -10,8 +9,6 @@ export default function ZonesDrawer() {
     sessionName,
     userId,
     isAdmin,
-    listenerActive,
-    toggleListener,
     selectedZoneId,
     selectZone,
     userLocation,
@@ -59,17 +56,6 @@ export default function ZonesDrawer() {
             <h1>{userId ? `${userId}'s ${sessionName}` : "Session"}</h1>
           </div>
           <div className="drawer-header-actions">
-            <GpsToggleButton />
-            <button
-              className="listener-toggle"
-              type="button"
-              aria-label="Pause/Resume Firebase listener"
-              title={listenerActive ? "Pause Firebase listener" : "Resume Firebase listener"}
-              data-state={listenerActive ? "active" : "paused"}
-              onClick={toggleListener}
-            >
-              {listenerActive ? "pause db" : "resume db"}
-            </button>
             <button
               className="text-button"
               type="button"

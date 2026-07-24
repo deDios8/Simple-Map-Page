@@ -2,7 +2,7 @@ import "./styles.css";
 import { AppProvider, useApp } from "./src/AppContext";
 import MapView from "./src/components/MapView";
 import StatusCard from "./src/components/StatusCard";
-import { SimControls } from "./src/components/GpsSimControls";
+import { GpsToggleButton, SimControls } from "./src/components/GpsSimControls";
 import RequestButtons from "./src/components/RequestButtons";
 import ZonesDrawer from "./src/components/ZonesDrawer";
 import EventsDrawer from "./src/components/EventsDrawer";
@@ -27,6 +27,7 @@ function AppShell() {
       </div>
 
       <StatusCard />
+      <GpsToggleButton />
       <SimControls />
       <RequestButtons />
 

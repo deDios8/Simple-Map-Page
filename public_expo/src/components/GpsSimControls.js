@@ -1,7 +1,6 @@
 import { useApp } from "../AppContext";
 
-// The GPS/Sim toggle button - lives in the zones drawer header, matching the
-// prototype's #gps-toggle placement.
+// The GPS/Sim toggle button - floats next to the zone/event drawer toggles.
 export function GpsToggleButton() {
   const { gpsMode, toggleGpsMode } = useApp();
   return (
@@ -18,8 +17,6 @@ export function GpsToggleButton() {
   );
 }
 
-// The floating four-direction d-pad shown only in Sim mode - matches the
-// prototype's #sim-controls, which floats over the map (not inside a drawer).
 export function SimControls() {
   const { gpsMode, moveSimulatedLocation } = useApp();
   if (gpsMode) return null;

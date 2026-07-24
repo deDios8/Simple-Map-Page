@@ -88,7 +88,8 @@ body {
 
 .zone-drawer-toggle {
   position: fixed;
-  right: 18px;
+  left: 50%;
+  margin-left: -31px;
   bottom: var(--safe-bottom);
   z-index: 900;
   display: flex;
@@ -113,7 +114,7 @@ body {
 
 .request-actions {
   position: fixed;
-  left: 18px;
+  right: 18px;
   bottom: var(--safe-bottom);
   z-index: 900;
   display: grid;
@@ -141,11 +142,11 @@ body {
 
 .drawer {
   position: fixed;
-  right: 12px;
-  bottom: calc(var(--safe-bottom) + 78px);
-  z-index: 850;
+  top: 12px;
+  left: 50%;
+  z-index: 950;
   width: min(420px, calc(100vw - 24px));
-  max-height: min(72vh, 760px);
+  max-height: calc(100vh - 24px);
   display: grid;
   grid-template-rows: auto 1fr;
   border: 1px solid var(--border);
@@ -154,26 +155,30 @@ body {
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
   overflow: hidden;
-  transform: translateY(18px);
+  transform: translateX(-50%) translateY(-18px);
   opacity: 0;
   pointer-events: none;
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
 .drawer.is-open {
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
 
 @media (max-width: 720px) {
   .drawer {
-    right: 0;
+    top: 0;
     left: 0;
-    bottom: 0;
     width: 100%;
-    max-height: 78vh;
-    border-radius: 24px 24px 0 0;
+    max-height: calc(100vh - 12px);
+    border-radius: 0 0 24px 24px;
+    transform: translateY(-18px);
+  }
+
+  .drawer.is-open {
+    transform: translateY(0);
   }
 }
 
@@ -198,45 +203,20 @@ body {
   align-items: center;
 }
 
-.listener-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--accent-dark);
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 200ms ease;
-}
-
-.listener-toggle:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: var(--accent);
-}
-
-.listener-toggle:active {
-  transform: scale(0.95);
-}
-
-.listener-toggle[data-state="paused"] {
-  opacity: 0.6;
-  background: rgba(255, 255, 255, 0.5);
-}
-
 .gps-toggle {
+  position: fixed;
+  left: 50%;
+  margin-left: -103px;
+  bottom: var(--safe-bottom);
+  z-index: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 36px;
-  padding: 0 12px;
+  width: 62px;
+  height: 62px;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.6);
   color: var(--accent-dark);
   font-size: 0.8rem;
@@ -262,8 +242,8 @@ body {
 
 .sim-controls {
   position: fixed;
-  top: 110px;
-  left: 16px;
+  left: 18px;
+  bottom: var(--safe-bottom);
   z-index: 650;
   display: grid;
   grid-template-columns: 48px 48px 48px;
@@ -804,15 +784,11 @@ body {
 }
 
 @media (max-width: 720px) {
-  .zone-drawer-toggle {
-    right: 14px;
-  }
-
-  .events-drawer-toggle {
-    right: 86px;
-  }
-
   .request-actions {
+    right: 12px;
+  }
+
+  .sim-controls {
     left: 12px;
   }
 }
@@ -906,8 +882,9 @@ body {
 
 .events-drawer-toggle {
   position: fixed;
-  right: 90px;
-  bottom: var(--safe-bottom);
+  left: 50%;
+  margin-left: -31px;
+  bottom: calc(var(--safe-bottom) + 72px);
   z-index: 900;
   display: flex;
   align-items: center;
@@ -927,19 +904,6 @@ body {
 
 .events-drawer-toggle:active {
   transform: scale(0.96);
-}
-
-/* ---------------------------------------------------------------------------
-   Events drawer positioning (removed — criteria drawer no longer exists)
-   --------------------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------------------
-   Event events drawer positioning
-   --------------------------------------------------------------------------- */
-
-.events-drawer {
-  right: 12px;
-  bottom: calc(var(--safe-bottom) + 78px);
 }
 
 /* ---------------------------------------------------------------------------
