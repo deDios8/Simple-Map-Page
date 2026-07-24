@@ -128,7 +128,8 @@
         },
         "properties": {
           "appearance": {
-            "color": "#f9e401",
+            "fill": "#f9e401",
+            "border": "#ffffff",
             "radius": 7,
             "opacity": 0.5,
             "shape": "",
