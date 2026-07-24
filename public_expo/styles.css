@@ -352,14 +352,6 @@ body {
   gap: 14px;
 }
 
-.editor-cancel-row {
-  display: flex;
-}
-
-.editor-cancel-row button {
-  width: 100%;
-}
-
 .text-button,
 .primary-button,
 .zone-list button {

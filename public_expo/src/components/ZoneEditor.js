@@ -302,12 +302,6 @@ export default function ZoneEditor() {
               {saveStatus}
             </p>
           </div>
-
-          <div className="editor-cancel-row">
-            <button className="text-button" type="button" onClick={() => selectZone(null)}>
-              Cancel
-            </button>
-          </div>
         </form>
       </div>
     </div>
