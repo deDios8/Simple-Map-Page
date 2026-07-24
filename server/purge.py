@@ -16,6 +16,10 @@ from firebase_auth import auth_headers
 DATABASE_URL = "https://geogm-simple-map-default-rtdb.firebaseio.com"
 
 # Path to delete (without leading slash, without .json extension)
+PATHS_TO_DELETE = [
+    "testBed/zzz_clientRequests",
+    "testBed/zzz_clientRequests_processed"
+]
 # PATH_TO_DELETE = "testBed/zzz_clientRequests"
 PATH_TO_DELETE = "testBed/zzz_clientRequests_processed"
 
@@ -83,8 +87,9 @@ if __name__ == "__main__":
     print("Firebase Realtime Database Path Purge")
     print("=" * 70)
     print()
-    
-    success = delete_path(DATABASE_URL, PATH_TO_DELETE)
+
+    for each_path in PATHS_TO_DELETE:
+        success = delete_path(DATABASE_URL, each_path)
     
     print()
     sys.exit(0 if success else 1)
