@@ -341,10 +341,17 @@ body {
 
 .editor-panel-header-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+.editor-panel-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .editor-panel-header label {

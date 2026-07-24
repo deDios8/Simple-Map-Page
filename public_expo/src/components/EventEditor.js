@@ -203,15 +203,20 @@ export default function EventEditor() {
           />
         </label>
         <div className="editor-panel-header-actions">
-          <button className="primary-button" type="submit" form="event-editor-form" disabled={!isAdmin}>
-            Save
-          </button>
-          <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
-            Delete
-          </button>
-          <button className="text-button" type="button" onClick={() => selectEvent(null)}>
-            Cancel
-          </button>
+          <div className="editor-panel-header-buttons">
+            <button className="primary-button" type="submit" form="event-editor-form" disabled={!isAdmin}>
+              Save
+            </button>
+            <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
+              Delete
+            </button>
+            <button className="text-button" type="button" onClick={() => selectEvent(null)}>
+              Cancel
+            </button>
+          </div>
+          <p className="save-status" aria-live="polite">
+            {saveStatus}
+          </p>
         </div>
       </div>
       <div className="editor-panel-body">
@@ -262,12 +267,6 @@ export default function EventEditor() {
               setResultRows((prev) => prev.map((row, i) => (i === index ? { ...row, rawValue: value } : row)))
             }
           />
-
-          <div className="editor-actions">
-            <p className="save-status" aria-live="polite">
-              {saveStatus}
-            </p>
-          </div>
         </form>
       </div>
     </div>
