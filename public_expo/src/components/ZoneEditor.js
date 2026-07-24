@@ -182,7 +182,21 @@ export default function ZoneEditor() {
   return (
     <div className="editor-panel is-open">
       <div className="editor-panel-header">
-        <h2>Editing {name || selectedZoneId}</h2>
+        <label>
+          <input
+            type="text"
+            placeholder="Zone Name"
+            value={name}
+            disabled={!isAdmin}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <button className="primary-button" type="submit" disabled={!isAdmin}>
+          Save
+        </button>
+        <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
+          Delete
+        </button>
         <button className="text-button" type="button" onClick={() => selectZone(null)}>
           Cancel
         </button>
@@ -190,16 +204,6 @@ export default function ZoneEditor() {
       <div className="editor-panel-body">
         <form className="editor-form" onSubmit={handleSubmit}>
           <div className="name-row">
-            <label>
-              Name
-              <input
-                type="text"
-                placeholder="Object label"
-                value={name}
-                disabled={!isAdmin}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
             <label>
               Traits
               <input
@@ -287,15 +291,9 @@ export default function ZoneEditor() {
           />
 
           <div className="editor-actions">
-            <div className="editor-action-buttons">
-              <button className="primary-button" type="submit" disabled={!isAdmin}>
-                Save changes
-              </button>
+            <div className="editor-action-buttons justify-end">
               <button className="text-button" type="button" disabled={!isAdmin} onClick={handleClearLogs}>
                 Clear logs
-              </button>
-              <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
-                Delete
               </button>
             </div>
             <p className="save-status" aria-live="polite">

@@ -326,6 +326,32 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.editor-panel-header button {
+  flex-shrink: 0;
+}
+
+.editor-panel-header label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.editor-panel-header label input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+}
+
 .editor-panel-header h2 {
   margin: 0;
   font-size: 1rem;
@@ -754,6 +780,10 @@ body {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.editor-action-buttons.justify-end {
+  justify-content: flex-end;
 }
 
 .save-status {
