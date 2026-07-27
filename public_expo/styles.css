@@ -184,6 +184,16 @@ body {
   min-height: calc(100vh - 24px);
 }
 
+/* While picking a coordinate on the map, hide any open drawer so the map is
+   fully reachable - this overrides .drawer.is-open regardless of source
+   order since it's more specific (3 classes vs. 2). The drawer's own
+   is-open state is left untouched, so it reappears automatically once
+   coordPickMode ends. */
+.app-shell.is-picking-coords .drawer {
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (max-width: 720px) {
   .drawer {
     top: 0;
@@ -587,9 +597,6 @@ body {
   cursor: not-allowed;
 }
 
-#map.is-coord-picking {
-  cursor: crosshair;
-}
 
 .stats-section {
   display: grid;

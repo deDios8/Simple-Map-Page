@@ -19,10 +19,10 @@ export default function App() {
 }
 
 function AppShell() {
-  const { userId } = useApp();
+  const { userId, coordPickMode } = useApp();
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell${coordPickMode ? " is-picking-coords" : ""}`}>
       <div id="map" aria-label="Interactive map">
         <MapView />
       </div>

@@ -2,7 +2,6 @@
 - Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
 - Allow triggers to assign targets reflexively targeting the zone the triggered
 
-- Wishlist: would like a way to move a user using keybindings on pc (overriding gps)
 - App auto-select a newly added zone, criteria, event for editing.
 - Add an event clock/timer
   - Tuning the timing of events to have a predictable tick rate for DOT-like effects
@@ -12,10 +11,7 @@
 - Test stat value checker triggers
 - searching for 'object' and 'Object' to do replacement to 'zone' and 'Zone' careful of duplicate variable names
 - hasTags isn't noticing a Stat name
-- ?? dismissMessage should remove all messages with the same text
-- consolidate Target and Trigger entries and components?
-- !! enter and exit zone is not updating properly
-
+- 
 
 # Dependencies
 ## macos
@@ -33,7 +29,10 @@ or
 .venv/bin/pip install shapely
 .venv/bin/pip install firebase
 
-# Instructions for deployment
+npm expo (can't remember exact commands to add)
+
+
+# Old instructions for deployment
 ## Project Console: 
 https://console.firebase.google.com/project/geogm-simple-map/overview
 ## Remote Hosting URL: 
@@ -46,10 +45,11 @@ http://localhost:8080/index.html
 ## Server Virtual Environment:
 python server/main.py
 
-## Expo Local Test:
+## New Expo Local Test:
 npx expo start --web
 ## Expo GitHub Pages Deploy:
 cd public_expo && npm run deploy
 # Note for bad cached on gh-pages:
 If you ever see the same fatal: a branch named 'gh-pages' already exists error again, the fix is identical: delete public_expo/node_modules/.cache/gh-pages and rerun npm run deploy.
 
+Save should become primary whenever something changes on the editor, but should otherwise start out looking like cancel.

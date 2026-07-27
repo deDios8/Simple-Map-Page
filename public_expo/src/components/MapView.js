@@ -9,7 +9,7 @@ const DEFAULT_CENTER = [48.21224, -101.31304];
 const DEFAULT_ZOOM = 14;
 
 export default function MapView() {
-  const { zones, userPass, userId, selectedZoneId, selectZone, userLocation, satelliteView } = useApp();
+  const { zones, userPass, userId, selectedZoneId, selectZone, userLocation, satelliteView, coordPickMode } = useApp();
 
   const visibleFeatures = Object.values(zones).filter((feature) =>
     isVisibleToCurrentUser(feature, { userPass, userId, zones }),
@@ -31,7 +31,10 @@ export default function MapView() {
         <ZoneMarker
           key={feature.properties.id}
           feature={feature}
-          onSelect={() => selectZone(feature.properties.id)}
+          onSelect={() => {
+            if (coordPickMode) return;
+            selectZone(feature.properties.id);
+          }}
         />
       ))}
 
@@ -46,6 +49,7 @@ export default function MapView() {
       <MapClickHandler />
       <FlyToSelection selectedZoneId={selectedZoneId} zones={zones} />
       <CenterOnFirstFix userLocation={userLocation} />
+      <CoordPickCursor coordPickMode={coordPickMode} />
     </MapContainer>
   );
 }
@@ -98,6 +102,18 @@ function FlyToSelection({ selectedZoneId, zones }) {
     map.flyTo([lat, lng], map.getZoom(), { duration: 0.6 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedZoneId]);
+  return null;
+}
+
+// Toggles Leaflet's built-in crosshair cursor class on the map's real DOM
+// container. MapContainer's own className prop only applies once at mount
+// (react-leaflet captures it in useState and never updates it), so a
+// reactive value like coordPickMode has to be applied this way instead.
+function CoordPickCursor({ coordPickMode }) {
+  const map = useMap();
+  useEffect(() => {
+    map.getContainer().classList.toggle("leaflet-crosshair", coordPickMode);
+  }, [coordPickMode, map]);
   return null;
 }
 

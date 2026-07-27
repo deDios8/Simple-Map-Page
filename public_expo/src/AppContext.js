@@ -117,6 +117,22 @@ export function AppProvider({ children }) {
   function pickCoordinates(lat, lng) {
     setPickedCoordinates({ lat, lng });
     setCoordPickMode(false);
+
+    // Optimistically move the zone being edited to the picked spot on the
+    // map right away, before the save request has even been sent.
+    if (selectedZoneId) {
+      setZones((prev) => {
+        const existing = prev[selectedZoneId];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [selectedZoneId]: {
+            ...existing,
+            geometry: { ...existing.geometry, coordinates: [lng, lat] },
+          },
+        };
+      });
+    }
   }
 
   function toggleMapLayer() {
