@@ -3,6 +3,7 @@ import { AppProvider, useApp } from "./src/AppContext";
 import MapView from "./src/components/MapView";
 import StatusCard from "./src/components/StatusCard";
 import { GpsToggleButton, SimControls } from "./src/components/GpsSimControls";
+import { MapLayerToggleButton } from "./src/components/MapLayerToggle";
 import RequestButtons from "./src/components/RequestButtons";
 import ZonesDrawer from "./src/components/ZonesDrawer";
 import EventsDrawer from "./src/components/EventsDrawer";
@@ -27,6 +28,7 @@ function AppShell() {
       </div>
 
       <StatusCard />
+      {/* <MapLayerToggleButton /> */}
       <GpsToggleButton />
       <SimControls />
       <RequestButtons />

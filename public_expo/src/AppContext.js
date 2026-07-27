@@ -19,6 +19,7 @@ export function AppProvider({ children }) {
   const [dismissedMessages, setDismissedMessages] = useState(() => new Set());
   const [coordPickMode, setCoordPickMode] = useState(false);
   const [pickedCoordinates, setPickedCoordinates] = useState(null);
+  const [satelliteView, setSatelliteView] = useState(true);
 
   const [zones, setZones] = useFirebaseCollection(sessionName, NODES.zones, normalizeObjects);
   const [events] = useFirebaseCollection(sessionName, NODES.events, normalizeEvents);
@@ -118,6 +119,10 @@ export function AppProvider({ children }) {
     setCoordPickMode(false);
   }
 
+  function toggleMapLayer() {
+    setSatelliteView((prev) => !prev);
+  }
+
   const value = {
     sessionName,
     userId,
@@ -147,6 +152,9 @@ export function AppProvider({ children }) {
     setCoordPickMode,
     pickedCoordinates,
     pickCoordinates,
+
+    satelliteView,
+    toggleMapLayer,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

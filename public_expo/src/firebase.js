@@ -20,7 +20,10 @@ signInAnonymously(auth).catch((error) => {
 export const NODES = nodes;
 export const DEFAULT_SESSION_NAME = defaultSessionName || "testBed";
 export const UPDATE_LOCATION_INTERVAL = updateLocationInterval || 2000;
-export const MAP_LAYER = mapLayer?.default || {};
+export const MAP_LAYERS = {
+  satellite: mapLayer?.default || {},
+  street: mapLayer?.alternative || {},
+};
 
 export function dbPath(sessionName, node) {
   return `${sessionName}/${node}`;

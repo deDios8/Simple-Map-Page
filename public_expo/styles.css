@@ -125,6 +125,16 @@ body {
   gap: var(--button-gap);
 }
 
+@media (max-width: 720px) {
+  .request-actions {
+    right: 12px;
+  }
+
+  .sim-controls {
+    left: 12px;
+  }
+}
+
 .request-action-button {
   width: var(--button-size);
   height: var(--button-size);
@@ -236,6 +246,32 @@ body {
 }
 
 .gps-toggle:active {
+  transform: scale(0.96);
+}
+
+.map-layer-toggle {
+  position: fixed;
+  left: 50%;
+  margin-left: calc(-1 * (var(--button-size) * 1.5 + var(--button-gap)));
+  bottom: calc(var(--safe-bottom) + var(--button-size) + var(--button-gap));
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--button-size);
+  height: var(--button-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #3a2361 0%, #6a3fc0 100%);
+  box-shadow: 0 14px 32px rgba(58, 35, 97, 0.36);
+  color: #f6f7f2;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.map-layer-toggle:active {
   transform: scale(0.96);
 }
 
@@ -814,16 +850,6 @@ body {
 
 .editor-bottom-spacer {
   height: calc(var(--button-size) + var(--safe-bottom));
-}
-
-@media (max-width: 720px) {
-  .request-actions {
-    right: 12px;
-  }
-
-  .sim-controls {
-    left: 12px;
-  }
 }
 
 .leaflet-popup-content-wrapper,

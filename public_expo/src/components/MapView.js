@@ -3,17 +3,19 @@ import { MapContainer, TileLayer, Circle, CircleMarker, Popup, ZoomControl, useM
 import "leaflet/dist/leaflet.css";
 import { useApp } from "../AppContext";
 import { isVisibleToCurrentUser } from "../zoneUtils";
-import { MAP_LAYER } from "../firebase";
+import { MAP_LAYERS } from "../firebase";
 
 const DEFAULT_CENTER = [48.21224, -101.31304];
 const DEFAULT_ZOOM = 14;
 
 export default function MapView() {
-  const { zones, userPass, userId, selectedZoneId, selectZone, userLocation } = useApp();
+  const { zones, userPass, userId, selectedZoneId, selectZone, userLocation, satelliteView } = useApp();
 
   const visibleFeatures = Object.values(zones).filter((feature) =>
     isVisibleToCurrentUser(feature, { userPass, userId, zones }),
   );
+
+  const mapLayer = satelliteView ? MAP_LAYERS.satellite : MAP_LAYERS.street;
 
   return (
     <MapContainer
@@ -23,7 +25,7 @@ export default function MapView() {
       style={{ height: "100%", width: "100%" }}
     >
       <ZoomControl position="topright" />
-      <TileLayer url={MAP_LAYER.url} attribution={MAP_LAYER.attribution} maxZoom={19} minZoom={12} />
+      <TileLayer url={mapLayer.url} attribution={mapLayer.attribution} maxZoom={19} minZoom={12} />
 
       {visibleFeatures.map((feature) => (
         <ZoneMarker
