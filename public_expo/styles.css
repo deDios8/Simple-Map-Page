@@ -459,6 +459,16 @@ body {
   gap: 6px;
 }
 
+.zone-list li {
+  display: flex;
+  gap: 6px;
+}
+
+.zone-list li > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .zone-list button {
   width: 100%;
   display: flex;
@@ -469,6 +479,18 @@ body {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.06);
   text-align: left;
+}
+
+.zone-list button.zone-list-duplicate-button {
+  width: auto;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.18);
+  color: var(--accent);
+  padding: 7px 10px;
+  font-weight: 700;
+  justify-content: center;
 }
 
 .list-color-dot {
@@ -638,7 +660,7 @@ body {
 
 .stat-row-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 8px;
   align-items: center;
 }
@@ -657,6 +679,15 @@ body {
   flex: 1;
   min-width: 0;
   padding: 4px 8px;
+}
+
+.stat-duplicate-button {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.18);
+  color: var(--accent);
+  padding: 7px 10px;
+  font-weight: 700;
 }
 
 .stat-remove-button {
@@ -769,7 +800,8 @@ body {
 .text-button:disabled,
 .stat-remove-button:disabled,
 .status-remove-button:disabled,
-.stat-row-add-button:disabled {
+.stat-row-add-button:disabled,
+.stat-duplicate-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -1003,7 +1035,7 @@ body {
 
 .criterion-row-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 8px;
   align-items: center;
 }
@@ -1035,7 +1067,7 @@ body {
 
 .result-row-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 8px;
   align-items: center;
 }

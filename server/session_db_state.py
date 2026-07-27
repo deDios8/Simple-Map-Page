@@ -817,7 +817,8 @@ class SessionState:
     def apply_add_zone_request(self, request_entity_id: int) -> None:
         request_geometry = esper.try_component(request_entity_id, ecs_comps_zone.Geometry)
         request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
-        if request_geometry is None or request_props is None:
+        add_object = esper.try_component(request_entity_id, ecs_comps_client_request.AddObject)
+        if request_geometry is None or request_props is None or add_object is None:
             self._consume_client_request(request_entity_id)
             return
 
@@ -832,8 +833,8 @@ class SessionState:
             return
 
         try:
-            lon = float(coordinates[0])
-            lat = float(coordinates[1])
+            default_lon = float(coordinates[0])
+            default_lat = float(coordinates[1])
         except (TypeError, ValueError):
             self._consume_client_request(request_entity_id)
             return
@@ -842,24 +843,48 @@ class SessionState:
         if new_zone_key in self.ZoneEntityIds:
             new_zone_key = f"{new_zone_key}_{self._random_string(3)}"
 
-        new_zone_entry = {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [lon, lat],
-            },
-            "properties": {
-                "id": new_zone_key,
-                "displayName": f"{new_zone_key}",
-                "appearance": {
-                    "fill": "#0b8f87",
-                    "visibleTo": ["USER"],
-                    "radius": 5,
+        form_data = add_object.form_data if isinstance(add_object.form_data, dict) else {}
+
+        if form_data:
+            lat = to_float(form_data.get("latitude"), default_lat)
+            lon = to_float(form_data.get("longitude"), default_lon)
+            stats_payload = form_data.get("stats") if isinstance(form_data.get("stats"), dict) else {}
+            new_zone_entry = {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {
+                    "id": new_zone_key,
+                    "displayName": str(form_data.get("name") or new_zone_key),
+                    "appearance": {
+                        "fill": str(form_data.get("fill") or "#0b8f87"),
+                        "border": str(form_data.get("border") or "#ffffff"),
+                        "radius": to_float(form_data.get("radius"), 5),
+                        "opacity": to_float(form_data.get("opacity"), 0.5),
+                        "visibleTo": normalize_string_list(form_data.get("visibleTo")),
+                    },
+                    "traits": normalize_string_list(form_data.get("traits")) or ["ZONE"],
+                    "stats": normalize_stats({"stats": stats_payload}),
                 },
-                "traits": ["ZONE"],
-                "stats": {},
-            },
-        }
+            }
+        else:
+            new_zone_entry = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [default_lon, default_lat],
+                },
+                "properties": {
+                    "id": new_zone_key,
+                    "displayName": f"{new_zone_key}",
+                    "appearance": {
+                        "fill": "#0b8f87",
+                        "visibleTo": ["USER"],
+                        "radius": 5,
+                    },
+                    "traits": ["ZONE"],
+                    "stats": {},
+                },
+            }
 
         put_db_entry(
             self.database_url,
@@ -1151,13 +1176,13 @@ class SessionState:
         if requested_action == "new_location":
             esper.add_component(entity_id, ecs_comps_client_request.NewLocation(requester_id=requester_id))
         elif requested_action == "add_zone":
-            esper.add_component(entity_id, ecs_comps_client_request.AddObject(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_comps_client_request.AddObject(requester_id=requester_id, form_data=form_data))
         elif request_type == "edited_zone":
             esper.add_component(entity_id, ecs_comps_client_request.EditedObject(target_id=target_id, target_path=target_path, form_data=form_data))
         elif request_type == "deleted_zone":
             esper.add_component(entity_id, ecs_comps_client_request.DeletedObject(target_id=target_id, target_path=target_path))
         elif requested_action == "add_event":
-            esper.add_component(entity_id, ecs_comps_client_request.AddEvent(requester_id=requester_id))
+            esper.add_component(entity_id, ecs_comps_client_request.AddEvent(requester_id=requester_id, form_data=form_data))
         elif request_type == "edited_event":
             esper.add_component(entity_id, ecs_comps_client_request.EditedEvent(target_id=target_id, form_data=form_data))
         elif request_type == "deleted_event":
@@ -1369,7 +1394,8 @@ class SessionState:
 
     def apply_add_event_request(self, request_entity_id: int) -> None:
         request_props = esper.try_component(request_entity_id, ecs_comps_client_request.ClientRequestPayload)
-        if request_props is None:
+        add_event = esper.try_component(request_entity_id, ecs_comps_client_request.AddEvent)
+        if request_props is None or add_event is None:
             self._consume_client_request(request_entity_id)
             return
 
@@ -1382,15 +1408,20 @@ class SessionState:
         if new_key in self.EventResultEntityIds:
             new_key = f"{new_key}_{self._random_string(3)}"
 
+        form_data = add_event.form_data if isinstance(add_event.form_data, dict) else {}
+        triggers = form_data.get("triggerComponents") if isinstance(form_data.get("triggerComponents"), dict) else {}
+        targets = form_data.get("targetComponents") if isinstance(form_data.get("targetComponents"), dict) else {}
+        results = form_data.get("results") if isinstance(form_data.get("results"), dict) else {}
+
         new_event_entry = {
             "type": "Feature",
             "geometry": None,
             "properties": {
                 "id": new_key,
-                "displayName": new_key,
-                "Triggers": {},
-                "Targets": {},
-                "Results": {},
+                "displayName": str(form_data.get("name") or new_key),
+                "Triggers": triggers,
+                "Targets": targets,
+                "Results": results,
             },
         }
         put_db_entry(self.database_url, self.session_name, new_key, new_event_entry, NODE=EVENTS_NODE)

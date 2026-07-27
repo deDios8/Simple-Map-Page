@@ -1,8 +1,19 @@
 import { useApp } from "../AppContext";
+import { submitAddEventRequest } from "../requests";
 
 export default function EventList({ onAdd }) {
-  const { events, selectedEventId, selectEvent } = useApp();
+  const { events, selectedEventId, selectEvent, sessionName, userId, userLocation, setStatusText } = useApp();
   const entries = Object.values(events);
+
+  function duplicateEvent(entry) {
+    const formData = {
+      name: entry.properties?.displayName || "",
+      triggerComponents: entry.properties?.Triggers || {},
+      targetComponents: entry.properties?.Targets || {},
+      results: entry.properties?.Results || {},
+    };
+    submitAddEventRequest(sessionName, userId, userLocation, formData).catch((error) => setStatusText(error.message));
+  }
 
   if (!entries.length) {
     return (
@@ -31,6 +42,14 @@ export default function EventList({ onAdd }) {
             >
               <span>{name}</span>
               <span className="list-meta"> &middot; {id}</span>
+            </button>
+            <button
+              className="zone-list-duplicate-button"
+              type="button"
+              aria-label="Duplicate event"
+              onClick={() => duplicateEvent(entry)}
+            >
+              ⧉
             </button>
           </li>
         );

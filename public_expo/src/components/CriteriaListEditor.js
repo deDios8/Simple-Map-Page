@@ -8,6 +8,7 @@ export default function CriteriaListEditor({
   rows,
   disabled,
   onAdd,
+  onDuplicate,
   onRemove,
   onChangeName,
   onChangeTags,
@@ -40,6 +41,15 @@ export default function CriteriaListEditor({
                     onChange={(event) => onChangeTags(index, event.target.value)}
                   />
                 </label>
+                <button
+                  className="stat-duplicate-button"
+                  type="button"
+                  aria-label="Duplicate criterion"
+                  disabled={disabled}
+                  onClick={() => onDuplicate(index)}
+                >
+                  ⧉
+                </button>
                 <button
                   className="stat-remove-button"
                   type="button"

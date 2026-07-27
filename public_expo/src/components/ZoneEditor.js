@@ -133,6 +133,19 @@ export default function ZoneEditor() {
     });
   }
 
+  function duplicateStatRow(index) {
+    setStatsRows((prev) => {
+      const usedKeys = new Set(prev.map((row) => row.key));
+      let nextIndex = prev.length + 1;
+      let key = `stat-${nextIndex}`;
+      while (usedKeys.has(key)) {
+        nextIndex += 1;
+        key = `stat-${nextIndex}`;
+      }
+      return [...prev, { ...prev[index], key }];
+    });
+  }
+
   function removeStatRow(index) {
     setStatsRows((prev) => prev.filter((_, i) => i !== index));
   }
@@ -176,6 +189,21 @@ export default function ZoneEditor() {
     setSaveStatus("Sending edit request...");
     try {
       await submitEditedZoneRequest(sessionName, userId, selectedZoneId, formData, coordinates);
+      // The zones snapshot refreshes on a timer independent of this save (see
+      // the load effect above), so isDirty would never clear on its own -
+      // reset the snapshot here instead of waiting for the server to echo back.
+      initialFormRef.current = JSON.stringify({
+        name,
+        fill,
+        border,
+        radius,
+        opacity,
+        visibleTo,
+        traits,
+        lat,
+        lng,
+        statsRows,
+      });
       setSaveStatus("Edit request sent. Server will apply updates shortly.");
     } catch (error) {
       console.error(error);
@@ -332,6 +360,7 @@ export default function ZoneEditor() {
             rows={statsRows}
             disabled={!isAdmin}
             onAdd={addStatRow}
+            onDuplicate={duplicateStatRow}
             onRemove={removeStatRow}
             onChange={updateStatRow}
           />

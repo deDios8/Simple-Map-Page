@@ -1,5 +1,5 @@
 // Renders one editable row per zone stat (name + value), reused by ZoneEditor.
-export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange }) {
+export default function StatsEditor({ rows, disabled, onAdd, onDuplicate, onRemove, onChange }) {
   return (
     <section className="stats-section" aria-labelledby="stats-heading">
       <div className="stats-header">
@@ -30,6 +30,15 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
                     onChange={(event) => onChange(index, "value", event.target.value)}
                   />
                 </label>
+                <button
+                  className="stat-duplicate-button"
+                  type="button"
+                  aria-label="Duplicate stat"
+                  disabled={disabled}
+                  onClick={() => onDuplicate(index)}
+                >
+                  ⧉
+                </button>
                 <button
                   className="stat-remove-button"
                   type="button"

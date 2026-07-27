@@ -17,6 +17,7 @@ class NewLocation:
 @dataclass
 class AddObject:
     requester_id: str
+    form_data: dict
 
 @dataclass
 class EditedObject:
@@ -32,6 +33,7 @@ class DeletedObject:
 @dataclass
 class AddEvent:
     requester_id: str
+    form_data: dict
 
 @dataclass
 class EditedEvent:

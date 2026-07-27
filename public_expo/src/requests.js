@@ -65,12 +65,13 @@ export function submitButtonClickRequest(sessionName, userId, userLocation, requ
   });
 }
 
-export function submitAddZoneRequest(sessionName, userId, userLocation) {
+export function submitAddZoneRequest(sessionName, userId, userLocation, formData = {}) {
   return submitRequest(sessionName, {
     requestId: "add_zone",
     requestType: "button_click",
     userId,
     coordinates: toGeoJsonCoordinates(userLocation),
+    properties: { formData },
   });
 }
 
@@ -123,12 +124,13 @@ export function submitClearAllLogsRequest(sessionName, userId, userLocation) {
   });
 }
 
-export function submitAddEventRequest(sessionName, userId, userLocation) {
+export function submitAddEventRequest(sessionName, userId, userLocation, formData = {}) {
   return submitRequest(sessionName, {
     requestId: "add_event",
     requestType: "add_event",
     userId,
     coordinates: toGeoJsonCoordinates(userLocation),
+    properties: { formData },
   });
 }
 

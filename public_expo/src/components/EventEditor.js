@@ -152,6 +152,28 @@ export default function EventEditor() {
     });
   }
 
+  // Criteria/result rows are keyed by component name (one of each type per
+  // event), so "duplicate" copies the row's other field but has to pick the
+  // next unused name - same as the add-row functions above.
+  function duplicateTriggerRow(index) {
+    setTriggerRows((prev) => {
+      const nextName = nextAvailableOption(TRIGGER_COMPONENT_OPTIONS, new Set(prev.map((row) => row.name)));
+      return [...prev, { ...prev[index], name: nextName }];
+    });
+  }
+  function duplicateTargetRow(index) {
+    setTargetRows((prev) => {
+      const nextName = nextAvailableOption(TARGET_COMPONENT_OPTIONS, new Set(prev.map((row) => row.name)));
+      return [...prev, { ...prev[index], name: nextName }];
+    });
+  }
+  function duplicateResultRow(index) {
+    setResultRows((prev) => {
+      const nextName = nextAvailableOption(RESULT_COMPONENT_OPTIONS, new Set(prev.map((row) => row.name)));
+      return [...prev, { ...prev[index], name: nextName }];
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (!isAdmin) {
@@ -247,6 +269,7 @@ export default function EventEditor() {
             rows={triggerRows}
             disabled={!isAdmin}
             onAdd={addTriggerRow}
+            onDuplicate={duplicateTriggerRow}
             onRemove={(index) => setTriggerRows((prev) => prev.filter((_, i) => i !== index))}
             onChangeName={(index, value) =>
               setTriggerRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
@@ -263,6 +286,7 @@ export default function EventEditor() {
             rows={targetRows}
             disabled={!isAdmin}
             onAdd={addTargetRow}
+            onDuplicate={duplicateTargetRow}
             onRemove={(index) => setTargetRows((prev) => prev.filter((_, i) => i !== index))}
             onChangeName={(index, value) =>
               setTargetRows((prev) => prev.map((row, i) => (i === index ? { ...row, name: value } : row)))
@@ -276,6 +300,7 @@ export default function EventEditor() {
             rows={resultRows}
             disabled={!isAdmin}
             onAdd={addResultRow}
+            onDuplicate={duplicateResultRow}
             onRemove={(index) => setResultRows((prev) => prev.filter((_, i) => i !== index))}
             onChangeName={(index, value) =>
               setResultRows((prev) =>

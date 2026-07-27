@@ -3,7 +3,7 @@ import { RESULT_COMPONENT_FIELD_CONFIG, RESULT_COMPONENT_OPTIONS } from "../conf
 // Row-list editor for an event's Results. This is the piece that was dead
 // code in the prototype (its DOM query looked for the wrong element id) -
 // here it's just plain component state, so there's no id to mismatch.
-export default function ResultsEditor({ rows, disabled, onAdd, onRemove, onChangeName, onChangeValue }) {
+export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRemove, onChangeName, onChangeValue }) {
   return (
     <section className="event-section" aria-labelledby="event-heading">
       <div className="stats-header">
@@ -34,6 +34,15 @@ export default function ResultsEditor({ rows, disabled, onAdd, onRemove, onChang
                   disabled={disabled}
                   onChange={(value) => onChangeValue(index, value)}
                 />
+                <button
+                  className="stat-duplicate-button"
+                  type="button"
+                  aria-label="Duplicate result"
+                  disabled={disabled}
+                  onClick={() => onDuplicate(index)}
+                >
+                  ⧉
+                </button>
                 <button
                   className="stat-remove-button"
                   type="button"
