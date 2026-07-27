@@ -16,11 +16,6 @@ export default function CriteriaListEditor({
     <section className="criteria-components-section" aria-label={heading}>
       <div className="stats-header">
         <h3>{heading}</h3>
-        <div className="section-actions">
-          <button className="text-button" type="button" disabled={disabled} onClick={onAdd}>
-            {addLabel}
-          </button>
-        </div>
       </div>
       <div className="stats-list">
         {rows.length === 0 ? (
@@ -61,6 +56,9 @@ export default function CriteriaListEditor({
             </article>
           ))
         )}
+        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+          {addLabel}
+        </button>
       </div>
     </section>
   );

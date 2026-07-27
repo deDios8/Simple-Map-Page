@@ -8,11 +8,6 @@ export default function ResultsEditor({ rows, disabled, onAdd, onRemove, onChang
     <section className="event-section" aria-labelledby="event-heading">
       <div className="stats-header">
         <h3 id="event-heading">Results</h3>
-        <div className="section-actions">
-          <button className="text-button" type="button" disabled={disabled} onClick={onAdd}>
-            Add result
-          </button>
-        </div>
       </div>
       <div className="stats-list">
         {rows.length === 0 ? (
@@ -56,6 +51,9 @@ export default function ResultsEditor({ rows, disabled, onAdd, onRemove, onChang
             );
           })
         )}
+        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+          Add result
+        </button>
       </div>
     </section>
   );
