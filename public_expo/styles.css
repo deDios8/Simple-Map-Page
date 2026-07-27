@@ -210,6 +210,10 @@ body {
   gap: 14px;
 }
 
+.editor-form {
+  align-content: start;
+}
+
 .drawer-header {
   grid-template-columns: 1fr auto;
   align-items: start;
