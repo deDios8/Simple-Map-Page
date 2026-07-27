@@ -10,6 +10,7 @@
   --border: rgba(255, 255, 255, 0.14);
   --shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
   --safe-bottom: max(env(safe-area-inset-bottom), 16px);
+  --safe-top: max(env(safe-area-inset-top), 16px);
   --button-size: 48px;
   --button-gap: 8px;
   font-family: "Segoe UI", "Aptos", sans-serif;
@@ -92,7 +93,7 @@ body {
   position: fixed;
   left: 50%;
   margin-left: calc(var(--button-size) / -2);
-  bottom: var(--safe-bottom);
+  top: var(--safe-top);
   z-index: 900;
   display: flex;
   align-items: center;
@@ -227,32 +228,6 @@ body {
   align-items: center;
 }
 
-.gps-toggle {
-  position: fixed;
-  left: 50%;
-  margin-left: calc(-1 * (var(--button-size) * 1.5 + var(--button-gap)));
-  bottom: var(--safe-bottom);
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--button-size);
-  height: var(--button-size);
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #4c2a72 0%, #7c4fd1 100%);
-  box-shadow: 0 14px 32px rgba(76, 42, 114, 0.36);
-  color: #f6f7f2;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.gps-toggle:active {
-  transform: scale(0.96);
-}
-
 .map-layer-toggle {
   position: fixed;
   left: 50%;
@@ -286,7 +261,7 @@ body {
   z-index: 650;
   display: grid;
   grid-template-columns: var(--button-size) var(--button-size);
-  grid-template-rows: var(--button-size) var(--button-size);
+  grid-template-rows: var(--button-size) var(--button-size) var(--button-size);
   gap: var(--button-gap);
   pointer-events: none;
 }
@@ -295,24 +270,48 @@ body {
   display: none;
 }
 
+.gps-toggle {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--button-size);
+  height: var(--button-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #4c2a72 0%, #7c4fd1 100%);
+  box-shadow: 0 14px 32px rgba(76, 42, 114, 0.36);
+  color: #f6f7f2;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.gps-toggle:active {
+  transform: scale(0.96);
+}
+
 .sim-button.sim-up-right {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .sim-button.sim-up-left {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .sim-button.sim-down-right {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
 }
 
 .sim-button.sim-down-left {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 3;
 }
 
 .sim-button {
@@ -938,7 +937,7 @@ body {
   position: fixed;
   left: 50%;
   margin-left: calc(var(--button-size) / 2 + var(--button-gap));
-  bottom: var(--safe-bottom);
+  top: var(--safe-top);
   z-index: 900;
   display: flex;
   align-items: center;
