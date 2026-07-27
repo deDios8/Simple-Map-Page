@@ -219,7 +219,7 @@ export default function EventEditor() {
         <div className="editor-panel-header-actions">
           <div className="editor-panel-header-buttons">
             <button
-              className={isDirty ? "primary-button" : "text-button"}
+              className={isDirty ? "primary-button is-unsaved" : "primary-button disabled"}
               type="submit"
               form="event-editor-form"
               disabled={!isAdmin}
