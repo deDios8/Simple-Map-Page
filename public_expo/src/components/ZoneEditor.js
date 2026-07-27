@@ -210,20 +210,7 @@ export default function ZoneEditor() {
       </div>
       <div className="editor-panel-body">
         <form id="zone-editor-form" className="editor-form" onSubmit={handleSubmit}>
-          <div className="name-row">
-            <label>
-              Traits
-              <input
-                type="text"
-                placeholder="ZONE, USER, etc."
-                value={traits}
-                disabled={!isAdmin}
-                onChange={(event) => setTraits(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="trait-row">
+          <div className="traits-row">
             <button
               className={`coord-pick-button${coordPickMode ? " is-active" : ""}`}
               type="button"
@@ -237,9 +224,22 @@ export default function ZoneEditor() {
               <span>Lng: {Number.isFinite(lng) ? lng : "--"}</span> */}
             </button>
             <label>
+              Traits
+              <input
+                type="text"
+                placeholder="ZONE, USER, etc."
+                value={traits}
+                disabled={!isAdmin}
+                onChange={(event) => setTraits(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="radius-row">
+            <label>
               Radius
-              <textarea
-                rows={1}
+              <input
+                type="text"
                 placeholder="5"
                 value={radius}
                 disabled={!isAdmin}
@@ -279,8 +279,8 @@ export default function ZoneEditor() {
             </label>
             <label>
               Opacity
-              <textarea
-                rows={1}
+              <input
+                type="text"
                 placeholder="0.5"
                 value={opacity}
                 disabled={!isAdmin}

@@ -500,27 +500,12 @@ body {
   min-width: 0;
 }
 
-.name-row {
+.traits-row,
+.radius-row {
   display: grid;
   grid-template-columns: 0.3fr 0.7fr;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-}
-
-.name-row label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  min-width: 0;
-}
-
-.name-row label input[type="text"] {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  padding: 4px 8px;
 }
 
 .appearance-row {
@@ -530,6 +515,8 @@ body {
   align-items: center;
 }
 
+.traits-row label,
+.radius-row label,
 .appearance-row label {
   display: flex;
   flex-direction: row;
@@ -539,8 +526,9 @@ body {
   min-width: 0;
 }
 
-.appearance-row label input[type="text"],
-.appearance-row label textarea {
+.traits-row label input[type="text"],
+.radius-row label input[type="text"],
+.appearance-row label input[type="text"] {
   flex: 1;
   min-width: 0;
   width: auto;
@@ -549,32 +537,9 @@ body {
 
 .appearance-row label input[type="color"] {
   flex: none;
-  width: 36px;
+  width: 48px;
   min-height: 30px;
   padding: 3px 4px;
-}
-
-.trait-row {
-  display: grid;
-  grid-template-columns: 0.3fr 0.3fr 0.4fr;
-  gap: 8px;
-  align-items: center;
-}
-
-.trait-row label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  min-width: 0;
-}
-
-.trait-row label input[type="text"] {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  padding: 4px 8px;
 }
 
 .coord-pick-button {
