@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "../AppContext";
 import {
   TRIGGER_COMPONENT_OPTIONS,
@@ -73,35 +73,49 @@ export default function EventEditor() {
   const [resultRows, setResultRows] = useState([]);
   const [saveStatus, setSaveStatus] = useState("");
 
+  // Snapshot of the form's values right after loading an event, used to tell
+  // whether the user has changed anything yet (see isDirty below).
+  const initialFormRef = useRef("");
+
   // Re-sync the form from the latest server data whenever it changes.
   useEffect(() => {
     if (!selectedEvent) return;
-    setName(selectedEvent.properties?.displayName || "");
+    const nextName = selectedEvent.properties?.displayName || "";
 
     const triggers = extractCriteriaComponents(selectedEvent.properties?.Triggers, TRIGGER_COMPONENT_OPTIONS);
-    setTriggerRows(
-      Object.entries(triggers).map(([rowName, data]) => ({
-        name: rowName,
-        tagsText: (Array.isArray(data?.tags) ? data.tags : []).join(", "),
-      })),
-    );
+    const nextTriggerRows = Object.entries(triggers).map(([rowName, data]) => ({
+      name: rowName,
+      tagsText: (Array.isArray(data?.tags) ? data.tags : []).join(", "),
+    }));
 
     const targets = extractCriteriaComponents(selectedEvent.properties?.Targets, TARGET_COMPONENT_OPTIONS);
-    setTargetRows(
-      Object.entries(targets).map(([rowName, data]) => ({
-        name: rowName,
-        tagsText: (Array.isArray(data?.tags) ? data.tags : []).join(", "),
-      })),
-    );
+    const nextTargetRows = Object.entries(targets).map(([rowName, data]) => ({
+      name: rowName,
+      tagsText: (Array.isArray(data?.tags) ? data.tags : []).join(", "),
+    }));
 
     const results = extractResults(selectedEvent.properties, RESULT_COMPONENT_OPTIONS);
-    setResultRows(
-      Object.entries(results).map(([rowName, data]) => ({
-        name: rowName,
-        rawValue: rawValueFromResultData(rowName, data),
-      })),
-    );
+    const nextResultRows = Object.entries(results).map(([rowName, data]) => ({
+      name: rowName,
+      rawValue: rawValueFromResultData(rowName, data),
+    }));
+
+    setName(nextName);
+    setTriggerRows(nextTriggerRows);
+    setTargetRows(nextTargetRows);
+    setResultRows(nextResultRows);
+
+    initialFormRef.current = JSON.stringify({
+      name: nextName,
+      triggerRows: nextTriggerRows,
+      targetRows: nextTargetRows,
+      resultRows: nextResultRows,
+    });
   }, [selectedEvent]);
+
+  // True once anything in the form differs from what it loaded with - drives
+  // the Save button's styling (see the render below).
+  const isDirty = initialFormRef.current !== JSON.stringify({ name, triggerRows, targetRows, resultRows });
 
   // Only clear the save-status message when the selection itself changes -
   // not on every snapshot refresh of the same event.
@@ -204,7 +218,12 @@ export default function EventEditor() {
         </label>
         <div className="editor-panel-header-actions">
           <div className="editor-panel-header-buttons">
-            <button className="primary-button" type="submit" form="event-editor-form" disabled={!isAdmin}>
+            <button
+              className={isDirty ? "primary-button" : "text-button"}
+              type="submit"
+              form="event-editor-form"
+              disabled={!isAdmin}
+            >
               Save
             </button>
             <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>

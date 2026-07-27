@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "../AppContext";
 import { normalizeStats, parseVisibleList, collectStats, createDefaultStat } from "../zoneUtils";
 import { submitEditedZoneRequest, submitDeletedZoneRequest, submitClearLogsRequest } from "../requests";
@@ -31,6 +31,10 @@ export default function ZoneEditor() {
   const [statsRows, setStatsRows] = useState([]);
   const [saveStatus, setSaveStatus] = useState("");
 
+  // Snapshot of the form's values right after loading a zone, used to tell
+  // whether the user has changed anything yet (see isDirty below).
+  const initialFormRef = useRef("");
+
   // Populate the form when the selected zone changes - but only then. The
   // `zones` snapshot is re-delivered every couple seconds (e.g. any player's
   // GPS ping patches the shared zones node), which would otherwise give
@@ -38,23 +42,53 @@ export default function ZoneEditor() {
   // user hasn't saved yet (including a stat row they just removed).
   useEffect(() => {
     if (!selectedFeature) return;
-    setName(selectedFeature.properties?.displayName || "");
-    setFill(selectedFeature.properties?.appearance?.fill || "#ffffff");
-    setBorder(selectedFeature.properties?.appearance?.border || "#ffffff");
-    setRadius(
-      Number.isFinite(selectedFeature.properties?.appearance?.radius)
-        ? String(selectedFeature.properties.appearance.radius)
-        : "",
-    );
-    setOpacity(Number.isFinite(selectedFeature.properties?.appearance?.opacity) ? String(selectedFeature.properties.appearance.opacity) : "");
-    setVisibleTo((selectedFeature.properties?.appearance?.visibleTo || []).join(", "));
-    setTraits((selectedFeature.properties?.traits || []).join(", "));
+    const nextName = selectedFeature.properties?.displayName || "";
+    const nextFill = selectedFeature.properties?.appearance?.fill || "#ffffff";
+    const nextBorder = selectedFeature.properties?.appearance?.border || "#ffffff";
+    const nextRadius = Number.isFinite(selectedFeature.properties?.appearance?.radius)
+      ? String(selectedFeature.properties.appearance.radius)
+      : "";
+    const nextOpacity = Number.isFinite(selectedFeature.properties?.appearance?.opacity)
+      ? String(selectedFeature.properties.appearance.opacity)
+      : "";
+    const nextVisibleTo = (selectedFeature.properties?.appearance?.visibleTo || []).join(", ");
+    const nextTraits = (selectedFeature.properties?.traits || []).join(", ");
     const coordinates = selectedFeature.geometry?.coordinates;
-    setLat(Array.isArray(coordinates) ? coordinates[1] : null);
-    setLng(Array.isArray(coordinates) ? coordinates[0] : null);
+    const nextLat = Array.isArray(coordinates) ? coordinates[1] : null;
+    const nextLng = Array.isArray(coordinates) ? coordinates[0] : null;
     const stats = normalizeStats(selectedFeature.properties);
-    setStatsRows(Object.entries(stats).map(([key, stat]) => ({ key, ...stat })));
+    const nextStatsRows = Object.entries(stats).map(([key, stat]) => ({ key, ...stat }));
+
+    setName(nextName);
+    setFill(nextFill);
+    setBorder(nextBorder);
+    setRadius(nextRadius);
+    setOpacity(nextOpacity);
+    setVisibleTo(nextVisibleTo);
+    setTraits(nextTraits);
+    setLat(nextLat);
+    setLng(nextLng);
+    setStatsRows(nextStatsRows);
+
+    initialFormRef.current = JSON.stringify({
+      name: nextName,
+      fill: nextFill,
+      border: nextBorder,
+      radius: nextRadius,
+      opacity: nextOpacity,
+      visibleTo: nextVisibleTo,
+      traits: nextTraits,
+      lat: nextLat,
+      lng: nextLng,
+      statsRows: nextStatsRows,
+    });
   }, [selectedZoneId]);
+
+  // True once anything in the form differs from what it loaded with - drives
+  // the Save button's styling (see the render below).
+  const isDirty =
+    initialFormRef.current !==
+    JSON.stringify({ name, fill, border, radius, opacity, visibleTo, traits, lat, lng, statsRows });
 
   // Only clear the save-status message when the selection itself changes -
   // not on every snapshot refresh of the same zone (which would otherwise
@@ -193,7 +227,12 @@ export default function ZoneEditor() {
         </label>
         <div className="editor-panel-header-actions">
           <div className="editor-panel-header-buttons">
-            <button className="primary-button" type="submit" form="zone-editor-form" disabled={!isAdmin}>
+            <button
+              className={isDirty ? "primary-button" : "text-button"}
+              type="submit"
+              form="zone-editor-form"
+              disabled={!isAdmin}
+            >
               Save
             </button>
             <button className="danger-button" type="button" disabled={!isAdmin} onClick={handleDelete}>
