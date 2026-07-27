@@ -6,10 +6,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
         <h2 id="stats-heading">Stats</h2>
       </div>
       <div className="stats-list">
-        {rows.length === 0 ? (
-          <div className="stats-empty">No stats yet. Add one to track custom values.</div>
-        ) : (
-          rows.map((row, index) => (
+        {rows.map((row, index) => (
             <article className="stat-row" key={row.key || index}>
               <div className="stat-row-grid">
                 <label>
@@ -45,7 +42,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
               </div>
             </article>
           ))
-        )}
+        }
         <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           Add stat
         </button>

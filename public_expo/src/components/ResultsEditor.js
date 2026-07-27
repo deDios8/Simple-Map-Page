@@ -10,47 +10,43 @@ export default function ResultsEditor({ rows, disabled, onAdd, onRemove, onChang
         <h3 id="event-heading">Results</h3>
       </div>
       <div className="stats-list">
-        {rows.length === 0 ? (
-          <div className="stats-empty">No results yet. Add one to define actions.</div>
-        ) : (
-          rows.map((row, index) => {
-            const config = RESULT_COMPONENT_FIELD_CONFIG[row.name] || {};
-            return (
-              <article className="stat-row" key={index}>
-                <div className="result-row-grid">
-                  <label>
-                    <select
-                      value={row.name}
-                      disabled={disabled}
-                      onChange={(event) => onChangeName(index, event.target.value)}
-                    >
-                      {RESULT_COMPONENT_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <ResultValueField
-                    config={config}
-                    value={row.rawValue}
+        {rows.map((row, index) => {
+          const config = RESULT_COMPONENT_FIELD_CONFIG[row.name] || {};
+          return (
+            <article className="stat-row" key={index}>
+              <div className="result-row-grid">
+                <label>
+                  <select
+                    value={row.name}
                     disabled={disabled}
-                    onChange={(value) => onChangeValue(index, value)}
-                  />
-                  <button
-                    className="stat-remove-button"
-                    type="button"
-                    aria-label="Remove result"
-                    disabled={disabled}
-                    onClick={() => onRemove(index)}
+                    onChange={(event) => onChangeName(index, event.target.value)}
                   >
-                    ✕
-                  </button>
-                </div>
-              </article>
-            );
-          })
-        )}
+                    {RESULT_COMPONENT_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <ResultValueField
+                  config={config}
+                  value={row.rawValue}
+                  disabled={disabled}
+                  onChange={(value) => onChangeValue(index, value)}
+                />
+                <button
+                  className="stat-remove-button"
+                  type="button"
+                  aria-label="Remove result"
+                  disabled={disabled}
+                  onClick={() => onRemove(index)}
+                >
+                  ✕
+                </button>
+              </div>
+            </article>
+          );
+        })}
         <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           Add result
         </button>

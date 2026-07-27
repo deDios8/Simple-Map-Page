@@ -18,10 +18,7 @@ export default function CriteriaListEditor({
         <h3>{heading}</h3>
       </div>
       <div className="stats-list">
-        {rows.length === 0 ? (
-          <div className="stats-empty">No criteria yet. Add one to define matching rules.</div>
-        ) : (
-          rows.map((row, index) => (
+        {rows.map((row, index) => (
             <article className="stat-row" key={index}>
               <div className="criterion-row-grid">
                 <label>
@@ -54,8 +51,7 @@ export default function CriteriaListEditor({
                 </button>
               </div>
             </article>
-          ))
-        )}
+          ))}
         <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           {addLabel}
         </button>
