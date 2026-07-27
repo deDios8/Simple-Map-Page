@@ -1,6 +1,6 @@
 import { useApp } from "../AppContext";
 
-export default function EventList() {
+export default function EventList({ onAdd }) {
   const { events, selectedEventId, selectEvent } = useApp();
   const entries = Object.values(events);
 
@@ -8,6 +8,11 @@ export default function EventList() {
     return (
       <ul className="zone-list">
         <li>No events found.</li>
+        <li>
+          <button className="is-add" type="button" onClick={onAdd} aria-label="Add new event">
+            Add event
+          </button>
+        </li>
       </ul>
     );
   }
@@ -30,6 +35,11 @@ export default function EventList() {
           </li>
         );
       })}
+      <li>
+        <button className="is-add" type="button" onClick={onAdd} aria-label="Add new event">
+          Add event
+        </button>
+      </li>
     </ul>
   );
 }

@@ -474,6 +474,12 @@ body {
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, white);
 }
 
+.zone-list button.is-add {
+  justify-content: center;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .list-meta {
   color: var(--muted);
   font-size: 0.82rem;
@@ -484,6 +490,10 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.editor-header button {
+  margin-left: auto;
 }
 
 .section-actions {
@@ -660,6 +670,17 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.stat-row-add-button {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+  font-weight: 700;
+  text-align: center;
+}
+
 .statuses-section {
   display: grid;
   gap: 12px;
@@ -741,7 +762,8 @@ body {
 
 .text-button:disabled,
 .stat-remove-button:disabled,
-.status-remove-button:disabled {
+.status-remove-button:disabled,
+.stat-row-add-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

@@ -76,16 +76,6 @@ export default function ZonesDrawer() {
         <div className="drawer-body">
           <section className="panel-section">
             <div className="editor-header">
-              <div className="section-actions">
-                <button
-                  className="text-button"
-                  type="button"
-                  aria-label="Add new zone at current location"
-                  onClick={handleAddZone}
-                >
-                  Add zone
-                </button>
-              </div>
               <button
                 className="text-button"
                 type="button"
@@ -95,7 +85,7 @@ export default function ZonesDrawer() {
                 Clear logs
               </button>
             </div>
-            <ZoneList />
+            <ZoneList onAdd={handleAddZone} />
             <div className="editor-bottom-spacer" aria-hidden="true" />
           </section>
         </div>

@@ -4,11 +4,6 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
     <section className="stats-section" aria-labelledby="stats-heading">
       <div className="stats-header">
         <h2 id="stats-heading">Stats</h2>
-        <div className="section-actions">
-          <button className="text-button" type="button" disabled={disabled} onClick={onAdd}>
-            Add stat
-          </button>
-        </div>
       </div>
       <div className="stats-list">
         {rows.length === 0 ? (
@@ -51,6 +46,9 @@ export default function StatsEditor({ rows, disabled, onAdd, onRemove, onChange 
             </article>
           ))
         )}
+        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+          Add stat
+        </button>
       </div>
     </section>
   );

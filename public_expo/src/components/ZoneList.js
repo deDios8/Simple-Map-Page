@@ -1,7 +1,7 @@
 import { useApp } from "../AppContext";
 import { isVisibleToCurrentUser } from "../zoneUtils";
 
-export default function ZoneList() {
+export default function ZoneList({ onAdd }) {
   const { zones, userPass, userId, selectedZoneId, selectZone } = useApp();
   const visibleFeatures = Object.values(zones).filter((feature) =>
     isVisibleToCurrentUser(feature, { userPass, userId, zones }),
@@ -11,6 +11,11 @@ export default function ZoneList() {
     return (
       <ul className="zone-list">
         <li>No zones found.</li>
+        <li>
+          <button className="is-add" type="button" onClick={onAdd} aria-label="Add new zone at current location">
+            Add zone
+          </button>
+        </li>
       </ul>
     );
   }
@@ -34,6 +39,11 @@ export default function ZoneList() {
           </li>
         );
       })}
+      <li>
+        <button className="is-add" type="button" onClick={onAdd} aria-label="Add new zone at current location">
+          Add zone
+        </button>
+      </li>
     </ul>
   );
 }
