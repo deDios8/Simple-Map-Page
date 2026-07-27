@@ -395,7 +395,7 @@ body {
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  flex: 1 1 auto;
+  flex: 1 1 60px;
   min-width: 0;
   font-weight: 600;
 }
@@ -495,7 +495,7 @@ body {
 
 .name-row {
   display: grid;
-  grid-template-columns: 0.35fr 0.65fr;
+  grid-template-columns: 0.3fr 0.7fr;
   gap: 10px;
   align-items: center;
 }
