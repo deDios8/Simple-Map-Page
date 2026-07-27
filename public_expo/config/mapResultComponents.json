@@ -12,8 +12,8 @@
   "ResultChangeRadius":        { "handler": "_change_radius",          "fieldName": "change",           "fieldType": "number", "label": "Change",          "placeholder": "-1" },
   "ResultSetOpacity":          { "handler": "_set_opacity",            "fieldName": "opacity",          "fieldType": "float",  "label": "Opacity",         "placeholder": "0.5" },
   "ResultChangeOpacity":       { "handler": "_change_opacity",         "fieldName": "change",           "fieldType": "float",  "label": "Change",          "placeholder": "-0.1" },
-  "ResultSetStatsToValues":    { "handler": "_set_stats_to_values",    "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" },
-  "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 10}" },
+  "ResultSetStatsToValues":    { "handler": "_set_stats_to_values",    "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 100}" },
+  "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 10}" },
   "ResultRevokeStats":         { "handler": "_revoke_stats",           "fieldName": "tags",             "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
-  "ResultToggleStatsWithValue":{ "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{Stat, Value}",   "placeholder": "{\"health\": 100}" }
+  "ResultToggleStatsWithValue":{ "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 100}" }
 }
