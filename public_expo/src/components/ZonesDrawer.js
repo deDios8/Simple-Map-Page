@@ -31,9 +31,10 @@ export default function ZonesDrawer() {
       setStatusText("Read-only mode: clearing logs requires gm password.");
       return;
     }
-    submitClearAllLogsRequest(sessionName, userId, userLocation).catch(() =>
-      setStatusText("Clear logs request failed. Check Firebase configuration and permissions."),
-    );
+    setStatusText("Sending clear alllogs request...");
+    submitClearAllLogsRequest(sessionName, userId, userLocation)
+      .then(() => setStatusText("Clear all logs request sent. Server will clear logs shortly."))
+      .catch(() => setStatusText("Clear all logs request failed. Check Firebase configuration and permissions."));
   }
 
   return (
@@ -82,7 +83,7 @@ export default function ZonesDrawer() {
                 aria-label="Clear zone logs for all zones"
                 onClick={handleClearAllLogs}
               >
-                Clear logs
+                Clear all logs
               </button>
             </div>
             <ZoneList onAdd={handleAddZone} />
