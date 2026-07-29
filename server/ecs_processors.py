@@ -622,7 +622,7 @@ class SyncZonesToDatabase(esper.Processor):
             except KeyError:
                 pass
 
-        if multi_path_payload:
+        if multi_path_payload: # Only send update if there are changes to the payload
             multi_path_patch(
                 self.session_state.database_url,
                 self.session_state.session_name,

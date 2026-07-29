@@ -1,16 +1,15 @@
 # TODO
 - Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationIntervalHz and 0.1.032 be contained on the server
-- Allow triggers to assign targets reflexively targeting the zone the triggered
-
-- App auto-select a newly added zone, criteria, event for editing.
-- Add an event clock/timer
-  - Tuning the timing of events to have a predictable tick rate for DOT-like effects
 - Bulk move option for anchor point for session to relocate entire games
-- Slow down tick rate for server event processing and separate that from db_updates
 - Stat editor for drop-down stat addition.
-- Test stat value checker triggers
-- searching for 'object' and 'Object' to do replacement to 'zone' and 'Zone' careful of duplicate variable names
+* Allow triggers to assign targets reflexively targeting the zone the triggered
+
+* App auto-select a newly added zone, criteria, event for editing.
+- Add an event clock/timer
+  - Tuning the timing of events to have a predictable tick rate for DOT-like effects names
 - hasTags isn't noticing a Stat name
+- First entered seemed to be per-zone rather than per-tag
+- No event triggers for stats
 - 
 
 # Dependencies
