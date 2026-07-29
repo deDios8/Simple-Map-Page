@@ -32,6 +32,13 @@ CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
 EVENTS_NODE = _nodes["events"]
 
+# How often the server ticks the ECS world and writes changes to the
+# database. This is independent of how often clients submit their own
+# location (see public_expo's UPDATE_LOCATION_INTERVAL) — clients receive
+# database changes in real time via Firebase's push listeners, so this rate
+# is effectively also how often clients see updates.
+SERVER_DB_UPDATE_HZ = 2.0
+
 
 def build_node_url(database_url: str, *path_segments: str) -> str:
     """Build a Firebase REST URL from path segments, appending .json."""
@@ -1534,9 +1541,7 @@ class SessionState:
         self.debug.start()
         self.debug.print_help()
 
-        # 3x the app.js updateFrequency rate (2000 ms → 0.5 Hz → 1.5 Hz).
-        ticks_per_second = 0.5
-        tick_dt = 1.0 / ticks_per_second
+        tick_dt = 1.0 / SERVER_DB_UPDATE_HZ
         next_tick = time.perf_counter()
 
         while True:
