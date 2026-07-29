@@ -681,7 +681,7 @@ body {
   padding: 4px 8px;
 }
 
-.stat-duplicate-button {
+.duplicate-button {
   border: 0;
   border-radius: 999px;
   background: rgba(45, 212, 191, 0.18);
@@ -690,7 +690,7 @@ body {
   font-weight: 700;
 }
 
-.stat-remove-button {
+.remove-button {
   border: 0;
   border-radius: 999px;
   background: rgba(216, 61, 69, 0.18);
@@ -707,7 +707,7 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.stat-row-add-button {
+.row-add-button {
   width: 100%;
   padding: 8px 12px;
   border-radius: 14px;
@@ -798,10 +798,10 @@ body {
 }
 
 .text-button:disabled,
-.stat-remove-button:disabled,
+.remove-button:disabled,
 .status-remove-button:disabled,
-.stat-row-add-button:disabled,
-.stat-duplicate-button:disabled {
+.row-add-button:disabled,
+.duplicate-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

@@ -25,7 +25,9 @@ export function normalizeEvents(rawEvents) {
 // Filters an event's Triggers/Targets bucket down to only recognized component names.
 export function extractCriteriaComponents(properties, allowedNames) {
   if (!properties || typeof properties !== "object") return {};
-  const knownNames = new Set(allowedNames);
+  const knownNames = new Set(
+    (allowedNames || []).map((name) => (typeof name === "string" ? name : name.value)),
+  );
   const components = {};
   for (const [key, value] of Object.entries(properties)) {
     if (knownNames.has(key) && value && typeof value === "object") {
@@ -39,7 +41,9 @@ export function extractCriteriaComponents(properties, allowedNames) {
 export function extractResults(properties, resultComponentOptions) {
   const results = properties?.Results;
   if (!results || typeof results !== "object") return {};
-  const knownNames = new Set(resultComponentOptions);
+  const knownNames = new Set(
+    (resultComponentOptions || []).map((name) => (typeof name === "string" ? name : name.value)),
+  );
   const out = {};
   for (const [key, value] of Object.entries(results)) {
     if (knownNames.has(key) && value && typeof value === "object") {

@@ -12,7 +12,11 @@ import CriteriaListEditor from "./CriteriaListEditor";
 import ResultsEditor from "./ResultsEditor";
 
 function nextAvailableOption(options, usedNames) {
-  return options.find((option) => !usedNames.has(option)) ?? options[0];
+  const candidate = options.find((option) => {
+    const value = typeof option === "string" ? option : option.value;
+    return !usedNames.has(value);
+  });
+  return candidate ? (typeof candidate === "string" ? candidate : candidate.value) : "";
 }
 
 function rawValueFromResultData(name, data) {

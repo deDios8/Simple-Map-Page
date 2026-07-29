@@ -1,19 +1,135 @@
 {
-  "ResultPopupMessage":        { "handler": "_popup_message",          "fieldName": "text",             "fieldType": "text",   "label": "Message",         "placeholder": "Hello, world!" },
-  "ResultGrantTraits":         { "handler": "_grant_traits",           "fieldName": "tags",             "fieldType": "csv",    "label": "Traits",          "placeholder": "trait1, trait2" },
-  "ResultRevokeTraits":        { "handler": "_revoke_traits",          "fieldName": "tags",             "fieldType": "csv",    "label": "Traits",          "placeholder": "trait1, trait2" },
-  "ResultToggleTraits":        { "handler": "_toggle_traits",          "fieldName": "tags",             "fieldType": "csv",    "label": "Traits",          "placeholder": "trait1, trait2" },
-  "ResultGrantVisibility":     { "handler": "_grant_visibility",       "fieldName": "tags",             "fieldType": "csv",    "label": "Visible" },
-  "ResultRevokeVisibility":    { "handler": "_revoke_visibility",      "fieldName": "tags",             "fieldType": "csv",    "label": "Visible" },
-  "ResultToggleVisibility":    { "handler": "_toggle_visibility",      "fieldName": "tags",             "fieldType": "csv",    "label": "Visible" },
-  "ResultSetFill":             { "handler": "_set_fill",               "fieldName": "fill",             "fieldType": "text",   "label": "Fill",            "placeholder": "#ff0000" },
-  "ResultSetBorder":           { "handler": "_set_border",             "fieldName": "border",           "fieldType": "text",   "label": "Border",          "placeholder": "#ffffff" },
-  "ResultSetRadius":           { "handler": "_set_radius",             "fieldName": "radius",           "fieldType": "number", "label": "Radius",          "placeholder": "5" },
-  "ResultChangeRadius":        { "handler": "_change_radius",          "fieldName": "change",           "fieldType": "number", "label": "Change",          "placeholder": "-1" },
-  "ResultSetOpacity":          { "handler": "_set_opacity",            "fieldName": "opacity",          "fieldType": "float",  "label": "Opacity",         "placeholder": "0.5" },
-  "ResultChangeOpacity":       { "handler": "_change_opacity",         "fieldName": "change",           "fieldType": "float",  "label": "Change",          "placeholder": "-0.1" },
-  "ResultSetStatsToValues":    { "handler": "_set_stats_to_values",    "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 100}" },
-  "ResultChangeStatsByValues": { "handler": "_change_stats_by_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 10}" },
-  "ResultRevokeStats":         { "handler": "_revoke_stats",           "fieldName": "tags",             "fieldType": "csv",    "label": "Stats",           "placeholder": "stat1, stat2" },
-  "ResultToggleStatsWithValue":{ "handler": "_toggle_stats_to_values", "fieldName": "stats_to_values",  "fieldType": "json",   "label": "{\"Stat\": Value}", "placeholder": "{\"health\": 100}" }
+  "ResultPopupMessage": {
+    "short_name": "Popup Message",
+    "handler": "_popup_message",
+    "fieldName": "text",
+    "fieldType": "text",
+    "label": "Message",
+    "placeholder": "Hello, world!"
+  },
+  "ResultGrantTraits": {
+    "short_name": "Grant Traits",
+    "handler": "_grant_traits",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Traits",
+    "placeholder": "trait1, trait2"
+  },
+  "ResultRevokeTraits": {
+    "short_name": "Revoke Traits",
+    "handler": "_revoke_traits",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Traits",
+    "placeholder": "trait1, trait2"
+  },
+  "ResultToggleTraits": {
+    "short_name": "Toggle Traits",
+    "handler": "_toggle_traits",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Traits",
+    "placeholder": "trait1, trait2"
+  },
+  "ResultGrantVisibility": {
+    "short_name": "Grant Visibility",
+    "handler": "_grant_visibility",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Visible"
+  },
+  "ResultRevokeVisibility": {
+    "short_name": "Revoke Visibility",
+    "handler": "_revoke_visibility",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Visible"
+  },
+  "ResultToggleVisibility": {
+    "short_name": "Toggle Visibility",
+    "handler": "_toggle_visibility",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Visible"
+  },
+  "ResultSetFill": {
+    "short_name": "Set Fill",
+    "handler": "_set_fill",
+    "fieldName": "fill",
+    "fieldType": "text",
+    "label": "Fill",
+    "placeholder": "#ff0000"
+  },
+  "ResultSetBorder": {
+    "short_name": "Set Border",
+    "handler": "_set_border",
+    "fieldName": "border",
+    "fieldType": "text",
+    "label": "Border",
+    "placeholder": "#ffffff"
+  },
+  "ResultSetRadius": {
+    "short_name": "Set Radius",
+    "handler": "_set_radius",
+    "fieldName": "radius",
+    "fieldType": "number",
+    "label": "Radius",
+    "placeholder": "5"
+  },
+  "ResultChangeRadius": {
+    "short_name": "Change Radius",
+    "handler": "_change_radius",
+    "fieldName": "change",
+    "fieldType": "number",
+    "label": "Change",
+    "placeholder": "-1"
+  },
+  "ResultSetOpacity": {
+    "short_name": "Set Opacity",
+    "handler": "_set_opacity",
+    "fieldName": "opacity",
+    "fieldType": "float",
+    "label": "Opacity",
+    "placeholder": "0.5"
+  },
+  "ResultChangeOpacity": {
+    "short_name": "Change Opacity",
+    "handler": "_change_opacity",
+    "fieldName": "change",
+    "fieldType": "float",
+    "label": "Change",
+    "placeholder": "-0.1"
+  },
+  "ResultSetStatsToValues": {
+    "short_name": "Set Stats",
+    "handler": "_set_stats_to_values",
+    "fieldName": "stats_to_values",
+    "fieldType": "json",
+    "label": "{\"Stat\": Value}",
+    "placeholder": "{\"health\": 100}"
+  },
+  "ResultChangeStatsByValues": {
+    "short_name": "Change Stats",
+    "handler": "_change_stats_by_values",
+    "fieldName": "stats_to_values",
+    "fieldType": "json",
+    "label": "{\"Stat\": Value}",
+    "placeholder": "{\"health\": 10}"
+  },
+  "ResultRevokeStats": {
+    "short_name": "Revoke Stats",
+    "handler": "_revoke_stats",
+    "fieldName": "tags",
+    "fieldType": "csv",
+    "label": "Stats",
+    "placeholder": "stat1, stat2"
+  },
+  "ResultToggleStatsWithValue": {
+    "short_name": "Toggle Stats",
+    "handler": "_toggle_stats_to_values",
+    "fieldName": "stats_to_values",
+    "fieldType": "json",
+    "label": "{\"Stat\": Value}",
+    "placeholder": "{\"health\": 100}"
+  }
 }

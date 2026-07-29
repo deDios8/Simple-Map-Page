@@ -31,7 +31,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onDuplicate, onRemo
                   />
                 </label>
                 <button
-                  className="stat-duplicate-button"
+                  className="duplicate-button"
                   type="button"
                   aria-label="Duplicate stat"
                   disabled={disabled}
@@ -40,7 +40,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onDuplicate, onRemo
                   ⧉
                 </button>
                 <button
-                  className="stat-remove-button"
+                  className="remove-button"
                   type="button"
                   aria-label="Remove stat"
                   disabled={disabled}
@@ -52,7 +52,7 @@ export default function StatsEditor({ rows, disabled, onAdd, onDuplicate, onRemo
             </article>
           ))
         }
-        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+        <button className="row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           Add stat
         </button>
       </div>

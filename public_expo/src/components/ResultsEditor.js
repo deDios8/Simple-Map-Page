@@ -21,11 +21,15 @@ export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRe
                     disabled={disabled}
                     onChange={(event) => onChangeName(index, event.target.value)}
                   >
-                    {RESULT_COMPONENT_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
+                    {RESULT_COMPONENT_OPTIONS.map((option) => {
+                      const value = typeof option === "string" ? option : option.value;
+                      const label = typeof option === "string" ? option : option.label || option.value;
+                      return (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
                 <ResultValueField
@@ -35,7 +39,7 @@ export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRe
                   onChange={(value) => onChangeValue(index, value)}
                 />
                 <button
-                  className="stat-duplicate-button"
+                  className="duplicate-button"
                   type="button"
                   aria-label="Duplicate result"
                   disabled={disabled}
@@ -44,7 +48,7 @@ export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRe
                   ⧉
                 </button>
                 <button
-                  className="stat-remove-button"
+                  className="remove-button"
                   type="button"
                   aria-label="Remove result"
                   disabled={disabled}
@@ -56,7 +60,7 @@ export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRe
             </article>
           );
         })}
-        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+        <button className="row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           Add result
         </button>
       </div>

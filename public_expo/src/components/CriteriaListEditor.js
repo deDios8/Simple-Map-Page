@@ -24,11 +24,15 @@ export default function CriteriaListEditor({
               <div className="criterion-row-grid">
                 <label>
                   <select value={row.name} disabled={disabled} onChange={(event) => onChangeName(index, event.target.value)}>
-                    {options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
+                    {options.map((option) => {
+                      const value = typeof option === "string" ? option : option.value;
+                      const label = typeof option === "string" ? option : option.label || option.value;
+                      return (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
                 <label>
@@ -42,7 +46,7 @@ export default function CriteriaListEditor({
                   />
                 </label>
                 <button
-                  className="stat-duplicate-button"
+                  className="duplicate-button"
                   type="button"
                   aria-label="Duplicate criterion"
                   disabled={disabled}
@@ -51,7 +55,7 @@ export default function CriteriaListEditor({
                   ⧉
                 </button>
                 <button
-                  className="stat-remove-button"
+                  className="remove-button"
                   type="button"
                   aria-label="Remove criterion"
                   disabled={disabled}
@@ -62,7 +66,7 @@ export default function CriteriaListEditor({
               </div>
             </article>
           ))}
-        <button className="stat-row-add-button" type="button" disabled={disabled} onClick={onAdd}>
+        <button className="row-add-button" type="button" disabled={disabled} onClick={onAdd}>
           {addLabel}
         </button>
       </div>
