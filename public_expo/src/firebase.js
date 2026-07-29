@@ -3,7 +3,7 @@ import { getAuth, signInAnonymously } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import onlineConfig from "../config/onlineConfig.json";
 
-const { nodes, defaultSessionName, updateLocationInterval, mapLayer, ...firebaseSdkConfig } = onlineConfig;
+const { nodes, defaultSessionName, updateLocationIntervalHz, mapLayer, ...firebaseSdkConfig } = onlineConfig;
 
 const app = initializeApp(firebaseSdkConfig);
 
@@ -19,7 +19,7 @@ signInAnonymously(auth).catch((error) => {
 
 export const NODES = nodes;
 export const DEFAULT_SESSION_NAME = defaultSessionName || "testBed";
-export const UPDATE_LOCATION_INTERVAL = updateLocationInterval || 2000;
+export const UPDATE_LOCATION_INTERVAL = updateLocationIntervalHz * 1000 || 2000;
 export const MAP_LAYERS = {
   satellite: mapLayer?.default || {},
   street: mapLayer?.alternative || {},

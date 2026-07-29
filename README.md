@@ -1,5 +1,5 @@
 # TODO
-- Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationInterval and 0.1.032 be contained on the server
+- Make the dropdown options for CRITERIA_COMPONENT_OPTIONS and RESULT_COMPONENT_OPTIONS and updateLocationIntervalHz and 0.1.032 be contained on the server
 - Allow triggers to assign targets reflexively targeting the zone the triggered
 
 - App auto-select a newly added zone, criteria, event for editing.

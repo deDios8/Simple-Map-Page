@@ -14,3 +14,4 @@ export const TARGET_COMPONENT_OPTIONS = Object.entries(mapCriteriaComponents)
 export const RESULT_COMPONENT_FIELD_CONFIG = mapResultComponents;
 
 export const RESULT_COMPONENT_OPTIONS = Object.keys(mapResultComponents);
+

@@ -15,7 +15,7 @@
   },
 
   "defaultSessionName":      "testBed",
-  "updateLocationInterval":   2000,
+  "updateLocationIntervalHz":   2,
   "mapLayer": {
     "default": {
       "name": "Default",

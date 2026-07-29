@@ -24,6 +24,7 @@ from firebase_auth import auth_headers
 
 _PUBLIC_DIR = pathlib.Path(__file__).parent.parent / "public_expo/config"
 _online_config: dict = json.loads((_PUBLIC_DIR / "onlineConfig.json").read_text())
+_updateHz: float = _online_config.get("updateLocationIntervalHz", 2.0)
 _nodes: dict = _online_config["nodes"]
 
 DEFAULT_DATABASE_URL = _online_config["databaseURL"]
@@ -31,14 +32,7 @@ ZONE_NODE = _nodes["zones"]
 CLIENT_REQUESTS_NODE = _nodes["clientRequests"]
 CLIENT_REQUESTS_PROCESSED_NODE = _nodes["clientRequestsProcessed"]
 EVENTS_NODE = _nodes["events"]
-
-# How often the server ticks the ECS world and writes changes to the
-# database. This is independent of how often clients submit their own
-# location (see public_expo's UPDATE_LOCATION_INTERVAL) — clients receive
-# database changes in real time via Firebase's push listeners, so this rate
-# is effectively also how often clients see updates.
-SERVER_DB_UPDATE_HZ = 2.0
-
+SERVER_DB_UPDATE_HZ = _updateHz
 
 def build_node_url(database_url: str, *path_segments: str) -> str:
     """Build a Firebase REST URL from path segments, appending .json."""
