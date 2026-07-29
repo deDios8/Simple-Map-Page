@@ -3,7 +3,7 @@ Main server application that listens to Firebase database changes and updates th
 """
 
 import esper
-import ecs_proc_session
+import ecs_proc_events
 import ecs_proc_border_db
 from session_db_state import DEFAULT_DATABASE_URL, SessionState
 import sys
@@ -16,12 +16,12 @@ def main() -> None:
     else:
         session_name = input("Session name: ")
     session_state = SessionState(DEFAULT_DATABASE_URL, session_name)
-    esper.add_processor(ecs_proc_session.ApplyClientRequests(session_state), priority=100)
-    esper.add_processor(ecs_proc_session.CheckZoneEntryExit(session_state), priority=95)
-    esper.add_processor(ecs_proc_border_db.CriteriaProcessor(session_state), priority=90)
-    esper.add_processor(ecs_proc_border_db.EventProcessor(session_state), priority=80)
-    esper.add_processor(ecs_proc_session.RemoveZoneEntryExit(), priority=10)
-    esper.add_processor(ecs_proc_session.SyncZonesToDatabase(session_state), priority=0)
+    esper.add_processor(ecs_proc_border_db.ApplyClientRequests(session_state), priority=100)
+    esper.add_processor(ecs_proc_border_db.CheckZoneEntryExit(session_state), priority=95)
+    esper.add_processor(ecs_proc_events.CriteriaProcessor(session_state), priority=90)
+    esper.add_processor(ecs_proc_events.EventProcessor(session_state), priority=80)
+    esper.add_processor(ecs_proc_border_db.RemoveZoneEntryExit(), priority=10)
+    esper.add_processor(ecs_proc_border_db.SyncZonesToDatabase(session_state), priority=0)
     session_state.run_db_and_ecs_processor()
 
 
