@@ -18,9 +18,9 @@ export default function CriteriaListEditor({
       <div className="stats-header">
         <h3>{heading}</h3>
       </div>
-      <div className="stats-list">
+      <div className="component-list">
         {rows.map((row, index) => (
-            <article className="stat-row" key={index}>
+            <article className="component-row" key={index}>
               <div className="criterion-row-grid">
                 <label>
                   <select value={row.name} disabled={disabled} onChange={(event) => onChangeName(index, event.target.value)}>

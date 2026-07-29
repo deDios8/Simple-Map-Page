@@ -9,11 +9,11 @@ export default function ResultsEditor({ rows, disabled, onAdd, onDuplicate, onRe
       <div className="stats-header">
         <h3 id="event-heading">Results</h3>
       </div>
-      <div className="stats-list">
+      <div className="component-list">
         {rows.map((row, index) => {
           const config = RESULT_COMPONENT_FIELD_CONFIG[row.name] || {};
           return (
-            <article className="stat-row" key={index}>
+            <article className="component-row" key={index}>
               <div className="result-row-grid">
                 <label>
                   <select

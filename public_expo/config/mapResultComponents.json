@@ -105,7 +105,7 @@
     "handler": "_set_stats_to_values",
     "fieldName": "stats_to_values",
     "fieldType": "json",
-    "label": "{\"Stat\": Value}",
+    "label": "{\"Stat\": #}",
     "placeholder": "{\"health\": 100}"
   },
   "ResultChangeStatsByValues": {
@@ -113,7 +113,7 @@
     "handler": "_change_stats_by_values",
     "fieldName": "stats_to_values",
     "fieldType": "json",
-    "label": "{\"Stat\": Value}",
+    "label": "{\"Stat\": #}",
     "placeholder": "{\"health\": 10}"
   },
   "ResultRevokeStats": {
@@ -129,7 +129,7 @@
     "handler": "_toggle_stats_to_values",
     "fieldName": "stats_to_values",
     "fieldType": "json",
-    "label": "{\"Stat\": Value}",
+    "label": "{\"Stat\": #}",
     "placeholder": "{\"health\": 100}"
   }
 }

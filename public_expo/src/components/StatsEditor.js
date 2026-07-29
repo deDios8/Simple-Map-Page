@@ -5,10 +5,10 @@ export default function StatsEditor({ rows, disabled, onAdd, onDuplicate, onRemo
       <div className="stats-header">
         <h2 id="stats-heading">Stats</h2>
       </div>
-      <div className="stats-list">
+      <div className="component-list">
         {rows.map((row, index) => (
-            <article className="stat-row" key={row.key || index}>
-              <div className="stat-row-grid">
+            <article className="component-row" key={row.key || index}>
+              <div className="component-row-grid">
                 <label>
                   Name
                   <input
