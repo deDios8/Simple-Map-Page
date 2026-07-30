@@ -551,7 +551,7 @@ body {
 
 .appearance-row {
   display: grid;
-  grid-template-columns: 0.3fr 0.3fr 0.4fr;
+  grid-template-columns: 0.15fr 0.35fr 0.2fr 0.3fr;
   gap: 8px;
   align-items: center;
 }
@@ -578,7 +578,7 @@ body {
 
 .appearance-row label input[type="color"] {
   flex: none;
-  width: 48px;
+  width: 36px;
   min-height: 30px;
   padding: 3px 4px;
 }

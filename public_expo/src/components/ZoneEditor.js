@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "../AppContext";
-import { normalizeStats, parseVisibleList, collectStats, createDefaultStat } from "../zoneUtils";
+import { normalizeStats, parseVisibleList, parseDashArray, collectStats, createDefaultStat } from "../zoneUtils";
 import { submitEditedZoneRequest, submitDeletedZoneRequest, submitClearLogsRequest } from "../requests";
 import StatsEditor from "./StatsEditor";
 
@@ -19,13 +19,34 @@ export default function ZoneEditor() {
 
   const selectedFeature = selectedZoneId ? zones[selectedZoneId] : null;
 
+  // Builds a stable, order-independent snapshot string for isDirty comparison
+  // - JSON.stringify preserves key insertion order, so the three call sites
+  // below (load, isDirty, and post-save reset) must always list fields in
+  // this exact order or the comparison silently breaks.
+  function formSnapshot(values) {
+    return JSON.stringify({
+      name: values.name,
+      traits: values.traits,
+      visibleTo: values.visibleTo,
+      radius: values.radius,
+      fill: values.fill,
+      opacity: values.opacity,
+      border: values.border,
+      dashArray: values.dashArray,
+      lat: values.lat,
+      lng: values.lng,
+      statsRows: values.statsRows,
+    });
+  }
+
   const [name, setName] = useState("");
-  const [fill, setFill] = useState("#ffffff");
-  const [border, setBorder] = useState("#ffffff");
-  const [radius, setRadius] = useState("");
-  const [opacity, setOpacity] = useState("0.5");
-  const [visibleTo, setVisibleTo] = useState("");
   const [traits, setTraits] = useState("");
+  const [visibleTo, setVisibleTo] = useState("");
+  const [radius, setRadius] = useState("");
+  const [fill, setFill] = useState("#ffffff");
+  const [opacity, setOpacity] = useState("0.5");
+  const [border, setBorder] = useState("#ffffff");
+  const [dashArray, setDashArray] = useState("1, 0");
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
   const [statsRows, setStatsRows] = useState([]);
@@ -45,6 +66,8 @@ export default function ZoneEditor() {
     const nextName = selectedFeature.properties?.displayName || "";
     const nextFill = selectedFeature.properties?.appearance?.fill || "#ffffff";
     const nextBorder = selectedFeature.properties?.appearance?.border || "#ffffff";
+    const rawDashArray = selectedFeature.properties?.appearance?.dash;
+    const nextDashArray = Array.isArray(rawDashArray) ? rawDashArray.join(", ") : rawDashArray || "1, 0";
     const nextRadius = Number.isFinite(selectedFeature.properties?.appearance?.radius)
       ? String(selectedFeature.properties.appearance.radius)
       : "";
@@ -60,20 +83,22 @@ export default function ZoneEditor() {
     const nextStatsRows = Object.entries(stats).map(([key, stat]) => ({ key, ...stat }));
 
     setName(nextName);
-    setFill(nextFill);
-    setBorder(nextBorder);
-    setRadius(nextRadius);
-    setOpacity(nextOpacity);
-    setVisibleTo(nextVisibleTo);
     setTraits(nextTraits);
+    setVisibleTo(nextVisibleTo);
+    setRadius(nextRadius);
+    setFill(nextFill);
+    setOpacity(nextOpacity);
+    setBorder(nextBorder);
+    setDashArray(nextDashArray);
     setLat(nextLat);
     setLng(nextLng);
     setStatsRows(nextStatsRows);
 
-    initialFormRef.current = JSON.stringify({
+    initialFormRef.current = formSnapshot({
       name: nextName,
       fill: nextFill,
       border: nextBorder,
+      dashArray: nextDashArray,
       radius: nextRadius,
       opacity: nextOpacity,
       visibleTo: nextVisibleTo,
@@ -88,7 +113,7 @@ export default function ZoneEditor() {
   // the Save button's styling (see the render below).
   const isDirty =
     initialFormRef.current !==
-    JSON.stringify({ name, fill, border, radius, opacity, visibleTo, traits, lat, lng, statsRows });
+    formSnapshot({ name, fill, border, dashArray, radius, opacity, visibleTo, traits, lat, lng, statsRows });
 
   // Only clear the save-status message when the selection itself changes -
   // not on every snapshot refresh of the same zone (which would otherwise
@@ -172,17 +197,19 @@ export default function ZoneEditor() {
     const nextLat = Number.isFinite(lat) ? Math.round(lat * 100000) / 100000 : lat;
     const nextLng = Number.isFinite(lng) ? Math.round(lng * 100000) / 100000 : lng;
     const coordinates = Number.isFinite(nextLng) && Number.isFinite(nextLat) ? [nextLng, nextLat] : null;
+    const parsedDashArray = parseDashArray(dashArray);
 
     const formData = {
       name: name.trim(),
-      fill,
-      border,
-      opacity,
-      visibleTo: parseVisibleList(visibleTo),
       traits: parseVisibleList(traits),
+      radius: String(nextRadius ?? ""),
+      visibleTo: parseVisibleList(visibleTo),
+      fill,
+      opacity,
+      border,
+      dash: parsedDashArray.length ? parsedDashArray : [1, 0],
       latitude: String(nextLat ?? ""),
       longitude: String(nextLng ?? ""),
-      radius: String(nextRadius ?? ""),
       stats,
     };
 
@@ -192,14 +219,15 @@ export default function ZoneEditor() {
       // The zones snapshot refreshes on a timer independent of this save (see
       // the load effect above), so isDirty would never clear on its own -
       // reset the snapshot here instead of waiting for the server to echo back.
-      initialFormRef.current = JSON.stringify({
+      initialFormRef.current = formSnapshot({
         name,
-        fill,
-        border,
-        radius,
-        opacity,
-        visibleTo,
         traits,
+        visibleTo,
+        radius,
+        fill,
+        opacity,
+        border,
+        dashArray,
         lat,
         lng,
         statsRows,
@@ -336,6 +364,16 @@ export default function ZoneEditor() {
               />
             </label>
             <label>
+              Opacity
+              <input
+                type="text"
+                placeholder="0.5"
+                value={opacity}
+                disabled={!isAdmin}
+                onChange={(event) => setOpacity(event.target.value)}
+              />
+            </label>
+            <label>
               Border
               <input
                 type="color"
@@ -345,13 +383,13 @@ export default function ZoneEditor() {
               />
             </label>
             <label>
-              Opacity
+              Dash
               <input
                 type="text"
-                placeholder="0.5"
-                value={opacity}
+                placeholder="1, 0"
+                value={dashArray}
                 disabled={!isAdmin}
-                onChange={(event) => setOpacity(event.target.value)}
+                onChange={(event) => setDashArray(event.target.value)}
               />
             </label>
           </div>

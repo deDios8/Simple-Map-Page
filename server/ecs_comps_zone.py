@@ -14,11 +14,12 @@ class DisplayName:
 
 @dataclass
 class Appearance:
-    fill: str
-    border: str
-    shape: str
     radius: int
+    fill: str
     opacity: float
+    border: str
+    dash: list
+    shape: str
     visible_to: list
 
 @dataclass
@@ -75,11 +76,12 @@ class Zone:
         esper.add_component(
             new_entity_id,
             Appearance(
-                fill=appearance.get("fill", "#ffffff"),
-                border=appearance.get("border", "#ffffff"),
-                shape=appearance.get("shape", ""),
                 radius=appearance.get("radius", 0),
+                fill=appearance.get("fill", "#ffffff"),
                 opacity=appearance.get("opacity", 0.5),
+                border=appearance.get("border", "#ffffff"),
+                dash=appearance.get("dash", [1,0]),
+                shape=appearance.get("shape", ""),
                 visible_to=appearance.get("visibleTo", []),
             ),
         )

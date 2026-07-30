@@ -72,6 +72,18 @@ export function parseVisibleList(value) {
   return value.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+// Converts the appearance editor's "1, 0" dash-pattern input into an array of
+// non-negative numbers for Leaflet's dashArray, dropping any comma-separated
+// entries that aren't valid numbers (this is the "correction" - bad entries
+// are silently removed rather than blocking the whole field).
+export function parseDashArray(value) {
+  if (!value || typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((s) => Number.parseFloat(s.trim()))
+    .filter((n) => Number.isFinite(n) && n >= 0);
+}
+
 // A zone is visible to the current user if the admin password is used, or if
 // the zone's appearance.visibleTo tags intersect the current user's own traits.
 export function isVisibleToCurrentUser(feature, { userPass, userId, zones }) {

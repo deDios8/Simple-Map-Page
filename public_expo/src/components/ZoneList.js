@@ -13,6 +13,7 @@ export default function ZoneList({ onAdd }) {
       name: feature.properties?.displayName || "",
       fill: feature.properties?.appearance?.fill || "#ffffff",
       border: feature.properties?.appearance?.border || "#ffffff",
+      dash: feature.properties?.appearance?.dash || [1, 0],
       opacity: String(feature.properties?.appearance?.opacity ?? "0.5"),
       visibleTo: feature.properties?.appearance?.visibleTo || [],
       traits: feature.properties?.traits || [],

@@ -77,18 +77,18 @@ class ZoneObjectEntry(DBEntry):
     def update_from_db_entry(self, db_entry: dict[str, Any]) -> None:
         super().update_from_db_entry(db_entry)
 
+        self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
+        self.traits = normalize_string_list(self.properties.get("traits", []))
+
         self.appearance = self.properties.get("appearance", {})
+        self.visible_to = normalize_string_list(self.appearance.get("visibleTo", [])) if isinstance(self.appearance, dict) else []
         self.radius = self.appearance.get("radius", 2) if isinstance(self.appearance, dict) else 2
         self.fill = self.appearance.get("fill", "#ffffff") if isinstance(self.appearance, dict) else "#ffffff"
-        self.border = self.appearance.get("border", "#ffffff") if isinstance(self.appearance, dict) else "#ffffff"
         self.opacity = self.appearance.get("opacity", 0.5) if isinstance(self.appearance, dict) else 0.5
-        self.visible_to = normalize_string_list(self.appearance.get("visibleTo", [])) if isinstance(self.appearance, dict) else []
-
-        self.name = self.properties.get("displayName", "") if isinstance(self.properties, dict) else ""
+        self.border = self.appearance.get("border", "#ffffff") if isinstance(self.appearance, dict) else "#ffffff"
+        self.dash = self.appearance.get("dash", [1, 0]) if isinstance(self.appearance, dict) else [1, 0]
         
         self.stats = normalize_stats(self.properties)
-
-        self.traits = normalize_string_list(self.properties.get("traits", []))
 
         self.messages = normalize_messages(self.properties)
 
@@ -169,6 +169,25 @@ def normalize_string_list(value: object) -> list[str]:
     if isinstance(value, str) and value.strip():
         return [s.strip() for s in value.split(",") if s.strip()]
     return []
+
+
+def normalize_dash(value: object) -> list[float]:
+    """Normalize a field to a list of non-negative numbers (Leaflet dash pattern).
+
+    Accepts a list of numbers or a comma-separated string.
+    """
+    if isinstance(value, list):
+        items = value
+    elif isinstance(value, str) and value.strip():
+        items = value.split(",")
+    else:
+        return [1, 0]
+    result = []
+    for item in items:
+        num = to_float(item, None)
+        if num is not None and num >= 0:
+            result.append(num)
+    return result or [1, 0]
 
 
 def normalize_messages(properties: Any) -> list[str]:
@@ -856,14 +875,15 @@ class SessionState:
                 "properties": {
                     "id": new_zone_key,
                     "displayName": str(form_data.get("name") or new_zone_key),
-                    "appearance": {
-                        "fill": str(form_data.get("fill") or "#0b8f87"),
-                        "border": str(form_data.get("border") or "#ffffff"),
-                        "radius": to_float(form_data.get("radius"), 5),
-                        "opacity": to_float(form_data.get("opacity"), 0.5),
-                        "visibleTo": normalize_string_list(form_data.get("visibleTo")),
-                    },
                     "traits": normalize_string_list(form_data.get("traits")) or ["ZONE"],
+                    "appearance": {
+                        "visibleTo": normalize_string_list(form_data.get("visibleTo")),
+                        "radius": to_float(form_data.get("radius"), 5),
+                        "fill": str(form_data.get("fill") or "#0b8f87"),
+                        "opacity": to_float(form_data.get("opacity"), 0.5),
+                        "border": str(form_data.get("border") or "#ffffff"),
+                        "dash": normalize_dash(form_data.get("dash")),
+                    },
                     "stats": normalize_stats({"stats": stats_payload}),
                 },
             }
@@ -923,15 +943,16 @@ class SessionState:
         geometry = esper.component_for_entity(target_entity_id, ecs_comps_zone.Geometry)
 
         display_name_comp.display_name = str(form_data.get("name", display_name_comp.display_name) or display_name_comp.display_name)
-
-        appearance.fill = str(form_data.get("fill", appearance.fill) or appearance.fill)
-        appearance.border = str(form_data.get("border", appearance.border) or appearance.border)
-        appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
-        appearance.opacity = to_float(form_data.get("opacity"), float(appearance.opacity))
-
+        next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else []
         appearance.visible_to = normalize_string_list(form_data.get("visibleTo")) if "visibleTo" in form_data else []
 
-        next_traits = normalize_string_list(form_data.get("traits")) if "traits" in form_data else []
+        appearance.radius = to_float(form_data.get("radius"), float(appearance.radius))
+        appearance.fill = str(form_data.get("fill", appearance.fill) or appearance.fill)
+        appearance.opacity = to_float(form_data.get("opacity"), float(appearance.opacity))
+        appearance.border = str(form_data.get("border", appearance.border) or appearance.border)
+        appearance.dash = normalize_dash(form_data.get("dash")) if "dash" in form_data else appearance.dash
+
+
         self._sync_traits_component(target_entity_id, {"traits": next_traits})
 
         lat = to_float(form_data.get("latitude"), float(geometry.coordinates[1]))
@@ -955,12 +976,13 @@ class SessionState:
             {
                 "geometry/coordinates": [lon, lat],
                 "properties/displayName": display_name_comp.display_name,
-                "properties/appearance/fill": appearance.fill,
-                "properties/appearance/border": appearance.border,
-                "properties/appearance/radius": appearance.radius,
-                "properties/appearance/opacity": appearance.opacity,
-                "properties/appearance/visibleTo": appearance.visible_to,
                 "properties/traits": next_traits,
+                "properties/appearance/visibleTo": appearance.visible_to,
+                "properties/appearance/radius": appearance.radius,
+                "properties/appearance/fill": appearance.fill,
+                "properties/appearance/opacity": appearance.opacity,
+                "properties/appearance/border": appearance.border,
+                "properties/appearance/dash": appearance.dash,
                 "properties/data": extra_data,
                 "properties/stats": next_stats_payload,
             },
@@ -980,14 +1002,15 @@ class SessionState:
             props = stream_obj.setdefault("properties", {})
             if isinstance(props, dict):
                 props["displayName"] = display_name_comp.display_name
+                props["traits"] = next_traits
                 appr = props.setdefault("appearance", {})
                 if isinstance(appr, dict):
-                    appr["fill"] = appearance.fill
-                    appr["border"] = appearance.border
-                    appr["radius"] = appearance.radius
-                    appr["opacity"] = appearance.opacity
                     appr["visibleTo"] = appearance.visible_to
-                props["traits"] = next_traits
+                    appr["radius"] = appearance.radius
+                    appr["fill"] = appearance.fill
+                    appr["opacity"] = appearance.opacity
+                    appr["border"] = appearance.border
+                    appr["dash"] = appearance.dash
                 props["data"] = extra_data
                 if next_stats_payload:
                     props["stats"] = next_stats_payload
@@ -1149,12 +1172,13 @@ class SessionState:
 
         appearance = esper.component_for_entity(existing_entity_id, ecs_comps_zone.Appearance)
         appearance_data = props.get("appearance", {}) if isinstance(props.get("appearance"), dict) else {}
-        appearance.fill = appearance_data.get("fill", "#ffffff")
-        appearance.border = appearance_data.get("border", "#ffffff")
-        appearance.shape = appearance_data.get("shape", "")
-        appearance.radius = appearance_data.get("radius", 0)
-        appearance.opacity = appearance_data.get("opacity", 0.5)
         appearance.visible_to = normalize_string_list(appearance_data.get("visibleTo", []))
+        appearance.radius = appearance_data.get("radius", 0)
+        appearance.fill = appearance_data.get("fill", "#ffffff")
+        appearance.opacity = appearance_data.get("opacity", 0.5)
+        appearance.border = appearance_data.get("border", "#ffffff")
+        appearance.dash = appearance_data.get("dash", [1,0])
+        appearance.shape = appearance_data.get("shape", "")
 
         geometry = esper.component_for_entity(existing_entity_id, ecs_comps_zone.Geometry)
         geometry.coordinates = zone.geometry.get("coordinates", [0, 0])

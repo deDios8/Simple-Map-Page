@@ -286,14 +286,6 @@ class EventProcessor(esper.Processor):
                 else:
                     appearance.visible_to.append(tag)
 
-    def _set_fill(self, target_entity_id: int, component: ecs_comps_event.ResultSetFill) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
-            appearance.fill = component.fill
-
-    def _set_border(self, target_entity_id: int, component: ecs_comps_event.ResultSetBorder) -> None:
-        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
-            appearance.border = component.border
-
     def _set_radius(self, target_entity_id: int, component: ecs_comps_event.ResultSetRadius) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.radius = component.radius
@@ -302,6 +294,10 @@ class EventProcessor(esper.Processor):
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.radius += component.change
 
+    def _set_fill(self, target_entity_id: int, component: ecs_comps_event.ResultSetFill) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.fill = component.fill
+
     def _set_opacity(self, target_entity_id: int, component: ecs_comps_event.ResultSetOpacity) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.opacity = component.opacity
@@ -309,6 +305,14 @@ class EventProcessor(esper.Processor):
     def _change_opacity(self, target_entity_id: int, component: ecs_comps_event.ResultChangeOpacity) -> None:
         if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
             appearance.opacity += component.change
+
+    def _set_border(self, target_entity_id: int, component: ecs_comps_event.ResultSetBorder) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.border = component.border
+
+    def _set_dash(self, target_entity_id: int, component: ecs_comps_event.ResultSetDash) -> None:
+        if appearance := esper.try_component(target_entity_id, ecs_comps_zone.Appearance):
+            appearance.dash = component.dash
 
     def _grant_traits(self, target_entity_id: int, component: ecs_comps_event.ResultGrantTraits) -> None:
         traits = esper.try_component(target_entity_id, ecs_comps_zone.Traits)

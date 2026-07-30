@@ -62,6 +62,8 @@ function ZoneMarker({ feature, onSelect }) {
   const border = feature.properties?.appearance?.border || "#ffffff";
   const radius = Number.isFinite(feature.properties?.appearance?.radius) ? feature.properties.appearance.radius : 5;
   const opacity = Number.isFinite(feature.properties?.appearance?.opacity) ? feature.properties.appearance.opacity : 0.5;
+  const dash = feature.properties?.appearance?.dash;
+  const dashArray = Array.isArray(dash) && dash.length ? dash.join(", ") : "1, 0";
   const coordinates = feature.geometry?.coordinates;
   if (!Array.isArray(coordinates)) return null;
   const [lng, lat] = coordinates;
@@ -70,7 +72,7 @@ function ZoneMarker({ feature, onSelect }) {
     <Circle
       center={[lat, lng]}
       radius={radius}
-      pathOptions={{ color: border, fillColor: fill, fillOpacity: opacity, weight: 2 }}
+      pathOptions={{ color: border, fillColor: fill, fillOpacity: opacity, weight: 2, dashArray: dashArray }}
       eventHandlers={{ click: onSelect }}
     >
       <Popup>{feature.properties?.displayName || feature.properties?.id || "Untitled zone"}</Popup>

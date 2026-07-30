@@ -154,6 +154,18 @@ class ObjectsThatMetAnyTargetCriteria:
 # Components for results
 # ---------------------------------------------------------------------------
 @dataclass
+class ResultGrantTraits:
+    tags: list
+
+@dataclass
+class ResultRevokeTraits:
+    tags: list
+
+@dataclass
+class ResultToggleTraits:
+    tags: list
+
+@dataclass
 class ResultGrantVisibility:
     tags: list
 
@@ -166,20 +178,16 @@ class ResultToggleVisibility:
     tags: list
 
 @dataclass
-class ResultSetFill:
-    fill: str
-
-@dataclass
-class ResultSetBorder:
-    border: str
-
-@dataclass
 class ResultSetRadius:
     radius: int
 
 @dataclass
 class ResultChangeRadius:
     change: int
+
+@dataclass
+class ResultSetFill:
+    fill: str
 
 @dataclass
 class ResultSetOpacity:
@@ -190,16 +198,12 @@ class ResultChangeOpacity:
     change: float
 
 @dataclass
-class ResultGrantTraits:
-    tags: list
+class ResultSetBorder:
+    border: str
 
 @dataclass
-class ResultRevokeTraits:
-    tags: list
-
-@dataclass
-class ResultToggleTraits:
-    tags: list
+class ResultSetDash:
+    dash: list
 
 @dataclass
 class ResultRevokeStats:

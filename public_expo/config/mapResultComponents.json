@@ -52,22 +52,6 @@
     "fieldType": "csv",
     "label": "Visible"
   },
-  "ResultSetFill": {
-    "short_name": "Set Fill",
-    "handler": "_set_fill",
-    "fieldName": "fill",
-    "fieldType": "text",
-    "label": "Fill",
-    "placeholder": "#ff0000"
-  },
-  "ResultSetBorder": {
-    "short_name": "Set Border",
-    "handler": "_set_border",
-    "fieldName": "border",
-    "fieldType": "text",
-    "label": "Border",
-    "placeholder": "#ffffff"
-  },
   "ResultSetRadius": {
     "short_name": "Set Radius",
     "handler": "_set_radius",
@@ -84,6 +68,14 @@
     "label": "Change",
     "placeholder": "-1"
   },
+  "ResultSetFill": {
+    "short_name": "Set Fill",
+    "handler": "_set_fill",
+    "fieldName": "fill",
+    "fieldType": "text",
+    "label": "Fill",
+    "placeholder": "#ff0000"
+  },
   "ResultSetOpacity": {
     "short_name": "Set Opacity",
     "handler": "_set_opacity",
@@ -99,6 +91,22 @@
     "fieldType": "float",
     "label": "Change",
     "placeholder": "-0.1"
+  },
+  "ResultSetBorder": {
+    "short_name": "Set Border",
+    "handler": "_set_border",
+    "fieldName": "border",
+    "fieldType": "text",
+    "label": "Border",
+    "placeholder": "#ffffff"
+  },
+  "ResultSetDash": {
+    "short_name": "Set Dash",
+    "handler": "_set_dash",
+    "fieldName": "dash",
+    "fieldType": "json",
+    "label": "[#,#]",
+    "placeholder": "[1, 0]"
   },
   "ResultSetStatsToValues": {
     "short_name": "Set Stats",

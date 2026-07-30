@@ -249,11 +249,12 @@ class SyncZonesToDatabase(esper.Processor):
         appearance = esper.try_component(entity_id, ecs_comps_zone.Appearance)
         if appearance is not None:
             payload["properties/appearance"] = {
-                "fill": appearance.fill,
-                "border": appearance.border,
-                "shape": appearance.shape,
                 "radius": appearance.radius,
+                "fill": appearance.fill,
                 "opacity": appearance.opacity,
+                "border": appearance.border,
+                "dash": appearance.dash,
+                "shape": appearance.shape,
                 "visibleTo": appearance.visible_to,
             }
 
